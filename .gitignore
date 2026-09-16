@@ -1,0 +1,6 @@
+reference/
+.godot/
+*.import
+!assets/**/*.import
+.tmp/
+*.log
