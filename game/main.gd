@@ -18,8 +18,7 @@ func _ready() -> void:
 	sim.entity_spawned.connect(_on_spawned)
 	sim.entity_died.connect(_on_died)
 	sim.team_lost.connect(func(t): print("team %d lost" % t))
-	sim.spawn("Units/Neutral/NexusLevel1", Simulation.TEAM_RED, Vector2(96, -23))
-	sim.spawn("Units/Neutral/NexusLevel1", Simulation.TEAM_BLUE, Vector2(-96, -23))
+	sim.spawn_bases()
 	_label = $HUD/Label
 	_place_camera(Vector2(0, -23))
 
@@ -39,10 +38,10 @@ func _unhandled_key_input(event: InputEvent) -> void:
 	if not event.is_pressed() or event.is_echo():
 		return
 	match event.keycode:
-		KEY_1: sim.drop_squad("Units/White/Footman", Simulation.TEAM_RED, Vector2(60, -23), 4)
-		KEY_2: sim.drop_squad("Units/White/Archer", Simulation.TEAM_RED, Vector2(60, -23), 2)
-		KEY_3: sim.drop_squad("Units/White/Footman", Simulation.TEAM_BLUE, Vector2(-60, -23), 4)
-		KEY_4: sim.drop_squad("Units/White/Archer", Simulation.TEAM_BLUE, Vector2(-60, -23), 2)
+		KEY_1: sim.drop_squad("Units/White/Footman", Simulation.TEAM_BLUE, Vector2(-60, -23), 4)
+		KEY_2: sim.drop_squad("Units/White/Archer", Simulation.TEAM_BLUE, Vector2(-60, -23), 2)
+		KEY_3: sim.drop_squad("Units/White/Footman", Simulation.TEAM_RED, Vector2(60, -23), 4)
+		KEY_4: sim.drop_squad("Units/White/Archer", Simulation.TEAM_RED, Vector2(60, -23), 2)
 		KEY_ESCAPE: get_tree().quit()
 
 

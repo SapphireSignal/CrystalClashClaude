@@ -79,10 +79,12 @@ The client runs the same shared movement components for smoothing; server correc
 
 ## 3. Map, lanes, pathfinding
 
-`BaseConflict.Map.pas`. `TMap` owns named polygon **zones** (`Camera`, `Walkzone`, `Drop`, each suffixed
-with team id; `Constants.pas:116-118`), a `TBuildZoneManager`, a `TLaneManager`, and world entities loaded
-from `Maps/<Map>/<Map>.bcm`. Two maps: `MAP_SINGLE='Single'` (one lane), `MAP_DOUBLE='Classic'` (two lanes).
-Map bounds +/-150.
+`BaseConflict.Map.pas`. `TMap` owns named polygon **zones** loaded from `Maps/<Map>/<Map>.bcm`
+(`Camera`, `Walkzone`, `Drop`, `Spell1`, `Spell2`; the team suffix is only appended at runtime for
+prefixed constraints, `Wela.pas:1342`), a `TBuildZoneManager` and a `TLaneManager`. No entities are stored
+in the map file; bases come from scenario scripts. Two maps: `MAP_SINGLE='Single'` (one lane, walkzone
+y in [-36,-10]), `MAP_DOUBLE='Classic'` (two lanes, walkzone y in [-36,36] minus a central island).
+Map bounds +/-150. Teams: **Blue = 1 at -x, Red = 2 at +x**. `RVector2.nXY` negates X only, `XnY` negates Y.
 
 **Lanes** = lists of `RWaypoint` gates (cross-section line + center + direction vectors), hardcoded in
 `TLaneManager.Create` (`Map.pas:520-560`) and `.Single` (`:645`):

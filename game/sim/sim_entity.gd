@@ -27,6 +27,23 @@ var summoning_sick_until: int = 0
 var created_at: int = 0
 var died_at: int = -1
 
+# Movement state (TMovementComponent / TPathfindingComponent)
+var moving: bool = false
+var move_target_id: int = 0          # entity we walk to, 0 = position target
+var move_target_pos: Vector2 = Vector2.ZERO
+var move_use_waypoints: bool = false
+var path: Array = []                 # tile indices, walked from the back (path.back() is next)
+var current_tile: int = -1
+var standing_on_tile: int = -1       # tile currently counted as blocked by this entity
+
+
+func move_goal(sim) -> Vector2:
+	if move_target_id != 0:
+		var t: SimEntity = sim.entities.get(move_target_id)
+		if t != null:
+			return t.position
+	return move_target_pos
+
 
 func setup(p_unit_id: String, p_league: int) -> void:
 	unit_id = p_unit_id

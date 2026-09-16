@@ -9,8 +9,8 @@ signal game_tick(counter: int)
 signal game_event(name: String)
 signal team_lost(team: int)
 
-const TEAM_RED: int = 1     # +x side (PvPRed.dws)
-const TEAM_BLUE: int = 2    # -x side (PvPBlue.dws)
+const TEAM_BLUE: int = 1    # -x side (PvPBlue.dws spawns with team 1)
+const TEAM_RED: int = 2     # +x side (PvPRed.dws spawns with team 2)
 
 var time_ms: int = 0
 var tick_counter: int = 0            # game ticks (1 s) since game start
@@ -21,11 +21,11 @@ var winner_team: int = 0
 var league: int = 4
 var rng := RandomNumberGenerator.new()
 
+var map: SimMap
 var entities: Dictionary = {}        # id -> SimEntity
 var _next_id: int = 1
 var commanders: Dictionary = {}      # team -> Commander
-var lane_y: Array[float] = [-23.0]   # single lane by default (Map.pas LANE_CENTER)
-var nexus_x: Dictionary = {TEAM_RED: 96.0, TEAM_BLUE: -96.0}
+var nexus_ids: Dictionary = {}       # team -> entity id
 var fired_events: Dictionary = {}
 
 
@@ -54,18 +54,23 @@ class Commander:
 		wood += amount - to_gold
 
 
-func _init(seed: int = 1, p_league: int = 4) -> void:
+func _init(seed: int = 1, p_league: int = 4, map_name: String = SimMap.SINGLE) -> void:
 	rng.seed = seed
 	league = p_league
-	for team in [TEAM_RED, TEAM_BLUE]:
+	map = SimMap.load_map(map_name)
+	for team in [TEAM_BLUE, TEAM_RED]:
 		var c := Commander.new()
 		c.team = team
 		commanders[team] = c
 
 
-func setup_two_lanes() -> void:
-	lane_y = [-23.0, 23.0]
-	nexus_x = {TEAM_RED: 92.0, TEAM_BLUE: -92.0}
+## Spawns nexus and lanetowers for both teams (PvPRed.dws / PvPBlue.dws).
+func spawn_bases() -> void:
+	for team in [TEAM_BLUE, TEAM_RED]:
+		var layout := map.base_layout(team)
+		spawn("Units/Neutral/NexusLevel1", team, layout["nexus"])
+		for p in layout["lanetowers"]:
+			spawn("Units/Neutral/LanetowerLevel1", team, p)
 
 
 func spawn(unit_id: String, team: int, pos: Vector2, front: Vector2 = Vector2.ZERO) -> SimEntity:
@@ -78,6 +83,13 @@ func spawn(unit_id: String, team: int, pos: Vector2, front: Vector2 = Vector2.ZE
 	e.front = front if front != Vector2.ZERO else Vector2(-1.0 if team == TEAM_RED else 1.0, 0.0)
 	e.created_at = time_ms
 	entities[e.id] = e
+	if e.has("upNexus"):
+		nexus_ids[team] = e.id
+	if e.is_building():
+		map.pathfinding.block_permanent_area(pos, e.collision_radius)
+	else:
+		_enter_tile(e)
+		_stand(e)
 	entity_spawned.emit(e)
 	return e
 
@@ -95,8 +107,10 @@ func drop_squad(unit_id: String, team: int, pos: Vector2, count: int, radius: fl
 	return result
 
 
-func enemy_nexus_x(team: int) -> float:
-	return nexus_x[TEAM_BLUE] if team == TEAM_RED else nexus_x[TEAM_RED]
+func enemy_nexus(team: int) -> SimEntity:
+	var other := TEAM_BLUE if team == TEAM_RED else TEAM_RED
+	var e: SimEntity = entities.get(nexus_ids.get(other, 0))
+	return e if e != null and e.alive else null
 
 
 func step() -> void:
@@ -111,6 +125,7 @@ func step() -> void:
 		if not e.can_think(time_ms):
 			continue
 		_think(e)
+		_move(e)
 	_cleanup_dead()
 
 
@@ -147,7 +162,7 @@ func _fire_scheduled_events() -> void:
 			game_event.emit(name)
 
 
-# ---------------------------------------------------------------- AI / combat
+# ---------------------------------------------------------------- AI (think chain)
 
 func _think(e: SimEntity) -> void:
 	if time_ms < e.locked_until:
@@ -157,6 +172,8 @@ func _think(e: SimEntity) -> void:
 		if target != null:
 			e.target_id = target.id
 			_face(e, target.position)
+			if e.moving:
+				_stand(e)
 			if time_ms >= e.cooldown_ready_at and e.fire_at < 0:
 				_prefire(e)
 			return
@@ -164,11 +181,21 @@ func _think(e: SimEntity) -> void:
 			var approach := _pick_target(e, e.attention_range())
 			if approach != null:
 				e.target_id = approach.id
-				_move_towards(e, approach.position, e.attack_range() + approach.collision_radius)
+				_move_to(e, approach.id, approach.position, false)
 				return
 	e.target_id = 0
 	if e.can_move():
 		_follow_lane(e)
+
+
+## TBrainFollowLaneComponent.ThinkChain: walk to the nearest enemy nexus using lane waypoints.
+func _follow_lane(e: SimEntity) -> void:
+	if e.moving:
+		return
+	var nexus := enemy_nexus(e.team)
+	if nexus == null:
+		return
+	_move_to(e, nexus.id, nexus.position, true)
 
 
 ## TBrainActionComponent.OnPreFire: hit lands after actionpoint, unit locked for max(actionpoint, actionduration).
@@ -204,6 +231,8 @@ func _kill(e: SimEntity) -> void:
 	e.alive = false
 	e.health = 0.0
 	e.died_at = time_ms
+	_leave_tile(e)
+	map.pathfinding.cancel_path(e.id)
 	entity_died.emit(e)
 	if e.has("upNexus") and not finished:
 		finished = true
@@ -237,28 +266,97 @@ func _face(e: SimEntity, at: Vector2) -> void:
 		e.front = d.normalized()
 
 
-func _move_towards(e: SimEntity, goal: Vector2, stop_distance: float) -> void:
-	var d := goal - e.position
-	var dist := d.length() - e.collision_radius
-	if dist <= stop_distance:
+# ---------------------------------------------------------------- movement (TMovementComponent, server side)
+
+func _move_to(e: SimEntity, target_id: int, target_pos: Vector2, use_waypoints: bool) -> void:
+	var same := e.moving and e.move_target_id == target_id and (target_id != 0 or e.move_target_pos == target_pos)
+	if same:
 		return
-	_face(e, goal)
-	var max_step := e.speed * SimConstants.TICK_MS
-	e.position += d.normalized() * minf(max_step, dist - stop_distance)
+	e.move_target_id = target_id
+	e.move_target_pos = target_pos
+	e.move_use_waypoints = use_waypoints
+	e.moving = true
+	_leave_standing(e)
+	_compute_path(e)
 
 
-func _follow_lane(e: SimEntity) -> void:
-	var y := _nearest_lane_y(e.position.y)
-	var goal := Vector2(enemy_nexus_x(e.team), y)
-	_move_towards(e, goal, 0.0)
+func _compute_path(e: SimEntity) -> void:
+	var goal := e.move_goal(self)
+	var nexus := enemy_nexus(e.team)
+	var direction := Lanes.direction_toward(e.position, nexus.position) if nexus else Lanes.NORMAL
+	e.path = map.pathfinding.compute_path(e.id, e.position, goal, time_ms, e.speed, e.move_use_waypoints, false, direction)
+	e.path.reverse()   # walk from the back like FPath[high(FPath)]
+	if not e.path.is_empty() and e.path.back() == e.current_tile:
+		e.path.pop_back()
 
 
-func _nearest_lane_y(y: float) -> float:
-	var best := lane_y[0]
-	for ly in lane_y:
-		if absf(ly - y) < absf(best - y):
-			best = ly
-	return best
+func _move(e: SimEntity) -> void:
+	if not e.moving or time_ms < e.locked_until:
+		return
+	var pf := map.pathfinding
+	var walking := e.speed * SimConstants.TICK_MS
+	var goal := e.move_goal(self)
+	var target_tile := pf.index_of(pf.tile_of(goal))
+	if e.path.is_empty():
+		if e.current_tile == target_tile:
+			_stand(e)
+			return
+		_compute_path(e)
+		if e.path.is_empty():
+			return
+	var pos := e.position
+	while not e.path.is_empty():
+		var next: int = e.path.back()
+		if next != e.current_tile and pf.is_blocked(next) and next != target_tile:
+			_compute_path(e)
+			return
+		var target_pos := goal if next == target_tile else pf.tile_center(pf.tile_from_index(next))
+		var dist := pos.distance_to(target_pos)
+		if dist <= walking:
+			pos = target_pos
+			walking -= dist
+			e.path.pop_back()
+		else:
+			pos += (target_pos - pos).normalized() * walking
+			break
+	_face(e, pos)
+	_set_position(e, pos)
+	if e.current_tile == target_tile:
+		_stand(e)
+
+
+func _set_position(e: SimEntity, pos: Vector2) -> void:
+	e.position = pos
+	var tile := map.pathfinding.index_of(map.pathfinding.tile_of(pos))
+	if tile != e.current_tile:
+		_leave_standing(e)
+		e.current_tile = tile
+
+
+func _enter_tile(e: SimEntity) -> void:
+	e.current_tile = map.pathfinding.index_of(map.pathfinding.tile_of(e.position))
+
+
+## TMovementComponent.OnStand + TPathfindingComponent.OnStand: stop, drop the path, block the tile.
+func _stand(e: SimEntity) -> void:
+	e.moving = false
+	e.path = []
+	map.pathfinding.cancel_path(e.id)
+	if e.standing_on_tile != e.current_tile:
+		_leave_standing(e)
+		e.standing_on_tile = e.current_tile
+		map.pathfinding.stand_on(e.current_tile)
+
+
+func _leave_standing(e: SimEntity) -> void:
+	if e.standing_on_tile >= 0:
+		map.pathfinding.leave(e.standing_on_tile)
+		e.standing_on_tile = -1
+
+
+func _leave_tile(e: SimEntity) -> void:
+	_leave_standing(e)
+	e.current_tile = -1
 
 
 func _cleanup_dead() -> void:

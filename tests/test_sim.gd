@@ -113,10 +113,64 @@ func test_attack_timing() -> void:
 
 func test_nexus_death_ends_game() -> void:
 	var sim := Simulation.new(1, 4)
-	var nexus := sim.spawn("Units/Neutral/NexusLevel1", Simulation.TEAM_BLUE, Vector2(-96, -23))
+	sim.spawn_bases()
+	var nexus := sim.enemy_nexus(Simulation.TEAM_RED)
+	runner.check_eq(nexus.team, Simulation.TEAM_BLUE, "enemy nexus of red is blue")
+	runner.check_eq(nexus.position, Vector2(-96, -23), "blue nexus at -96,-23 on Single")
+	runner.check_near(nexus.max_health, 3750.0, "nexus hp league 4")
 	var lost := []
 	sim.team_lost.connect(func(t): lost.append(t))
 	sim.deal_damage(nexus, 1e9, SimConstants.DamageType.TRUE, nexus)
 	runner.check(sim.finished, "game finished")
 	runner.check_eq(sim.winner_team, Simulation.TEAM_RED, "red wins")
 	runner.check_eq(lost, [Simulation.TEAM_BLUE], "blue lost signal")
+
+
+func test_pathfinding_grid() -> void:
+	var m := SimMap.load_map(SimMap.SINGLE)
+	var pf := m.pathfinding
+	runner.check(not pf.is_blocked(pf.index_of(pf.tile_of(Vector2(0, -23)))), "lane center walkable")
+	runner.check(pf.is_blocked(pf.index_of(pf.tile_of(Vector2(0, 40)))), "outside walkzone blocked")
+	var path := pf.compute_path(1, Vector2(0, -23), Vector2(10, -23), 0, 0.004, false, false, Lanes.NORMAL)
+	runner.check(path.size() >= 12 and path.size() <= 14, "straight path of ~13 tiles (got %d)" % path.size())
+	# a second unit planning the same corridor at the same time must be pushed aside by the reservations
+	var path2 := pf.compute_path(2, Vector2(0, -23), Vector2(10, -23), 0, 0.004, false, false, Lanes.NORMAL)
+	runner.check(path2.size() > 0, "second unit finds a path")
+	runner.check(path2 != path, "second unit avoids reserved tiles")
+	pf.cancel_path(1)
+	var path3 := pf.compute_path(3, Vector2(0, -23), Vector2(10, -23), 0, 0.004, false, false, Lanes.NORMAL)
+	runner.check_eq(path3, path, "after release the straight path is free again")
+
+
+func test_lane_waypoints() -> void:
+	var lanes := Lanes.single()
+	var wp = lanes.lanes[0].next_waypoint(Vector2(-80, -23), Lanes.NORMAL)
+	runner.check_eq(wp, Vector2(-60, -23), "first gate ahead when walking +x")
+	wp = lanes.lanes[0].next_waypoint(Vector2(0, -23), Lanes.NORMAL)
+	runner.check_eq(wp, Vector2(60, -23), "second gate ahead from center")
+	wp = lanes.lanes[0].next_waypoint(Vector2(80, -23), Lanes.NORMAL)
+	runner.check_eq(wp, null, "no gate ahead near red nexus")
+	wp = lanes.lanes[0].next_waypoint(Vector2(80, -23), Lanes.REVERSE)
+	runner.check_eq(wp, Vector2(60, -23), "walking -x sees the +60 gate first")
+
+
+func test_unit_walks_lane_to_enemy_nexus() -> void:
+	var sim := Simulation.new(5, 4)
+	sim.spawn_bases()
+	var squad := sim.drop_squad("Units/White/Footman", Simulation.TEAM_BLUE, Vector2(-80, -23), 4)
+	# red has no units: footmen walk ~113 units until the red lanetower (x=48, range 15, 100 dmg) shoots them
+	var hits: Array = []
+	var on_hit := func(att, t, d): if att.has("upLanetower") and t.has("upMelee"): hits.append([sim.time_ms, d, t.position])
+	sim.attack_fired.connect(on_hit)
+	while hits.is_empty() and sim.time_ms < 120000:
+		sim.step()
+	sim.attack_fired.disconnect(on_hit)
+	runner.check(not hits.is_empty(), "footmen walked into the red lanetower's range")
+	if not hits.is_empty():
+		# 113 units at 4 u/s = 28.25 s, plus 1 s summoning sickness
+		runner.check(hits[0][0] > 28000 and hits[0][0] < 32000, "arrival time matches 4 u/s (got %d ms)" % hits[0][0])
+		runner.check_near(hits[0][1], 100.0, "lanetower damage 100")
+		var p: Vector2 = hits[0][2]
+		runner.check(p.x > 30.0 and p.y > -36 and p.y < -10, "footman was on the lane inside the walkzone")
+	for f in squad:
+		runner.check(f.position.y > -36 and f.position.y < -10, "footman stayed inside the walkzone")

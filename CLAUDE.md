@@ -92,13 +92,17 @@ Act as two people at once:
   original `.ets` scripts and card registry. Never hand-edit; fix the extractor instead.
 - 2026-09-16 Tests: own tiny runner `tests/run_tests.gd` (no GUT/gdUnit install needed). Run after `--import`:
   `godot --headless --path <proj> -s tests/run_tests.gd --log-file <proj>/.tmp/godot.log`.
+- 2026-09-16 Team ids as in the scenario scripts: Blue = 1 at -x, Red = 2 at +x. Zones in map files are not
+  team-suffixed (`Walkzone`, `Drop`, `Camera`, `Spell1`, `Spell2`). `RVector2.nXY` negates X only.
+- 2026-09-16 Checkpoint routine: tests green, game runs, CLAUDE.md Status updated, `CONTINUE.md` rewritten
+  (the prompt to paste into a new chat), commit + push.
 - 2026-09-16 Git identity in this repo is `SapphireSignal` (never the owner's personal name/email). Remote:
   github.com/SapphireSignal/CrystalClashClaude. Commit + push at each working checkpoint.
 
 ## Status
-Phase 1 done (docs written). Phase 2 started: `game/sim/` has fixed-tick Simulation, Blackboard stats loaded from
-`units.json` (233 unit scripts extracted, league arrays + inheritance), armor formula, attack timing
-(actionpoint/duration/cooldown), nearest-target picking, straight-lane movement, economy tick with gold cap
-overflow to wood, tech-level events, nexus death = loss. 40 tests pass. `game/main.tscn` is a sandbox with
-capsule units (keys 1-4 drop squads). Next: A* grid pathfinding with time reservations, build grid + spawner
-waves, card play (cost/charges), projectiles, abilities/modifiers (Read-chain), then spells.
+Phase 1 done (docs written). Phase 2 in progress: `game/sim/` has fixed-tick Simulation, Blackboard stats from
+`units.json` (233 unit scripts, league arrays, inheritance), armor formula, attack timing, nearest-target
+picking, economy tick with gold-cap overflow to wood, tech events, nexus death = loss, map zones from
+`game/data/maps/*.json`, original lane waypoints, A* tile pathfinding with space-time reservations and
+path following (TMovementComponent port), base spawning (nexus + lanetowers). 61 tests pass.
+`game/main.tscn` is a sandbox with capsule units (keys 1-4 drop squads). See `CONTINUE.md` for the next step.
