@@ -1,0 +1,8133 @@
+{
+ "Units/Black/Frostgoyle": {
+  "script": "Units/Black/Frostgoyle.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecBlack"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier2",
+     "upUnit",
+     "upMelee",
+     "upFlying"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atUnarmored"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 155.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 155.0
+   },
+   "eiWelaRange": {
+    "0": 1.0,
+    "1": 1.0
+   },
+   "eiDamageType": {
+    "1": [
+     "dtMelee"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 75.0
+   },
+   "eiCooldown": {
+    "1": 3600
+   },
+   "eiWelaActionpoint": {
+    "1": 400
+   },
+   "eiWelaActionduration": {
+    "1": 700
+   },
+   "eiWelaModifier": {
+    "2": 1.5,
+    "3": 2.0
+   }
+  },
+  "collision_radius": 0.7
+ },
+ "Units/Black/FrostgoyleDrop": {
+  "script": "Units/Black/FrostgoyleDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Black\\Frostgoyle"
+   },
+   "eiWelaCount": {
+    "0": 2
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": false,
+  "tier": 2
+ },
+ "Units/Black/FrostgoyleFountain": {
+  "script": "Units/Black/FrostgoyleFountain.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecBlack"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier2",
+     "upGround",
+     "upBuilding",
+     "upSoulGatherer",
+     "upNoAutoAttack"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atFortified"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 475.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 475.0
+   },
+   "eiResourceCap.reMana": {
+    "*": 8
+   },
+   "eiResourceBalance.reMana": {
+    "*": 0
+   },
+   "eiResourceCost.reMana": {
+    "2": 4
+   },
+   "eiCooldown": {
+    "2": 3000
+   },
+   "eiWelaUnitPattern": {
+    "2": "Units\\Black\\Frostgoyle"
+   }
+  },
+  "collision_radius": 0.6
+ },
+ "Units/Black/FrostgoyleFountainBuilding": {
+  "script": "Units/Black/FrostgoyleFountainBuilding.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Black\\FrostgoyleFountain"
+   }
+  },
+  "card_kind": "BuildingCard",
+  "legendary": false,
+  "tier": 2
+ },
+ "Units/Black/FrostgoyleSpawner": {
+  "script": "Units/Black/FrostgoyleSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Black\\Frostgoyle"
+   },
+   "eiWelaCount": {
+    "0": 2
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 2
+ },
+ "Units/Black/Tyrus": {
+  "script": "Units/Black/Tyrus.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecBlack"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier3",
+     "upUnit",
+     "upGround",
+     "upMelee",
+     "upLegendary",
+     "upSoulGatherer"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atMedium"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 390.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 390.0
+   },
+   "eiResourceCap.reMana": {
+    "*": 20
+   },
+   "eiResourceBalance.reMana": {
+    "*": 0
+   },
+   "eiWelaRange": {
+    "0": 1.0,
+    "1": 1.0,
+    "3": 5.0,
+    "5": 9.0
+   },
+   "eiDamageType": {
+    "1": [
+     "dtMelee"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 65.0,
+    "2": 5.0,
+    "3": 1.0,
+    "5": 1.0
+   },
+   "eiCooldown": {
+    "1": 1000,
+    "3": 3000
+   },
+   "eiWelaActionpoint": {
+    "1": 366
+   },
+   "eiWelaActionduration": {
+    "1": 800
+   },
+   "eiResourceCost.reMana": {
+    "2": 1
+   },
+   "eiWelaModifier": {
+    "2": 0.0
+   },
+   "eiWelaTargetCount": {
+    "3": 1,
+    "5": 200
+   },
+   "eiWelaUnitPattern": {
+    "3": "Projectiles\\Black\\VoidGatherProjectile",
+    "5": "Projectiles\\Black\\VoidGatherProjectileTyrus"
+   }
+  },
+  "collision_radius": 0.9
+ },
+ "Units/Black/TyrusDrop": {
+  "script": "Units/Black/TyrusDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Black\\Tyrus"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": true,
+  "tier": 3
+ },
+ "Units/Black/Vecra": {
+  "script": "Units/Black/Vecra.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecBlack"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier3",
+     "upUnit",
+     "upRanged",
+     "upFlying",
+     "upLegendary"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atHeavy"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 460.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 460.0
+   },
+   "eiWelaTargetCount": {
+    "0": 1,
+    "1": 1,
+    "4": 200,
+    "5": 200
+   },
+   "eiWelaRange": {
+    "0": 7.0,
+    "1": 7.0,
+    "4": 8.0,
+    "5": 8.0
+   },
+   "eiWelaUnitPattern": {
+    "0": "Projectiles\\Black\\VecraProjectile",
+    "1": "Projectiles\\Black\\VecraProjectile",
+    "3": "Projectiles\\Black\\VecraFreeze"
+   },
+   "eiDamageType": {
+    "1": [
+     "dtRanged"
+    ],
+    "2": [
+     "dtIgnoreArmor"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 290.0,
+    "2": 10.0
+   },
+   "eiCooldown": {
+    "1": 2000,
+    "2": 2000
+   },
+   "eiWelaActionpoint": {
+    "1": 450
+   },
+   "eiWelaActionduration": {
+    "1": 833
+   },
+   "eiWelaModifier": {
+    "3": 0.2
+   },
+   "eiLinkPattern": {
+    "4": "Links\\VecraAura",
+    "5": "Links\\VecraAura"
+   },
+   "eiWelaActive": {
+    "4": false,
+    "5": false
+   }
+  },
+  "collision_radius": 1.2
+ },
+ "Units/Black/VecraDrop": {
+  "script": "Units/Black/VecraDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Black\\Vecra"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": true,
+  "tier": 3
+ },
+ "Units/Black/VoidAltar": {
+  "script": "Units/Black/VoidAltar.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecBlack"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier3",
+     "upGround",
+     "upBuilding",
+     "upRanged",
+     "upSoulDonor",
+     "upSoulGatherer",
+     "upNoAutoAttack",
+     "upSupporter"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atFortified"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 115.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 115.0
+   },
+   "eiResourceCap.reMana": {
+    "*": 10
+   },
+   "eiResourceBalance.reMana": {
+    "*": 0
+   },
+   "eiWelaRange": {
+    "2": 40.0,
+    "4": 12.0
+   },
+   "eiCooldown": {
+    "2": 3000,
+    "4": 1000
+   },
+   "eiWelaUnitPattern": {
+    "2": "Projectiles\\Black\\SoulGatherProjectile",
+    "4": "Projectiles\\Black\\SoulDonorProjectile"
+   },
+   "eiWelaDamage": {
+    "2": 1.0,
+    "3": 1.0,
+    "4": 1.0
+   },
+   "eiResourceCost.reMana": {
+    "4": 1
+   },
+   "eiDamageType": {
+    "4": [
+     "dtIrredirectable"
+    ]
+   }
+  },
+  "collision_radius": 0.9
+ },
+ "Units/Black/VoidAltarBuilding": {
+  "script": "Units/Black/VoidAltarBuilding.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Black\\VoidAltar"
+   }
+  },
+  "card_kind": "BuildingCard",
+  "legendary": false,
+  "tier": 3
+ },
+ "Units/Black/VoidBane": {
+  "script": "Units/Black/VoidBane.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecBlack"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier1",
+     "upUnit",
+     "upGround",
+     "upMelee",
+     "upSoulGatherer",
+     "upHasDeathRattle"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atUnarmored"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 190.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 190.0
+   },
+   "eiResourceCap.reMana": {
+    "*": 14
+   },
+   "eiResourceBalance.reMana": {
+    "*": 0
+   },
+   "eiWelaRange": {
+    "0": 1.5,
+    "1": 1.5,
+    "3": 8.0
+   },
+   "eiDamageType": {
+    "1": [
+     "dtMelee",
+     "dtSplash"
+    ],
+    "3": [
+     "dtIrredirectable"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 27.0,
+    "2": 15.0,
+    "3": 1.0
+   },
+   "eiCooldown": {
+    "1": 2300
+   },
+   "eiWelaAreaOfEffect": {
+    "1": 2.5
+   },
+   "eiWelaAreaOfEffectCone": {
+    "1": 2.8269
+   },
+   "eiWelaActionpoint": {
+    "1": 333
+   },
+   "eiWelaActionduration": {
+    "1": 1133
+   },
+   "eiWelaTargetCount": {
+    "3": 0
+   },
+   "eiWelaModifier": {
+    "3": 1
+   },
+   "eiWelaUnitPattern": {
+    "3": "Projectiles\\Black\\SoulDonorProjectileVoidBane"
+   }
+  },
+  "collision_radius": 0.7
+ },
+ "Units/Black/VoidBaneDrop": {
+  "script": "Units/Black/VoidBaneDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Black\\VoidBane"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": false,
+  "tier": 1
+ },
+ "Units/Black/VoidBaneSpawner": {
+  "script": "Units/Black/VoidBaneSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Black\\VoidBane"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 1
+ },
+ "Units/Black/VoidBowman": {
+  "script": "Units/Black/VoidBowman.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecBlack"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier1",
+     "upUnit",
+     "upGround",
+     "upRanged"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atUnarmored"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 60.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 60.0
+   },
+   "eiWelaRange": {
+    "0": 8.0,
+    "1": 8.0
+   },
+   "eiWelaUnitPattern": {
+    "0": "Projectiles\\Black\\VoidBowmanProjectile",
+    "1": "Projectiles\\Black\\VoidBowmanProjectile"
+   },
+   "eiCooldown": {
+    "1": 1700
+   },
+   "eiDamageType": {
+    "1": [
+     "dtRanged"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 20.0
+   },
+   "eiWelaActionpoint": {
+    "1": 366
+   },
+   "eiWelaActionduration": {
+    "1": 1200
+   }
+  },
+  "collision_radius": 0.45
+ },
+ "Units/Black/VoidBowmanDrop": {
+  "script": "Units/Black/VoidBowmanDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Black\\VoidBowman"
+   },
+   "eiWelaCount": {
+    "0": 2
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": false,
+  "tier": 1
+ },
+ "Units/Black/VoidBowmanSpawner": {
+  "script": "Units/Black/VoidBowmanSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Black\\VoidBowman"
+   },
+   "eiWelaCount": {
+    "0": 2
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 1
+ },
+ "Units/Black/VoidCauldron": {
+  "script": "Units/Black/VoidCauldron.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecBlack"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier2",
+     "upUnit",
+     "upGround",
+     "upRanged",
+     "upSoulGatherer",
+     "upHasDeathRattle"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atHeavy"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 285.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 285.0
+   },
+   "eiResourceCap.reMana": {
+    "*": 15
+   },
+   "eiResourceBalance.reMana": {
+    "*": 0
+   },
+   "eiWelaRange": {
+    "0": 3.0,
+    "1": 3.0,
+    "2": 14.0
+   },
+   "eiWelaUnitPattern": {
+    "0": "Projectiles\\Black\\VoidCauldronProjectile",
+    "1": "Projectiles\\Black\\VoidCauldronProjectile",
+    "2": "Projectiles\\Black\\VoidCauldronBuildingBlastProjectile"
+   },
+   "eiCooldown": {
+    "1": 2800
+   },
+   "eiDamageType": {
+    "1": [
+     "dtRanged",
+     "dtSiege"
+    ],
+    "2": [
+     "dtRanged",
+     "dtSiege",
+     "dtAbility"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 60.0,
+    "2": 15.0
+   },
+   "eiWelaActionpoint": {
+    "1": 200
+   },
+   "eiWelaActionduration": {
+    "1": 500
+   },
+   "eiWelaTargetCount": {
+    "2": 0
+   },
+   "eiWelaModifier": {
+    "2": 1
+   }
+  },
+  "collision_radius": 0.6
+ },
+ "Units/Black/VoidCauldronDrop": {
+  "script": "Units/Black/VoidCauldronDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Black\\VoidCauldron"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": false,
+  "tier": 2
+ },
+ "Units/Black/VoidCauldronSpawner": {
+  "script": "Units/Black/VoidCauldronSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Black\\VoidCauldron"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 2
+ },
+ "Units/Black/VoidSkeleton": {
+  "script": "Units/Black/VoidSkeleton.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecBlack"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier1",
+     "upUnit",
+     "upGround",
+     "upMelee",
+     "upHasUndying",
+     "upSoulGatherer"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atUnarmored"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 105.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 105.0
+   },
+   "eiResourceCap.reMana": {
+    "*": 1
+   },
+   "eiResourceBalance.reMana": {
+    "*": 0
+   },
+   "eiWelaRange": {
+    "0": 1.0,
+    "1": 1.0
+   },
+   "eiDamageType": {
+    "1": [
+     "dtMelee"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 16.0
+   },
+   "eiCooldown": {
+    "1": 1700
+   },
+   "eiWelaActionpoint": {
+    "1": 266
+   },
+   "eiWelaActionduration": {
+    "1": 933
+   },
+   "eiWelaModifier": {
+    "2": 1.5,
+    "3": 2.0
+   },
+   "eiResourceCost.reMana": {
+    "4": 1
+   }
+  },
+  "collision_radius": 0.45
+ },
+ "Units/Black/VoidSkeletonDrop": {
+  "script": "Units/Black/VoidSkeletonDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Black\\VoidSkeleton"
+   },
+   "eiWelaCount": {
+    "0": 2
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": false,
+  "tier": 1
+ },
+ "Units/Black/VoidSkeletonSpawner": {
+  "script": "Units/Black/VoidSkeletonSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Black\\VoidSkeleton"
+   },
+   "eiWelaCount": {
+    "0": 2
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 1
+ },
+ "Units/Black/VoidSlime": {
+  "script": "Units/Black/VoidSlime.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecBlack"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier2",
+     "upUnit",
+     "upGround",
+     "upMelee"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atUnarmored"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 495.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 495.0
+   },
+   "eiWelaRange": {
+    "0": 1.0,
+    "1": 1.0
+   },
+   "eiDamageType": {
+    "1": [
+     "dtMelee"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 100.0
+   },
+   "eiCooldown": {
+    "1": 2300,
+    "2": 200
+   },
+   "eiWelaActionpoint": {
+    "1": 350
+   },
+   "eiWelaActionduration": {
+    "1": 966
+   }
+  },
+  "collision_radius": 0.7
+ },
+ "Units/Black/VoidSlimeDrop": {
+  "script": "Units/Black/VoidSlimeDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Black\\VoidSlime"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": false,
+  "tier": 2
+ },
+ "Units/Black/VoidSlimeSpawner": {
+  "script": "Units/Black/VoidSlimeSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Black\\VoidSlime"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 2
+ },
+ "Units/Black/VoidWorm": {
+  "script": "Units/Black/VoidWorm.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecBlack"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier1",
+     "upUnit",
+     "upGround",
+     "upRanged",
+     "upRangedGroundOnly",
+     "upHasDeathRattle"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atLight"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 100.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 100.0
+   },
+   "eiWelaRange": {
+    "0": 5.0,
+    "1": 5.0,
+    "2": 2.0,
+    "3": 2.0
+   },
+   "eiWelaUnitPattern": {
+    "0": "Projectiles\\Black\\VoidwormProjectile",
+    "1": "Projectiles\\Black\\VoidwormProjectile"
+   },
+   "eiCooldown": {
+    "1": 1700
+   },
+   "eiDamageType": {
+    "1": [
+     "dtRanged"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 40.0
+   },
+   "eiWelaActionpoint": {
+    "1": 250
+   },
+   "eiWelaActionduration": {
+    "1": 666
+   },
+   "eiWelaTargetCount": {
+    "2": 200
+   }
+  },
+  "collision_radius": 0.6
+ },
+ "Units/Black/VoidWormDrop": {
+  "script": "Units/Black/VoidWormDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Black\\VoidWorm"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": false,
+  "tier": 1
+ },
+ "Units/Black/VoidWormSpawner": {
+  "script": "Units/Black/VoidWormSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Black\\VoidWorm"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 1
+ },
+ "Units/Black/VoidWraith": {
+  "script": "Units/Black/VoidWraith.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecBlack"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier3",
+     "upUnit",
+     "upGround",
+     "upRanged"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atUnarmored"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 475.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 475.0
+   },
+   "eiResourceBalance.reMana": {
+    "*": 6
+   },
+   "eiResourceCap.reMana": {
+    "*": 12
+   },
+   "eiWelaRange": {
+    "0": 5.0,
+    "1": 5.0,
+    "2": 7.0
+   },
+   "eiWelaUnitPattern": {
+    "0": "Projectiles\\Black\\VoidWraithProjectile",
+    "1": "Projectiles\\Black\\VoidWraithProjectile"
+   },
+   "eiCooldown": {
+    "1": 2000,
+    "2": 3000,
+    "5": 3000
+   },
+   "eiDamageType": {
+    "1": [
+     "dtRanged"
+    ],
+    "2": [],
+    "3": [
+     "dtSplash",
+     "dtAbility"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 86.0,
+    "2": 200.0,
+    "3": 60.0,
+    "5": 1.0
+   },
+   "eiWelaActionpoint": {
+    "1": 266,
+    "2": 800
+   },
+   "eiWelaActionduration": {
+    "1": 833,
+    "2": 1600
+   },
+   "eiResourceCost.reMana": {
+    "2": 6
+   },
+   "eiWelaAreaOfEffect": {
+    "3": 4.0
+   }
+  },
+  "collision_radius": 0.7
+ },
+ "Units/Black/VoidWraithDrop": {
+  "script": "Units/Black/VoidWraithDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Black\\VoidWraith"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": false,
+  "tier": 3
+ },
+ "Units/Black/VoidWraithSpawner": {
+  "script": "Units/Black/VoidWraithSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Black\\VoidWraith"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 3
+ },
+ "Units/Blue/Aegis": {
+  "script": "Units/Blue/Aegis.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecBlue"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upMonumental",
+     "upFlying",
+     "upTier3",
+     "upGround",
+     "upBuilding",
+     "upRanged",
+     "upImmuneToBlinded",
+     "upLinkWeapon",
+     "upLegendary"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atFortified"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 890.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 890.0
+   },
+   "eiResourceCap.reMana": {
+    "*": 12
+   },
+   "eiResourceBalance.reMana": {
+    "*": 12
+   },
+   "eiWelaRange": {
+    "1": 11.0,
+    "2": 15.0,
+    "3": 6.0,
+    "4": 6.0,
+    "5": 6.0,
+    "6": 6.0,
+    "7": 1.5
+   },
+   "eiWelaUnitPattern": {
+    "1": "Projectiles\\Blue\\AegisRiftProjectile",
+    "2": "Projectiles\\Blue\\AegisMissile"
+   },
+   "eiCooldown": {
+    "1": 4000,
+    "2": 1800,
+    "3": 500,
+    "4": 500,
+    "5": 500,
+    "6": 500,
+    "7": 333
+   },
+   "eiWelaActionpoint": {
+    "1": 433
+   },
+   "eiWelaActionduration": {
+    "1": 1033
+   },
+   "eiWelaActive": {
+    "2": false,
+    "3": false,
+    "4": false,
+    "5": false,
+    "6": false
+   },
+   "eiResourceCost.reMana": {
+    "2": 1
+   },
+   "eiDamageType": {
+    "2": [
+     "dtRanged"
+    ],
+    "3": [
+     "dtRanged"
+    ],
+    "4": [
+     "dtRanged"
+    ],
+    "5": [
+     "dtRanged"
+    ],
+    "6": [
+     "dtRanged"
+    ]
+   },
+   "eiWelaDamage": {
+    "2": 53.0,
+    "3": 5.9,
+    "4": 5.9,
+    "5": 5.9,
+    "6": 5.9
+   },
+   "eiWelaAreaOfEffect": {
+    "2": 2.5
+   },
+   "eiLinkPattern": {
+    "3": "Links\\AegisGatlingLinkFront",
+    "4": "Links\\AegisGatlingLinkLeft",
+    "5": "Links\\AegisGatlingLinkBack",
+    "6": "Links\\AegisGatlingLinkRight"
+   },
+   "eiWelaTargetCount": {
+    "7": 200
+   }
+  },
+  "collision_radius": 1.4
+ },
+ "Units/Blue/AegisBuilding": {
+  "script": "Units/Blue/AegisBuilding.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Blue\\Aegis"
+   }
+  },
+  "card_kind": "BuildingCard",
+  "legendary": true,
+  "tier": 3
+ },
+ "Units/Blue/Airdominator": {
+  "script": "Units/Blue/Airdominator.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecBlue"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier3",
+     "upUnit",
+     "upRanged",
+     "upRangedGroundOnly",
+     "upFlying"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atLight"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 120.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 120.0
+   },
+   "eiWelaRange": {
+    "1": 15.0
+   },
+   "eiWelaUnitPattern": {
+    "0": "Projectiles\\Blue\\AirdominatorMissile",
+    "1": "Projectiles\\Blue\\AirdominatorMissile"
+   },
+   "eiCooldown": {
+    "1": 2800
+   },
+   "eiDamageType": {
+    "1": [
+     "dtRanged",
+     "dtSplash"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 25.0
+   },
+   "eiWelaAreaOfEffect": {
+    "1": 2.5
+   },
+   "eiWelaActionpoint": {
+    "1": 333
+   },
+   "eiWelaActionduration": {
+    "1": 833
+   }
+  },
+  "collision_radius": 0.75
+ },
+ "Units/Blue/AirdominatorDrop": {
+  "script": "Units/Blue/AirdominatorDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Blue\\Airdominator"
+   },
+   "eiWelaCount": {
+    "0": 3
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": false,
+  "tier": 3
+ },
+ "Units/Blue/AirdominatorSpawner": {
+  "script": "Units/Blue/AirdominatorSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Blue\\Airdominator"
+   },
+   "eiWelaCount": {
+    "0": 3
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 3
+ },
+ "Units/Blue/AmmoFactory": {
+  "script": "Units/Blue/AmmoFactory.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecBlue"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier2",
+     "upGround",
+     "upBuilding",
+     "upGadget",
+     "upSoulDonor",
+     "upNoAutoAttack",
+     "upSupporter"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atFortified"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 295.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 295.0
+   },
+   "eiResourceCap.reMana": {
+    "*": 4
+   },
+   "eiResourceBalance.reMana": {
+    "*": 4
+   },
+   "eiResourceCost.reMana": {
+    "2": 1
+   },
+   "eiWelaTargetCount": {
+    "2": 1
+   },
+   "eiDamageType": {
+    "2": [
+     "dtIrredirectable"
+    ]
+   },
+   "eiWelaDamage": {
+    "2": 1.0,
+    "3": 1.0,
+    "4": 1.0,
+    "5": 1.0
+   },
+   "eiWelaRange": {
+    "2": 6.0
+   },
+   "eiWelaUnitPattern": {
+    "2": "Projectiles\\Blue\\AmmoFactoryProjectile"
+   },
+   "eiWelaActionpoint": {
+    "2": 400
+   },
+   "eiWelaActionduration": {
+    "2": 1033
+   },
+   "eiCooldown": {
+    "3": 3000
+   }
+  },
+  "collision_radius": 0.75
+ },
+ "Units/Blue/AmmoFactoryBuilding": {
+  "script": "Units/Blue/AmmoFactoryBuilding.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Blue\\AmmoFactory"
+   },
+   "eiWelaRange": {
+    "5": 10000.0
+   }
+  },
+  "card_kind": "BuildingCard",
+  "legendary": false,
+  "tier": 2
+ },
+ "Units/Blue/Atlas": {
+  "script": "Units/Blue/Atlas.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecBlue"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier1",
+     "upUnit",
+     "upMelee",
+     "upGround",
+     "upLegendary"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atHeavy"
+   },
+   "eiResourceCap.reHealth": {
+    "*": "AdjustedHealth"
+   },
+   "eiResourceBalance.reHealth": {
+    "*": "AdjustedHealth"
+   },
+   "eiResourceCap.reLevel": {
+    "*": 10
+   },
+   "eiWelaRange": {
+    "0": 1.0,
+    "1": 1.0,
+    "3": 6.5,
+    "5": 12.0
+   },
+   "eiDamageType": {
+    "1": [
+     "dtMelee"
+    ],
+    "3": [
+     "dtRanged",
+     "dtAbility"
+    ],
+    "4": [
+     "dtTrue",
+     "dtIgnoreArmor"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 79.0,
+    "3": 10.0,
+    "4": 10.0,
+    "5": 0.1
+   },
+   "eiCooldown": {
+    "1": 1700
+   },
+   "eiWelaActionpoint": {
+    "1": 766
+   },
+   "eiWelaActionduration": {
+    "1": 1400
+   },
+   "eiWelaUnitPattern": {
+    "3": "Projectiles\\Blue\\AtlasActiveArmorProjectile"
+   }
+  },
+  "collision_radius": 1.0
+ },
+ "Units/Blue/AtlasDrop": {
+  "script": "Units/Blue/AtlasDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Blue\\Atlas"
+   },
+   "eiWelaCount": {
+    "0": 1
+   },
+   "eiResourceCap.reLevel": {
+    "*": "MAX_LEVEL"
+   },
+   "eiResourceBalance.reLevel": {
+    "*": "Min(Entity.BalanceInt(reCardTimesPlayed), MAX_LEVEL)"
+   },
+   "eiWelaDamage": {
+    "5": 100.0,
+    "6": 1.0
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": true,
+  "tier": 1
+ },
+ "Units/Blue/AtlasSpawner": {
+  "script": "Units/Blue/AtlasSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Blue\\Atlas"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 1
+ },
+ "Units/Blue/Bombardier": {
+  "script": "Units/Blue/Bombardier.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecBlue"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier3",
+     "upUnit",
+     "upGround",
+     "upRanged",
+     "upImmuneToBlinded"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atLight"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 155.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 155.0
+   },
+   "eiResourceCap.reMana": {
+    "*": 4
+   },
+   "eiResourceBalance.reMana": {
+    "*": 4
+   },
+   "eiWelaRange": {
+    "0": 9.0,
+    "1": 9.0,
+    "2": 9.0,
+    "4": 20.0
+   },
+   "eiCooldown": {
+    "1": 3600,
+    "2": 3600
+   },
+   "eiDamageType": {
+    "1": [
+     "dtRanged",
+     "dtSplash"
+    ],
+    "2": [
+     "dtRanged",
+     "dtSplash"
+    ],
+    "4": [
+     "dtRanged",
+     "dtAbility"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 82.0,
+    "2": 82.0,
+    "4": 275.0
+   },
+   "eiWelaAreaOfEffect": {
+    "1": 18.0,
+    "2": 23.0
+   },
+   "eiWelaActionpoint": {
+    "1": 333,
+    "2": 333,
+    "4": 1033
+   },
+   "eiWelaActionduration": {
+    "1": 700,
+    "2": 700,
+    "4": "{1766}3000"
+   },
+   "eiResourceCost.reMana": {
+    "4": 4
+   },
+   "eiWelaUnitPattern": {
+    "4": "Projectiles\\Blue\\BombardierProjectile"
+   }
+  },
+  "collision_radius": 0.8
+ },
+ "Units/Blue/BombardierDrop": {
+  "script": "Units/Blue/BombardierDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Blue\\Bombardier"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": false,
+  "tier": 3
+ },
+ "Units/Blue/BombardierSpawner": {
+  "script": "Units/Blue/BombardierSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Blue\\Bombardier"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 3
+ },
+ "Units/Blue/DamperDrone": {
+  "script": "Units/Blue/DamperDrone.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecBlue"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier1",
+     "upUnit",
+     "upMelee",
+     "upGround"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atLight"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 41.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 41.0
+   },
+   "eiResourceCap.reMana": {
+    "*": 2
+   },
+   "eiResourceBalance.reMana": {
+    "*": 0
+   },
+   "eiWelaRange": {
+    "0": 1.0,
+    "1": 1.0,
+    "3": 1.0
+   },
+   "eiDamageType": {
+    "1": [
+     "dtMelee",
+     "dtSiege"
+    ],
+    "3": [
+     "dtSiege",
+     "dtSplash",
+     "dtAbility"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 11.0,
+    "3": 20.0
+   },
+   "eiCooldown": {
+    "1": 1500
+   },
+   "eiWelaActionpoint": {
+    "1": 400
+   },
+   "eiWelaActionduration": {
+    "1": 900
+   },
+   "eiWelaModifier": {
+    "2": 0.3,
+    "3": 15.0
+   },
+   "eiWelaAreaOfEffect": {
+    "3": 1.5
+   }
+  },
+  "collision_radius": 0.45
+ },
+ "Units/Blue/DamperDroneDrop": {
+  "script": "Units/Blue/DamperDroneDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Blue\\DamperDrone"
+   },
+   "eiWelaCount": {
+    "0": 4
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": false,
+  "tier": 1
+ },
+ "Units/Blue/DamperDroneSpawner": {
+  "script": "Units/Blue/DamperDroneSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Blue\\DamperDrone"
+   },
+   "eiWelaCount": {
+    "0": 4
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 1
+ },
+ "Units/Blue/GatlingDrone": {
+  "script": "Units/Blue/GatlingDrone.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecBlue"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier1",
+     "upUnit",
+     "upGround",
+     "upRanged",
+     "upImmuneToBlinded",
+     "upLinkWeapon"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atUnarmored"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 98.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 98.0
+   },
+   "eiWelaRange": {
+    "0": 6.0,
+    "1": 6.0
+   },
+   "eiLinkPattern": {
+    "0": "Links\\GatlingLink",
+    "1": "Links\\GatlingLink"
+   },
+   "eiCooldown": {
+    "1": 500
+   },
+   "eiDamageType": {
+    "1": [
+     "dtRanged",
+     "dtIgnoreArmor"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 11.0
+   }
+  },
+  "collision_radius": 0.55
+ },
+ "Units/Blue/GatlingDroneDrop": {
+  "script": "Units/Blue/GatlingDroneDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Blue\\GatlingDrone"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": false,
+  "tier": 1
+ },
+ "Units/Blue/GatlingDroneSpawner": {
+  "script": "Units/Blue/GatlingDroneSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Blue\\GatlingDrone"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 1
+ },
+ "Units/Blue/GatlingTurret": {
+  "script": "Units/Blue/GatlingTurret.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecBlue"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier1",
+     "upGround",
+     "upBuilding",
+     "upRanged",
+     "upImmuneToBlinded",
+     "upLinkWeapon",
+     "upGadget"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atFortified"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 230.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 230.0
+   },
+   "eiResourceCap.reMana": {
+    "*": 20
+   },
+   "eiResourceBalance.reMana": {
+    "*": 20
+   },
+   "eiResourceCost.reMana": {
+    "1": 1
+   },
+   "eiWelaRange": {
+    "1": 6.0
+   },
+   "eiLinkPattern": {
+    "0": "Links\\GatlingTowerLink",
+    "1": "Links\\GatlingTowerLink"
+   },
+   "eiCooldown": {
+    "1": 500
+   },
+   "eiDamageType": {
+    "1": [
+     "dtRanged"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 15.0,
+    "3": 1.0,
+    "4": 1.0
+   }
+  },
+  "collision_radius": 0.75
+ },
+ "Units/Blue/GatlingTurretBuilding": {
+  "script": "Units/Blue/GatlingTurretBuilding.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Blue\\GatlingTurret"
+   },
+   "eiWelaRange": {
+    "5": 10000.0
+   }
+  },
+  "card_kind": "BuildingCard",
+  "legendary": false,
+  "tier": 1
+ },
+ "Units/Blue/Inductioner": {
+  "script": "Units/Blue/Inductioner.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecBlue"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier2",
+     "upUnit",
+     "upGround",
+     "upRangedGroundOnly",
+     "upRanged"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atLight"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 165.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 165.0
+   },
+   "eiResourceCap.reMana": {
+    "*": 2
+   },
+   "eiResourceBalance.reMana": {
+    "*": 0
+   },
+   "eiWelaRange": {
+    "0": 8.0,
+    "1": 8.0,
+    "2": 15.0,
+    "3": 12.0
+   },
+   "eiWelaUnitPattern": {
+    "0": "Projectiles\\Blue\\InductionerProjectile",
+    "1": "Projectiles\\Blue\\InductionerProjectile",
+    "2": "Projectiles\\Blue\\InductionerMissile"
+   },
+   "eiCooldown": {
+    "1": 2800,
+    "2": 3000
+   },
+   "eiDamageType": {
+    "1": [
+     "dtRanged"
+    ],
+    "2": [
+     "dtRanged",
+     "dtSplash",
+     "dtAbility"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 110.0,
+    "2": 53.0,
+    "3": 1.0
+   },
+   "eiWelaActionpoint": {
+    "1": 300
+   },
+   "eiWelaActionduration": {
+    "1": 666
+   },
+   "eiResourceCost.reMana": {
+    "2": 2
+   },
+   "eiWelaAreaOfEffect": {
+    "2": 2.5
+   }
+  },
+  "collision_radius": 0.75
+ },
+ "Units/Blue/InductionerDrop": {
+  "script": "Units/Blue/InductionerDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Blue\\Inductioner"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": false,
+  "tier": 2
+ },
+ "Units/Blue/InductionerSpawner": {
+  "script": "Units/Blue/InductionerSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Blue\\Inductioner"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 2
+ },
+ "Units/Blue/MissileTurret": {
+  "script": "Units/Blue/MissileTurret.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecBlue"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier2",
+     "upGround",
+     "upBuilding",
+     "upRanged",
+     "upGadget"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atFortified"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 260.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 260.0
+   },
+   "eiResourceCap.reMana": {
+    "*": 14
+   },
+   "eiResourceBalance.reMana": {
+    "*": 14
+   },
+   "eiResourceCost.reMana": {
+    "1": 2
+   },
+   "eiWelaRange": {
+    "1": 15.0
+   },
+   "eiWelaUnitPattern": {
+    "0": "Projectiles\\Blue\\MissileTowerMissile",
+    "1": "Projectiles\\Blue\\MissileTowerMissile"
+   },
+   "eiCooldown": {
+    "1": 2800
+   },
+   "eiDamageType": {
+    "1": [
+     "dtRanged"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 47.0,
+    "2": 1.0,
+    "3": 1.0
+   },
+   "eiWelaAreaOfEffect": {
+    "1": 2.5
+   },
+   "eiWelaActionpoint": {
+    "1": 233
+   },
+   "eiWelaActionduration": {
+    "1": 766
+   }
+  },
+  "collision_radius": 0.75
+ },
+ "Units/Blue/MissileTurretBuilding": {
+  "script": "Units/Blue/MissileTurretBuilding.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Blue\\MissileTurret"
+   },
+   "eiWelaRange": {
+    "5": 10000.0
+   }
+  },
+  "card_kind": "BuildingCard",
+  "legendary": false,
+  "tier": 2
+ },
+ "Units/Blue/ObserverDrone": {
+  "script": "Units/Blue/ObserverDrone.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecBlue"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier1",
+     "upFlying",
+     "upBuilding",
+     "upUnit",
+     "upGadget",
+     "upNoAutoAttack",
+     "upSupporter"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atFortified"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 78.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 78.0
+   },
+   "eiWelaTargetCount": {
+    "2": 200,
+    "3": 200,
+    "6": 1
+   },
+   "eiLinkPattern": {
+    "2": "Links\\RangeUpgradeAura",
+    "3": "Links\\RangeUpgradeAura",
+    "6": "Links\\InvisibleAura"
+   },
+   "eiWelaRange": {
+    "2": 4.0,
+    "3": 4.0,
+    "6": 15.0,
+    "7": 15.0
+   },
+   "eiWelaActive": {
+    "2": false
+   },
+   "eiWelaDamage": {
+    "4": 1.0,
+    "5": 1.0
+   }
+  },
+  "collision_radius": 0.45
+ },
+ "Units/Blue/ObserverDroneBuilding": {
+  "script": "Units/Blue/ObserverDroneBuilding.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Blue\\ObserverDrone"
+   },
+   "eiWelaRange": {
+    "5": 10000.0
+   }
+  },
+  "card_kind": "BuildingCard",
+  "legendary": false,
+  "tier": 1
+ },
+ "Units/Blue/PhaseDrone": {
+  "script": "Units/Blue/PhaseDrone.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecBlue"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier2",
+     "upUnit",
+     "upGround",
+     "upMelee"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atMedium"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 165.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 165.0
+   },
+   "eiResourceCap.reMana": {
+    "*": 2
+   },
+   "eiResourceBalance.reMana": {
+    "*": 2
+   },
+   "eiWelaRange": {
+    "0": 1.0,
+    "1": 1.0,
+    "3": 8.0,
+    "4": 12.0
+   },
+   "eiDamageType": {
+    "1": [
+     "dtMelee"
+    ],
+    "3": [
+     "dtMelee",
+     "dtAbility"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 16.0,
+    "3": 100.0,
+    "4": 1.0
+   },
+   "eiCooldown": {
+    "1": 2000,
+    "2": 8000,
+    "3": 3000
+   },
+   "eiWelaActionpoint": {
+    "1": 400,
+    "3": 333
+   },
+   "eiWelaActionduration": {
+    "1": 966,
+    "3": 1066
+   },
+   "eiResourceCost.reMana": {
+    "3": 2
+   }
+  },
+  "collision_radius": 0.7
+ },
+ "Units/Blue/PhaseDroneDrop": {
+  "script": "Units/Blue/PhaseDroneDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Blue\\PhaseDrone"
+   },
+   "eiWelaCount": {
+    "0": 2
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": false,
+  "tier": 2
+ },
+ "Units/Blue/PhaseDroneSpawner": {
+  "script": "Units/Blue/PhaseDroneSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Blue\\PhaseDrone"
+   },
+   "eiWelaCount": {
+    "0": 2
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 2
+ },
+ "Units/Blue/ShieldDrone": {
+  "script": "Units/Blue/ShieldDrone.ets",
+  "values": {
+   "eiSpeed": {
+    "*": 0.00425
+   },
+   "eiColorIdentity": {
+    "*": "ecBlue"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier2",
+     "upUnit",
+     "upFlying",
+     "upNoAutoAttack",
+     "upSupporter",
+     "upFollower"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atUnarmored"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 260.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 260.0
+   },
+   "eiAttentionrange": {
+    "0": 10.0,
+    "6": 10.0
+   },
+   "eiWelaTargetCount": {
+    "2": 200,
+    "3": 200
+   },
+   "eiLinkPattern": {
+    "2": "Links\\ProjectileReflectorAura",
+    "3": "Links\\ProjectileReflectorAura"
+   },
+   "eiWelaRange": {
+    "2": 7.0,
+    "3": 7.0,
+    "6": 2.0
+   },
+   "eiWelaActive": {
+    "2": false
+   },
+   "eiDamageType": {
+    "5": [
+     "dtTrue",
+     "dtIgnoreArmor"
+    ]
+   },
+   "eiWelaDamage": {
+    "5": 10.0
+   }
+  },
+  "collision_radius": 0.5
+ },
+ "Units/Blue/ShieldDroneDrop": {
+  "script": "Units/Blue/ShieldDroneDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Blue\\ShieldDrone"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": false,
+  "tier": 2
+ },
+ "Units/Blue/ShieldDroneSpawner": {
+  "script": "Units/Blue/ShieldDroneSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Blue\\ShieldDrone"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 2
+ },
+ "Units/Colorless/BigCasterGolem": {
+  "script": "Units/Colorless/BigCasterGolem.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecColorless"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier3",
+     "upUnit",
+     "upGround",
+     "upRanged",
+     "upImmuneToBlinded",
+     "upGolem",
+     "upLinkWeapon"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atMedium"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 340.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 340.0
+   },
+   "eiWelaRange": {
+    "0": 8.0,
+    "1": 8.0
+   },
+   "eiLinkPattern": {
+    "1": "Links\\BigCasterGolemLink"
+   },
+   "eiCooldown": {
+    "1": 500
+   },
+   "eiDamageType": {
+    "1": [
+     "dtRanged"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 21.0
+   }
+  },
+  "collision_radius": 0.6
+ },
+ "Units/Colorless/BigCasterGolemDrop": {
+  "script": "Units/Colorless/BigCasterGolemDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Colorless\\BigCasterGolem"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": false,
+  "tier": 3
+ },
+ "Units/Colorless/BigCasterGolemSpawner": {
+  "script": "Units/Colorless/BigCasterGolemSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Colorless\\BigCasterGolem"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 3
+ },
+ "Units/Colorless/BigFlyingGolem": {
+  "script": "Units/Colorless/BigFlyingGolem.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecColorless"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier3",
+     "upUnit",
+     "upFlying",
+     "upRanged",
+     "upGolem"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atMedium"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 220.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 220.0
+   },
+   "eiWelaRange": {
+    "0": 8.0,
+    "1": 8.0
+   },
+   "eiWelaTargetCount": {
+    "1": 3
+   },
+   "eiWelaUnitPattern": {
+    "0": "Projectiles\\Colorless\\BigFlyingGolemProjectile",
+    "1": "Projectiles\\Colorless\\BigFlyingGolemProjectile"
+   },
+   "eiCooldown": {
+    "1": 2000
+   },
+   "eiDamageType": {
+    "1": [
+     "dtRanged"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 54.0
+   }
+  },
+  "collision_radius": 0.8
+ },
+ "Units/Colorless/BigFlyingGolemDrop": {
+  "script": "Units/Colorless/BigFlyingGolemDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Colorless\\BigFlyingGolem"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": false,
+  "tier": 3
+ },
+ "Units/Colorless/BigFlyingGolemSpawner": {
+  "script": "Units/Colorless/BigFlyingGolemSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Colorless\\BigFlyingGolem"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 3
+ },
+ "Units/Colorless/BigGolemTower": {
+  "script": "Units/Colorless/BigGolemTower.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecColorless"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier3",
+     "upGround",
+     "upBuilding",
+     "upRanged",
+     "upGolem"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atFortified"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 625.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 625.0
+   },
+   "eiWelaRange": {
+    "0": 11.0,
+    "1": 11.0
+   },
+   "eiWelaUnitPattern": {
+    "0": "Projectiles\\Colorless\\BigGolemTowerProjectile",
+    "1": "Projectiles\\Colorless\\BigGolemTowerProjectile"
+   },
+   "eiCooldown": {
+    "1": 1700
+   },
+   "eiDamageType": {
+    "1": [
+     "dtRanged"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 93.0
+   }
+  },
+  "collision_radius": 0.85
+ },
+ "Units/Colorless/BigGolemTowerBuilding": {
+  "script": "Units/Colorless/BigGolemTowerBuilding.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Colorless\\BigGolemTower"
+   }
+  },
+  "card_kind": "BuildingCard",
+  "legendary": false,
+  "tier": 3
+ },
+ "Units/Colorless/BigMeleeGolem": {
+  "script": "Units/Colorless/BigMeleeGolem.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecColorless"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier3",
+     "upUnit",
+     "upGround",
+     "upMelee",
+     "upGolem"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atHeavy"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 505.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 505.0
+   },
+   "eiWelaRange": {
+    "0": 1.0,
+    "1": 1.0
+   },
+   "eiDamageType": {
+    "1": [
+     "dtMelee"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 100.0,
+    "2": 35.0
+   },
+   "eiCooldown": {
+    "1": 2800,
+    "2": 3000
+   },
+   "eiWelaActionpoint": {
+    "1": 466
+   },
+   "eiWelaActionduration": {
+    "1": 1000
+   },
+   "eiWelaUnitPattern": {
+    "3": "Projectiles\\Colorless\\SplinterProjectile"
+   }
+  },
+  "collision_radius": 0.8
+ },
+ "Units/Colorless/BigMeleeGolemDrop": {
+  "script": "Units/Colorless/BigMeleeGolemDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Colorless\\BigMeleeGolem"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": false,
+  "tier": 3
+ },
+ "Units/Colorless/BigMeleeGolemSpawner": {
+  "script": "Units/Colorless/BigMeleeGolemSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Colorless\\BigMeleeGolem"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 3
+ },
+ "Units/Colorless/BossGolem": {
+  "script": "Units/Colorless/BossGolem.ets",
+  "values": {
+   "eiSpeed": {
+    "*": 0.004
+   },
+   "eiAttentionrange": {
+    "0": 18.0,
+    "1": 18.0,
+    "2": 18.0,
+    "3": 18.0,
+    "4": 18.0,
+    "5": 18.0
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upFlying",
+     "upGround",
+     "upMonumental",
+     "upUnit",
+     "upMelee",
+     "upLegendary",
+     "upTier3",
+     "upGolem"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atHeavy"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 4000.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 4000.0
+   },
+   "eiWelaRange": {
+    "1": 2.5,
+    "2": 2.5
+   },
+   "eiDamageType": {
+    "1": [
+     "dtMelee",
+     "dtSplash"
+    ],
+    "2": [
+     "dtMelee",
+     "dtSplash"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 200.0,
+    "2": 200.0
+   },
+   "eiCooldown": {
+    "1": 3000,
+    "2": 3000
+   },
+   "eiWelaAreaOfEffect": {
+    "1": 5.0,
+    "2": 5.0
+   },
+   "eiWelaAreaOfEffectCone": {
+    "1": 2.8269,
+    "2": 2.8269
+   },
+   "eiWelaActionpoint": {
+    "1": 1600,
+    "2": 1166
+   },
+   "eiWelaActionduration": {
+    "1": 2533,
+    "2": 2333
+   }
+  },
+  "collision_radius": 1.5
+ },
+ "Units/Colorless/BossGolemDrop": {
+  "script": "Units/Colorless/BossGolemDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Colorless\\BossGolem"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": false,
+  "tier": 3
+ },
+ "Units/Colorless/MediumMeleeGolem": {
+  "script": "Units/Colorless/MediumMeleeGolem.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecColorless"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier2",
+     "upUnit",
+     "upGround",
+     "upMelee",
+     "upGolem"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atLight"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 190.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 190.0
+   },
+   "eiWelaRange": {
+    "0": 1.0,
+    "1": 1.0
+   },
+   "eiDamageType": {
+    "1": [
+     "dtMelee",
+     "dtSplash"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 17.0
+   },
+   "eiCooldown": {
+    "1": 2300
+   },
+   "eiWelaAreaOfEffect": {
+    "1": 6.0
+   },
+   "eiWelaAreaOfEffectCone": {
+    "1": 0.78525
+   },
+   "eiWelaActionpoint": {
+    "1": 533
+   },
+   "eiWelaActionduration": {
+    "1": 1133
+   }
+  },
+  "collision_radius": 0.65
+ },
+ "Units/Colorless/MediumMeleeGolemDrop": {
+  "script": "Units/Colorless/MediumMeleeGolemDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Colorless\\MediumMeleeGolem"
+   },
+   "eiWelaCount": {
+    "0": 2
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": false,
+  "tier": 2
+ },
+ "Units/Colorless/MediumMeleeGolemSpawner": {
+  "script": "Units/Colorless/MediumMeleeGolemSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Colorless\\MediumMeleeGolem"
+   },
+   "eiWelaCount": {
+    "0": 2
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 2
+ },
+ "Units/Colorless/MeleeGolemTower": {
+  "script": "Units/Colorless/MeleeGolemTower.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecColorless"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier2",
+     "upGround",
+     "upBuilding",
+     "upMelee",
+     "upGolem"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atFortified"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 655.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 655.0
+   },
+   "eiDamageType": {
+    "1": [
+     "dtMelee"
+    ],
+    "2": [
+     "dtMelee",
+     "dtSplash"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 150.0,
+    "2": 49.95
+   },
+   "eiWelaActionpoint": {
+    "1": 666,
+    "2": 466
+   },
+   "eiWelaActionduration": {
+    "1": 1033,
+    "2": 866
+   },
+   "eiWelaRange": {
+    "1": 1.5,
+    "2": 1.5
+   },
+   "eiCooldown": {
+    "1": 2800,
+    "2": 2800
+   },
+   "eiWelaAreaOfEffect": {
+    "2": 2.0
+   },
+   "eiWelaAreaOfEffectCone": {
+    "2": 3.141
+   }
+  },
+  "collision_radius": 0.75
+ },
+ "Units/Colorless/MeleeGolemTowerBuilding": {
+  "script": "Units/Colorless/MeleeGolemTowerBuilding.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Colorless\\MeleeGolemTower"
+   }
+  },
+  "card_kind": "BuildingCard",
+  "legendary": false,
+  "tier": 2
+ },
+ "Units/Colorless/SiegeGolem": {
+  "script": "Units/Colorless/SiegeGolem.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecColorless"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier2",
+     "upUnit",
+     "upGround",
+     "upMelee",
+     "upGolem"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atMedium"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 270.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 270.0
+   },
+   "eiResourceBalance.reWelaCharge": {
+    "*": 0
+   },
+   "eiResourceCap.reWelaCharge": {
+    "*": 100
+   },
+   "eiResourceCost.reWelaCharge": {
+    "1": 1,
+    "3": 100,
+    "4": 1
+   },
+   "eiDamageType": {
+    "1": [
+     "dtMelee",
+     "dtSiege"
+    ],
+    "3": [
+     "dtRanged",
+     "dtSiege"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 52.0,
+    "2": 5.0,
+    "3": 50.0
+   },
+   "eiWelaRange": {
+    "1": 1.5,
+    "2": 20.0,
+    "3": 21.0
+   },
+   "eiCooldown": {
+    "1": 2300,
+    "2": 500
+   },
+   "eiWelaActionpoint": {
+    "1": 633,
+    "3": 250
+   },
+   "eiWelaActionduration": {
+    "1": 1033,
+    "3": 833
+   },
+   "eiWelaUnitPattern": {
+    "3": "Projectiles\\Colorless\\SiegeGolemProjectile"
+   }
+  },
+  "collision_radius": 0.9
+ },
+ "Units/Colorless/SiegeGolemDrop": {
+  "script": "Units/Colorless/SiegeGolemDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Colorless\\SiegeGolem"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": false,
+  "tier": 2
+ },
+ "Units/Colorless/SiegeGolemSpawner": {
+  "script": "Units/Colorless/SiegeGolemSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Colorless\\SiegeGolem"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 2
+ },
+ "Units/Colorless/SmallCasterGolem": {
+  "script": "Units/Colorless/SmallCasterGolem.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecColorless"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier1",
+     "upUnit",
+     "upGround",
+     "upRanged",
+     "upGolem",
+     "upSupporter"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atUnarmored"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 60.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 60.0
+   },
+   "eiWelaRange": {
+    "0": 8.0,
+    "1": 8.0,
+    "2": 8.0,
+    "3": 8.0
+   },
+   "eiWelaUnitPattern": {
+    "0": "Projectiles\\Colorless\\SmallCasterGolemProjectile",
+    "1": "Projectiles\\Colorless\\SmallCasterGolemProjectile"
+   },
+   "eiCooldown": {
+    "1": 2800,
+    "3": 5000
+   },
+   "eiDamageType": {
+    "1": [
+     "dtRanged"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 26.0
+   },
+   "eiWelaTargetCount": {
+    "2": 200,
+    "3": 200
+   },
+   "eiLinkPattern": {
+    "2": "Links\\CrystalPowerLink",
+    "3": "Links\\CrystalPowerLink"
+   }
+  },
+  "collision_radius": 0.45
+ },
+ "Units/Colorless/SmallCasterGolemDrop": {
+  "script": "Units/Colorless/SmallCasterGolemDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Colorless\\SmallCasterGolem"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": false,
+  "tier": 1
+ },
+ "Units/Colorless/SmallCasterGolemSpawner": {
+  "script": "Units/Colorless/SmallCasterGolemSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Colorless\\SmallCasterGolem"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 1
+ },
+ "Units/Colorless/SmallFlyingGolem": {
+  "script": "Units/Colorless/SmallFlyingGolem.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecColorless"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier1",
+     "upUnit",
+     "upFlying",
+     "upRanged",
+     "upGolem"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atUnarmored"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 105.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 105.0
+   },
+   "eiWelaRange": {
+    "0": 8.0,
+    "1": 8.0
+   },
+   "eiWelaUnitPattern": {
+    "0": "Projectiles\\Colorless\\SmallFlyingGolemProjectile",
+    "1": "Projectiles\\Colorless\\SmallFlyingGolemProjectile"
+   },
+   "eiCooldown": {
+    "1": 2300
+   },
+   "eiDamageType": {
+    "1": [
+     "dtRanged"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 47.0
+   }
+  },
+  "collision_radius": 0.6
+ },
+ "Units/Colorless/SmallFlyingGolemDrop": {
+  "script": "Units/Colorless/SmallFlyingGolemDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Colorless\\SmallFlyingGolem"
+   },
+   "eiWelaCount": {
+    "0": 2
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": false,
+  "tier": 2
+ },
+ "Units/Colorless/SmallFlyingGolemSpawner": {
+  "script": "Units/Colorless/SmallFlyingGolemSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Colorless\\SmallFlyingGolem"
+   },
+   "eiWelaCount": {
+    "0": 2
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 2
+ },
+ "Units/Colorless/SmallGolemTower": {
+  "script": "Units/Colorless/SmallGolemTower.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecColorless"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier1",
+     "upGround",
+     "upBuilding",
+     "upRanged",
+     "upGolem"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atFortified"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 210.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 210.0
+   },
+   "eiWelaRange": {
+    "0": 11.0,
+    "1": 11.0
+   },
+   "eiWelaUnitPattern": {
+    "0": "Projectiles\\Colorless\\SmallGolemTowerProjectile",
+    "1": "Projectiles\\Colorless\\SmallGolemTowerProjectile"
+   },
+   "eiCooldown": {
+    "1": 1500
+   },
+   "eiDamageType": {
+    "1": [
+     "dtRanged"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 37.0
+   }
+  },
+  "collision_radius": 0.5
+ },
+ "Units/Colorless/SmallGolemTowerBuilding": {
+  "script": "Units/Colorless/SmallGolemTowerBuilding.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Colorless\\SmallGolemTower"
+   }
+  },
+  "card_kind": "BuildingCard",
+  "legendary": false,
+  "tier": 1
+ },
+ "Units/Colorless/SmallMeleeGolem": {
+  "script": "Units/Colorless/SmallMeleeGolem.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecColorless"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier1",
+     "upUnit",
+     "upGround",
+     "upMelee",
+     "upGolem"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atLight"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 68.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 68.0
+   },
+   "eiWelaRange": {
+    "0": 1.0,
+    "1": 1.0
+   },
+   "eiDamageType": {
+    "1": [
+     "dtMelee"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 10.0
+   },
+   "eiCooldown": {
+    "1": 1700
+   },
+   "eiWelaActionpoint": {
+    "1": 533
+   },
+   "eiWelaActionduration": {
+    "1": 1133
+   }
+  },
+  "collision_radius": 0.55
+ },
+ "Units/Colorless/SmallMeleeGolemDrop": {
+  "script": "Units/Colorless/SmallMeleeGolemDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Colorless\\SmallMeleeGolem"
+   },
+   "eiWelaCount": {
+    "0": 3
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": false,
+  "tier": 1
+ },
+ "Units/Colorless/SmallMeleeGolemSpawner": {
+  "script": "Units/Colorless/SmallMeleeGolemSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Colorless\\SmallMeleeGolem"
+   },
+   "eiWelaCount": {
+    "0": 3
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 1
+ },
+ "Units/Colorless/SmallRangedGolem": {
+  "script": "Units/Colorless/SmallRangedGolem.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecColorless"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier1",
+     "upUnit",
+     "upGround",
+     "upRanged",
+     "upGolem"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atUnarmored"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 34.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 34.0
+   },
+   "eiWelaRange": {
+    "0": 10.0,
+    "1": 10.0
+   },
+   "eiWelaUnitPattern": {
+    "0": "Projectiles\\Colorless\\SmallRangedGolemProjectile",
+    "1": "Projectiles\\Colorless\\SmallRangedGolemProjectile"
+   },
+   "eiCooldown": {
+    "1": 1700
+   },
+   "eiDamageType": {
+    "1": [
+     "dtRanged"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 18.0
+   },
+   "eiWelaActionpoint": {
+    "1": 100
+   },
+   "eiWelaActionduration": {
+    "1": 333
+   }
+  },
+  "collision_radius": 0.4
+ },
+ "Units/Colorless/SmallRangedGolemDrop": {
+  "script": "Units/Colorless/SmallRangedGolemDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Colorless\\SmallRangedGolem"
+   },
+   "eiWelaCount": {
+    "0": 2
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": false,
+  "tier": 1
+ },
+ "Units/Colorless/SmallRangedGolemSpawner": {
+  "script": "Units/Colorless/SmallRangedGolemSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Colorless\\SmallRangedGolem"
+   },
+   "eiWelaCount": {
+    "0": 2
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 1
+ },
+ "Units/Golems/GolemsBigCasterGolem": {
+  "script": "Units/Golems/GolemsBigCasterGolem.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecColorless"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier3",
+     "upUnit",
+     "upGround",
+     "upRanged",
+     "upImmuneToBlinded",
+     "upGolem",
+     "upLinkWeapon"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atLight"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 270.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 270.0
+   },
+   "eiWelaRange": {
+    "0": 8.0,
+    "1": 8.0
+   },
+   "eiLinkPattern": {
+    "1": "Links\\BigCasterGolemLink"
+   },
+   "eiCooldown": {
+    "1": 500
+   },
+   "eiDamageType": {
+    "1": [
+     "dtRanged"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 14.0
+   }
+  },
+  "collision_radius": 0.6
+ },
+ "Units/Golems/GolemsBigCasterGolemDrop": {
+  "script": "Units/Golems/GolemsBigCasterGolemDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Golems\\GolemsBigCasterGolem"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": false,
+  "tier": 3
+ },
+ "Units/Golems/GolemsBigCasterGolemSpawner": {
+  "script": "Units/Golems/GolemsBigCasterGolemSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Golems\\GolemsBigCasterGolem"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 3
+ },
+ "Units/Golems/GolemsBigFlyingGolem": {
+  "script": "Units/Golems/GolemsBigFlyingGolem.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecColorless"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier3",
+     "upUnit",
+     "upFlying",
+     "upRanged",
+     "upGolem"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atMedium"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 160.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 160.0
+   },
+   "eiWelaRange": {
+    "0": 6.0,
+    "1": 6.0
+   },
+   "eiWelaTargetCount": {
+    "1": 3
+   },
+   "eiWelaUnitPattern": {
+    "0": "Projectiles\\Colorless\\BigFlyingGolemProjectile",
+    "1": "Projectiles\\Colorless\\BigFlyingGolemProjectile"
+   },
+   "eiCooldown": {
+    "1": 2000
+   },
+   "eiDamageType": {
+    "1": [
+     "dtRanged"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 63.0
+   }
+  },
+  "collision_radius": 0.8
+ },
+ "Units/Golems/GolemsBigFlyingGolemDrop": {
+  "script": "Units/Golems/GolemsBigFlyingGolemDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Golems\\GolemsBigFlyingGolem"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": false,
+  "tier": 3
+ },
+ "Units/Golems/GolemsBigFlyingGolemSpawner": {
+  "script": "Units/Golems/GolemsBigFlyingGolemSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Golems\\GolemsBigFlyingGolem"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 3
+ },
+ "Units/Golems/GolemsBigGolemTower": {
+  "script": "Units/Golems/GolemsBigGolemTower.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecColorless"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier3",
+     "upGround",
+     "upBuilding",
+     "upRanged",
+     "upGolem"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atFortified"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 570.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 570.0
+   },
+   "eiWelaRange": {
+    "0": 11.0,
+    "1": 11.0
+   },
+   "eiWelaTargetCount": {
+    "1": 2
+   },
+   "eiWelaUnitPattern": {
+    "0": "Projectiles\\Colorless\\BigGolemTowerProjectile",
+    "1": "Projectiles\\Colorless\\BigGolemTowerProjectile"
+   },
+   "eiCooldown": {
+    "1": 1700
+   },
+   "eiDamageType": {
+    "1": [
+     "dtRanged"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 68.0
+   }
+  },
+  "collision_radius": 0.85
+ },
+ "Units/Golems/GolemsBigGolemTowerBuilding": {
+  "script": "Units/Golems/GolemsBigGolemTowerBuilding.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Golems\\GolemsBigGolemTower"
+   }
+  },
+  "card_kind": "BuildingCard",
+  "legendary": false,
+  "tier": 3
+ },
+ "Units/Golems/GolemsBigMeleeGolem": {
+  "script": "Units/Golems/GolemsBigMeleeGolem.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecColorless"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier3",
+     "upUnit",
+     "upGround",
+     "upMelee",
+     "upGolem"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atHeavy"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 505.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 505.0
+   },
+   "eiWelaRange": {
+    "0": 1.0,
+    "1": 1.0
+   },
+   "eiDamageType": {
+    "1": [
+     "dtMelee"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 100.0,
+    "2": 35.0
+   },
+   "eiCooldown": {
+    "1": 2800,
+    "2": 3000
+   },
+   "eiWelaActionpoint": {
+    "1": 466
+   },
+   "eiWelaActionduration": {
+    "1": 1000
+   },
+   "eiWelaUnitPattern": {
+    "3": "Projectiles\\Colorless\\SplinterProjectile"
+   }
+  },
+  "collision_radius": 0.8
+ },
+ "Units/Golems/GolemsBigMeleeGolemDrop": {
+  "script": "Units/Golems/GolemsBigMeleeGolemDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Golems\\GolemsBigMeleeGolem"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": false,
+  "tier": 3
+ },
+ "Units/Golems/GolemsBigMeleeGolemSpawner": {
+  "script": "Units/Golems/GolemsBigMeleeGolemSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Golems\\GolemsBigMeleeGolem"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 3
+ },
+ "Units/Golems/GolemsBossGolem": {
+  "script": "Units/Golems/GolemsBossGolem.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecColorless"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upFlying",
+     "upGround",
+     "upMonumental",
+     "upUnit",
+     "upMelee",
+     "upLegendary",
+     "upTier3",
+     "upGolem"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atFortified"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 1900.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 1900.0
+   },
+   "eiWelaRange": {
+    "1": 1.5,
+    "2": 1.5
+   },
+   "eiDamageType": {
+    "1": [
+     "dtMelee",
+     "dtSplash"
+    ],
+    "2": [
+     "dtMelee",
+     "dtSplash"
+    ],
+    "3": [
+     "dtAbility",
+     "dtSplash"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 370.0,
+    "2": 370.0,
+    "3": 100.0
+   },
+   "eiCooldown": {
+    "1": 2800,
+    "2": 2800,
+    "3": 500
+   },
+   "eiWelaAreaOfEffect": {
+    "1": 5.0,
+    "2": 5.0,
+    "3": 4.5
+   },
+   "eiWelaAreaOfEffectCone": {
+    "1": 2.8269,
+    "2": 2.8269
+   },
+   "eiWelaActionpoint": {
+    "1": 1600,
+    "2": 1166
+   },
+   "eiWelaActionduration": {
+    "1": 2533,
+    "2": 2333
+   }
+  },
+  "collision_radius": 1.5
+ },
+ "Units/Golems/GolemsBossGolemDrop": {
+  "script": "Units/Golems/GolemsBossGolemDrop.ets",
+  "values": {
+   "eiResourceCost.reGold": {
+    "*": "GetCardBaseCost(3, Entity.CardLeague, Entity.CardLevel, True, False, False) + 100"
+   },
+   "eiWelaUnitPattern": {
+    "0": "Units\\Golems\\GolemsBossGolem"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": true,
+  "tier": 3
+ },
+ "Units/Golems/GolemsBossGolemSpawner": {
+  "script": "Units/Golems/GolemsBossGolemSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Golems\\GolemsBossGolem"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 3
+ },
+ "Units/Golems/GolemsMediumMeleeGolem": {
+  "script": "Units/Golems/GolemsMediumMeleeGolem.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecColorless"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier2",
+     "upUnit",
+     "upGround",
+     "upMelee",
+     "upGolem"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atMedium"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 205.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 205.0
+   },
+   "eiWelaRange": {
+    "0": 1.0,
+    "1": 1.0
+   },
+   "eiDamageType": {
+    "1": [
+     "dtMelee",
+     "dtSplash"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 32.0
+   },
+   "eiCooldown": {
+    "1": 2300
+   },
+   "eiWelaAreaOfEffect": {
+    "1": 6.0
+   },
+   "eiWelaAreaOfEffectCone": {
+    "1": 0.78525
+   },
+   "eiWelaActionpoint": {
+    "1": 533
+   },
+   "eiWelaActionduration": {
+    "1": 1133
+   }
+  },
+  "collision_radius": 0.65
+ },
+ "Units/Golems/GolemsMediumMeleeGolemDrop": {
+  "script": "Units/Golems/GolemsMediumMeleeGolemDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Golems\\GolemsMediumMeleeGolem"
+   },
+   "eiWelaCount": {
+    "0": 2
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": false,
+  "tier": 2
+ },
+ "Units/Golems/GolemsMediumMeleeGolemSpawner": {
+  "script": "Units/Golems/GolemsMediumMeleeGolemSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Golems\\GolemsMediumMeleeGolem"
+   },
+   "eiWelaCount": {
+    "0": 2
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 2
+ },
+ "Units/Golems/GolemsMeleeGolemTower": {
+  "script": "Units/Golems/GolemsMeleeGolemTower.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecColorless"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier2",
+     "upGround",
+     "upBuilding",
+     "upMelee",
+     "upGolem"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atFortified"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 770.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 770.0
+   },
+   "eiDamageType": {
+    "1": [
+     "dtMelee"
+    ],
+    "2": [
+     "dtMelee",
+     "dtSplash"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 110.0,
+    "2": 36.63
+   },
+   "eiWelaActionpoint": {
+    "1": 666,
+    "2": 466
+   },
+   "eiWelaActionduration": {
+    "1": 1033,
+    "2": 866
+   },
+   "eiWelaRange": {
+    "1": 1.5,
+    "2": 1.5
+   },
+   "eiCooldown": {
+    "1": 1700,
+    "2": 1700
+   },
+   "eiWelaAreaOfEffect": {
+    "2": 2.0
+   },
+   "eiWelaAreaOfEffectCone": {
+    "2": 3.141
+   }
+  },
+  "collision_radius": 0.75
+ },
+ "Units/Golems/GolemsMeleeGolemTowerBuilding": {
+  "script": "Units/Golems/GolemsMeleeGolemTowerBuilding.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Golems\\GolemsMeleeGolemTower"
+   }
+  },
+  "card_kind": "BuildingCard",
+  "legendary": false,
+  "tier": 2
+ },
+ "Units/Golems/GolemsSiegeGolem": {
+  "script": "Units/Golems/GolemsSiegeGolem.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecColorless"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier2",
+     "upUnit",
+     "upGround",
+     "upMelee",
+     "upGolem"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atMedium"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 270.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 270.0
+   },
+   "eiResourceBalance.reWelaCharge": {
+    "*": 0
+   },
+   "eiResourceCap.reWelaCharge": {
+    "*": 16
+   },
+   "eiResourceCost.reWelaCharge": {
+    "1": 1,
+    "3": 16,
+    "4": 1
+   },
+   "eiDamageType": {
+    "1": [
+     "dtMelee",
+     "dtSiege"
+    ],
+    "3": [
+     "dtRanged",
+     "dtSiege"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 68.0,
+    "2": 1.0,
+    "3": 50.0
+   },
+   "eiWelaRange": {
+    "1": 1.5,
+    "2": 20.0,
+    "3": 21.0
+   },
+   "eiCooldown": {
+    "1": 2300,
+    "2": 500
+   },
+   "eiWelaActionpoint": {
+    "1": 633,
+    "3": 250
+   },
+   "eiWelaActionduration": {
+    "1": 1033,
+    "3": 833
+   },
+   "eiWelaUnitPattern": {
+    "3": "Projectiles\\Colorless\\SiegeGolemProjectile"
+   }
+  },
+  "collision_radius": 0.9
+ },
+ "Units/Golems/GolemsSiegeGolemDrop": {
+  "script": "Units/Golems/GolemsSiegeGolemDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Golems\\GolemsSiegeGolem"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": false,
+  "tier": 2
+ },
+ "Units/Golems/GolemsSiegeGolemSpawner": {
+  "script": "Units/Golems/GolemsSiegeGolemSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Golems\\GolemsSiegeGolem"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 2
+ },
+ "Units/Golems/GolemsSmallCasterGolem": {
+  "script": "Units/Golems/GolemsSmallCasterGolem.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecColorless"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier1",
+     "upUnit",
+     "upGround",
+     "upRanged",
+     "upGolem",
+     "upSupporter"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atLight"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 51.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 51.0
+   },
+   "eiWelaRange": {
+    "0": 8.0,
+    "1": 8.0,
+    "2": 8.0,
+    "3": 8.0
+   },
+   "eiWelaUnitPattern": {
+    "0": "Projectiles\\Colorless\\SmallCasterGolemProjectile",
+    "1": "Projectiles\\Colorless\\SmallCasterGolemProjectile"
+   },
+   "eiCooldown": {
+    "1": 2800,
+    "3": 3000
+   },
+   "eiDamageType": {
+    "1": [
+     "dtRanged"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 33.0
+   },
+   "eiWelaTargetCount": {
+    "2": 200,
+    "3": 200
+   },
+   "eiLinkPattern": {
+    "2": "Links\\CrystalSpeedLink",
+    "3": "Links\\CrystalSpeedLink"
+   }
+  },
+  "collision_radius": 0.45
+ },
+ "Units/Golems/GolemsSmallCasterGolemDrop": {
+  "script": "Units/Golems/GolemsSmallCasterGolemDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Golems\\GolemsSmallCasterGolem"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": false,
+  "tier": 1
+ },
+ "Units/Golems/GolemsSmallCasterGolemSpawner": {
+  "script": "Units/Golems/GolemsSmallCasterGolemSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Golems\\GolemsSmallCasterGolem"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 1
+ },
+ "Units/Golems/GolemsSmallFlyingGolem": {
+  "script": "Units/Golems/GolemsSmallFlyingGolem.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecColorless"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier1",
+     "upUnit",
+     "upFlying",
+     "upRanged",
+     "upGolem"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atMedium"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 97.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 97.0
+   },
+   "eiWelaRange": {
+    "0": 6.0,
+    "1": 6.0
+   },
+   "eiWelaUnitPattern": {
+    "0": "Projectiles\\Colorless\\SmallFlyingGolemProjectile",
+    "1": "Projectiles\\Colorless\\SmallFlyingGolemProjectile"
+   },
+   "eiWelaTargetCount": {
+    "1": 2
+   },
+   "eiCooldown": {
+    "1": 2300
+   },
+   "eiDamageType": {
+    "1": [
+     "dtRanged"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 29.0
+   }
+  },
+  "collision_radius": 0.6
+ },
+ "Units/Golems/GolemsSmallFlyingGolemDrop": {
+  "script": "Units/Golems/GolemsSmallFlyingGolemDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Golems\\GolemsSmallFlyingGolem"
+   },
+   "eiWelaCount": {
+    "0": 2
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": false,
+  "tier": 2
+ },
+ "Units/Golems/GolemsSmallFlyingGolemSpawner": {
+  "script": "Units/Golems/GolemsSmallFlyingGolemSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Golems\\GolemsSmallFlyingGolem"
+   },
+   "eiWelaCount": {
+    "0": 2
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 2
+ },
+ "Units/Golems/GolemsSmallGolemTower": {
+  "script": "Units/Golems/GolemsSmallGolemTower.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecColorless"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier1",
+     "upGround",
+     "upBuilding",
+     "upRanged",
+     "upGolem"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atFortified"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 275.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 275.0
+   },
+   "eiWelaRange": {
+    "0": 11.0,
+    "1": 11.0
+   },
+   "eiWelaUnitPattern": {
+    "0": "Projectiles\\Colorless\\SmallGolemTowerProjectile",
+    "1": "Projectiles\\Colorless\\SmallGolemTowerProjectile"
+   },
+   "eiCooldown": {
+    "1": 1500
+   },
+   "eiDamageType": {
+    "1": [
+     "dtRanged"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 30.0
+   }
+  },
+  "collision_radius": 0.5
+ },
+ "Units/Golems/GolemsSmallGolemTowerBuilding": {
+  "script": "Units/Golems/GolemsSmallGolemTowerBuilding.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Golems\\GolemsSmallGolemTower"
+   }
+  },
+  "card_kind": "BuildingCard",
+  "legendary": false,
+  "tier": 1
+ },
+ "Units/Golems/GolemsSmallMeleeGolem": {
+  "script": "Units/Golems/GolemsSmallMeleeGolem.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecColorless"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier1",
+     "upUnit",
+     "upGround",
+     "upMelee",
+     "upGolem",
+     "upSpellImmune"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atLight"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 110.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 110.0
+   },
+   "eiWelaRange": {
+    "0": 1.0,
+    "1": 1.0
+   },
+   "eiDamageType": {
+    "1": [
+     "dtMelee"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 14.0
+   },
+   "eiCooldown": {
+    "1": 1700
+   },
+   "eiWelaActionpoint": {
+    "1": 533
+   },
+   "eiWelaActionduration": {
+    "1": 1133
+   }
+  },
+  "collision_radius": 0.55
+ },
+ "Units/Golems/GolemsSmallMeleeGolemDrop": {
+  "script": "Units/Golems/GolemsSmallMeleeGolemDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Golems\\GolemsSmallMeleeGolem"
+   },
+   "eiWelaCount": {
+    "0": 3
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": false,
+  "tier": 1
+ },
+ "Units/Golems/GolemsSmallMeleeGolemSpawner": {
+  "script": "Units/Golems/GolemsSmallMeleeGolemSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Golems\\GolemsSmallMeleeGolem"
+   },
+   "eiWelaCount": {
+    "0": 3
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 1
+ },
+ "Units/Golems/GolemsSmallRangedGolem": {
+  "script": "Units/Golems/GolemsSmallRangedGolem.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecColorless"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier1",
+     "upUnit",
+     "upGround",
+     "upRanged",
+     "upGolem"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atLight"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 46.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 46.0
+   },
+   "eiWelaRange": {
+    "0": 8.0,
+    "1": 8.0
+   },
+   "eiWelaUnitPattern": {
+    "0": "Projectiles\\Colorless\\SmallRangedGolemProjectile",
+    "1": "Projectiles\\Colorless\\SmallRangedGolemProjectile"
+   },
+   "eiCooldown": {
+    "1": 1700
+   },
+   "eiDamageType": {
+    "1": [
+     "dtRanged",
+     "dtSiege"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 15.0
+   },
+   "eiWelaActionpoint": {
+    "1": 100
+   },
+   "eiWelaActionduration": {
+    "1": 333
+   }
+  },
+  "collision_radius": 0.4
+ },
+ "Units/Golems/GolemsSmallRangedGolemDrop": {
+  "script": "Units/Golems/GolemsSmallRangedGolemDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Golems\\GolemsSmallRangedGolem"
+   },
+   "eiWelaCount": {
+    "0": 2
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": false,
+  "tier": 1
+ },
+ "Units/Golems/GolemsSmallRangedGolemSpawner": {
+  "script": "Units/Golems/GolemsSmallRangedGolemSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Golems\\GolemsSmallRangedGolem"
+   },
+   "eiWelaCount": {
+    "0": 2
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 1
+ },
+ "Units/Green/Brratu": {
+  "script": "Units/Green/Brratu.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecGreen"
+   },
+   "eiUnitData.udUsePathfinding": {
+    "*": false
+   },
+   "eiSpeed": {
+    "*": 0.002
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upMonumental",
+     "upTier3",
+     "upUnit",
+     "upGround",
+     "upFlying",
+     "upMelee",
+     "upLegendary"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atUnarmored"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 1800.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 1800.0
+   },
+   "eiWelaRange": {
+    "1": 0.5
+   },
+   "eiDamageType": {
+    "1": [
+     "dtMelee",
+     "dtSiege"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 34.0,
+    "3": 300.0
+   },
+   "eiCooldown": {
+    "1": 3600
+   },
+   "eiWelaActionpoint": {
+    "1": 1000
+   },
+   "eiWelaActionduration": {
+    "1": 2000
+   },
+   "eiWelaModifier": {
+    "2": 0.2
+   }
+  },
+  "collision_radius": 1.8
+ },
+ "Units/Green/BrratuDrop": {
+  "script": "Units/Green/BrratuDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Green\\Brratu"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": true,
+  "tier": 3
+ },
+ "Units/Green/BrratuSpawner": {
+  "script": "Units/Green/BrratuSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Green\\Brratu"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 3
+ },
+ "Units/Green/ForestGuardian": {
+  "script": "Units/Green/ForestGuardian.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecGreen"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier2",
+     "upGround",
+     "upBuilding",
+     "upRanged"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atFortified"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 335.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 335.0
+   },
+   "eiWelaRange": {
+    "1": 11.0,
+    "2": 24.0
+   },
+   "eiWelaUnitPattern": {
+    "0": "Projectiles\\Green\\ForestGuardianProjectile",
+    "1": "Projectiles\\Green\\ForestGuardianProjectile",
+    "2": "Projectiles\\Green\\ForestGuardianProjectile"
+   },
+   "eiCooldown": {
+    "1": 2800,
+    "2": 2800
+   },
+   "eiDamageType": {
+    "1": [
+     "dtRanged",
+     "dtSplash",
+     "dtSiege"
+    ],
+    "2": [
+     "dtRanged",
+     "dtSplash",
+     "dtSiege",
+     "dtAbility"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 32.0,
+    "2": 16.0
+   },
+   "eiWelaAreaOfEffect": {
+    "1": 2.0,
+    "2": 2.0
+   },
+   "eiWelaActionpoint": {
+    "1": 880,
+    "2": 880
+   },
+   "eiWelaActionduration": {
+    "1": 1933,
+    "2": 1933
+   }
+  },
+  "collision_radius": 0.75
+ },
+ "Units/Green/ForestGuardianBuilding": {
+  "script": "Units/Green/ForestGuardianBuilding.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Green\\ForestGuardian"
+   }
+  },
+  "card_kind": "BuildingCard",
+  "legendary": false,
+  "tier": 2
+ },
+ "Units/Green/Groundbreaker": {
+  "script": "Units/Green/Groundbreaker.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecGreen"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier3",
+     "upUnit",
+     "upGround",
+     "upMelee"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atUnarmored"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 345.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 345.0
+   },
+   "eiWelaRange": {
+    "1": 1.0,
+    "4": 1.0,
+    "5": 1.0
+   },
+   "eiDamageType": {
+    "1": [
+     "dtMelee"
+    ],
+    "5": [
+     "dtSplash",
+     "dtAbility"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 150.0,
+    "5": 120.0
+   },
+   "eiCooldown": {
+    "1": 1700
+   },
+   "eiWelaActionpoint": {
+    "1": 500,
+    "5": 133
+   },
+   "eiWelaActionduration": {
+    "1": 1500,
+    "5": 1233
+   },
+   "eiWelaModifier": {
+    "2": 1.5,
+    "3": 2.0,
+    "6": 0.4
+   },
+   "eiWelaAreaOfEffect": {
+    "5": 3.0
+   }
+  },
+  "collision_radius": 0.75
+ },
+ "Units/Green/GroundbreakerDrop": {
+  "script": "Units/Green/GroundbreakerDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Green\\Groundbreaker"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": false,
+  "tier": 3
+ },
+ "Units/Green/GroundbreakerSpawner": {
+  "script": "Units/Green/GroundbreakerSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Green\\Groundbreaker"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 3
+ },
+ "Units/Green/HeartOfTheForest": {
+  "script": "Units/Green/HeartOfTheForest.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecGreen"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier1",
+     "upUnit",
+     "upGround",
+     "upNoAutoAttack",
+     "upSupporter"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atUnarmored"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 60.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 60.0
+   },
+   "eiResourceBalance.reMana": {
+    "*": 3
+   },
+   "eiResourceCap.reMana": {
+    "*": 3
+   },
+   "eiAttentionrange": {
+    "0": 10.0
+   },
+   "eiResourceCost.reMana": {
+    "2": 3,
+    "4": 3
+   },
+   "eiWelaRange": {
+    "2": 6.0,
+    "4": 6.0
+   },
+   "eiWelaUnitPattern": {
+    "2": "Projectiles\\Green\\HeartOfTheForestProjectile"
+   },
+   "eiWelaTargetCount": {
+    "2": 1
+   },
+   "eiDamageType": {
+    "2": [
+     "dtIrredirectable"
+    ]
+   },
+   "eiWelaActionpoint": {
+    "2": 400
+   },
+   "eiWelaActionduration": {
+    "2": 800
+   },
+   "eiWelaDamage": {
+    "5": 1.0
+   },
+   "eiCooldown": {
+    "5": 3000
+   }
+  },
+  "collision_radius": 0.45
+ },
+ "Units/Green/HeartOfTheForestDrop": {
+  "script": "Units/Green/HeartOfTheForestDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Green\\HeartOfTheForest"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": false,
+  "tier": 1
+ },
+ "Units/Green/HeartOfTheForestSpawner": {
+  "script": "Units/Green/HeartOfTheForestSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Green\\HeartOfTheForest"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 1
+ },
+ "Units/Green/Oracle": {
+  "script": "Units/Green/Oracle.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecGreen"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier3",
+     "upUnit",
+     "upGround",
+     "upMelee"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atLight"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 610.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 610.0
+   },
+   "eiResourceBalance.reWelaCharge": {
+    "*": 0
+   },
+   "eiResourceCap.reWelaCharge": {
+    "*": 12
+   },
+   "eiResourceBalance.reWelaChargeCapacity": {
+    "*": 0
+   },
+   "eiResourceCap.reWelaChargeCapacity": {
+    "*": 12
+   },
+   "eiWelaRange": {
+    "1": 1.5,
+    "2": 6.0
+   },
+   "eiDamageType": {
+    "1": [
+     "dtMelee",
+     "dtSplash"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 87.0,
+    "2": 60.0,
+    "3": 1.0
+   },
+   "eiCooldown": {
+    "1": 3600,
+    "2": 500
+   },
+   "eiWelaAreaOfEffect": {
+    "1": 2.0
+   },
+   "eiWelaActionpoint": {
+    "1": 533
+   },
+   "eiWelaActionduration": {
+    "1": 1166
+   },
+   "eiWelaUnitPattern": {
+    "2": "Projectiles\\Green\\OracleSaplingProjectile"
+   }
+  },
+  "collision_radius": 0.9
+ },
+ "Units/Green/OracleDrop": {
+  "script": "Units/Green/OracleDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Green\\Oracle"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": false,
+  "tier": 3
+ },
+ "Units/Green/OracleSpawner": {
+  "script": "Units/Green/OracleSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Green\\Oracle"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 3
+ },
+ "Units/Green/Rootdude": {
+  "script": "Units/Green/Rootdude.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecGreen"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier2",
+     "upUnit",
+     "upGround",
+     "upRangedGroundOnly",
+     "upRanged"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atUnarmored"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 495.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 495.0
+   },
+   "eiResourceBalance.reMana": {
+    "*": 0
+   },
+   "eiResourceCap.reMana": {
+    "*": 4
+   },
+   "eiWelaRange": {
+    "1": 3.0,
+    "2": 11.0
+   },
+   "eiDamageType": {
+    "1": [
+     "dtRanged"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 89.0,
+    "3": 1.0,
+    "4": 100.0
+   },
+   "eiCooldown": {
+    "1": 2800
+   },
+   "eiWelaActionpoint": {
+    "1": 666
+   },
+   "eiWelaActionduration": {
+    "1": 1366
+   },
+   "eiResourceCost.reMana": {
+    "2": 1
+   },
+   "eiWelaUnitPattern": {
+    "2": "Projectiles\\Green\\RootdudeRootBraidProjectile"
+   }
+  },
+  "collision_radius": 0.85
+ },
+ "Units/Green/RootdudeDrop": {
+  "script": "Units/Green/RootdudeDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Green\\Rootdude"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": false,
+  "tier": 2
+ },
+ "Units/Green/RootdudeSpawner": {
+  "script": "Units/Green/RootdudeSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Green\\Rootdude"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 2
+ },
+ "Units/Green/Rootling": {
+  "script": "Units/Green/Rootling.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecGreen"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier1",
+     "upUnit",
+     "upGround",
+     "upRangedGroundOnly",
+     "upRanged",
+     "upImmuneToBlinded",
+     "upLinkWeapon"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atLight"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 200.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 200.0
+   },
+   "eiWelaRange": {
+    "0": 5.0,
+    "1": 5.0
+   },
+   "eiLinkPattern": {
+    "1": "Links/RootlingLink"
+   },
+   "eiCooldown": {
+    "1": 1000
+   },
+   "eiDamageType": {
+    "1": [
+     "dtRanged"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 12.0
+   },
+   "eiWelaActionpoint": {
+    "1": 500
+   },
+   "eiWelaActionduration": {
+    "1": 500
+   }
+  },
+  "collision_radius": 0.45
+ },
+ "Units/Green/RootlingDrop": {
+  "script": "Units/Green/RootlingDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Green\\Rootling"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": false,
+  "tier": 1
+ },
+ "Units/Green/RootlingSpawner": {
+  "script": "Units/Green/RootlingSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Green\\Rootling"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 1
+ },
+ "Units/Green/Sapling": {
+  "script": "Units/Green/Sapling.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecGreen"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier1",
+     "upUnit",
+     "upGround",
+     "upMelee",
+     "upSapling",
+     "upSoulless"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atUnarmored"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 2.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 2.0
+   },
+   "eiWelaRange": {
+    "1": 0.5
+   },
+   "eiDamageType": {
+    "1": [
+     "dtMelee"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 4.0
+   },
+   "eiCooldown": {
+    "1": 1500,
+    "9": 17000
+   },
+   "eiWelaActionpoint": {
+    "1": 266
+   },
+   "eiWelaActionduration": {
+    "1": 766
+   }
+  },
+  "collision_radius": 0.3
+ },
+ "Units/Green/SaplingDrop": {
+  "script": "Units/Green/SaplingDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Green\\Sapling"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": false,
+  "tier": 1
+ },
+ "Units/Green/SaplingFarm": {
+  "script": "Units/Green/SaplingFarm.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecGreen"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier1",
+     "upGround",
+     "upBuilding",
+     "upNoAutoAttack"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atFortified"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 84.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 84.0
+   },
+   "eiResourceBalance.reMana": {
+    "*": 5
+   },
+   "eiResourceCap.reMana": {
+    "*": 10
+   },
+   "eiResourceCost.reMana": {
+    "2": 5
+   },
+   "eiWelaUnitPattern": {
+    "2": "Units\\Green\\Sapling"
+   },
+   "eiWelaCount": {
+    "2": 3
+   },
+   "eiWelaActionpoint": {
+    "2": 500
+   },
+   "eiWelaActionduration": {
+    "2": 1366
+   },
+   "eiWelaDamage": {
+    "3": 1.0
+   },
+   "eiCooldown": {
+    "3": 3000
+   }
+  },
+  "collision_radius": 0.55
+ },
+ "Units/Green/SaplingFarmBuilding": {
+  "script": "Units/Green/SaplingFarmBuilding.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Green\\SaplingFarm"
+   }
+  },
+  "card_kind": "BuildingCard",
+  "legendary": false,
+  "tier": 1
+ },
+ "Units/Green/SaplingSpawner": {
+  "script": "Units/Green/SaplingSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Green\\Sapling"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 1
+ },
+ "Units/Green/Spore": {
+  "script": "Units/Green/Spore.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecGreen"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier2",
+     "upUnit",
+     "upFlying",
+     "upRanged",
+     "upHasDeathRattle"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atUnarmored"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 140.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 140.0
+   },
+   "eiWelaRange": {
+    "0": 3.0,
+    "1": 3.0
+   },
+   "eiWelaUnitPattern": {
+    "0": "Projectiles\\Green\\SporeProjectile",
+    "1": "Projectiles\\Green\\SporeProjectile",
+    "2": "Effects\\SporeField"
+   },
+   "eiCooldown": {
+    "1": 1500
+   },
+   "eiDamageType": {
+    "1": [
+     "dtRanged"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 80.0
+   },
+   "eiWelaActionpoint": {
+    "1": 333
+   },
+   "eiWelaActionduration": {
+    "1": 666
+   }
+  },
+  "collision_radius": 0.6
+ },
+ "Units/Green/SporeDrop": {
+  "script": "Units/Green/SporeDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Green\\Spore"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": false,
+  "tier": 2
+ },
+ "Units/Green/SporeSpawner": {
+  "script": "Units/Green/SporeSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Green\\Spore"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 2
+ },
+ "Units/Green/Thistle": {
+  "script": "Units/Green/Thistle.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecGreen"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier1",
+     "upUnit",
+     "upGround",
+     "upRanged"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atUnarmored"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 27.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 27.0
+   },
+   "eiWelaRange": {
+    "0": 8.0,
+    "1": 8.0
+   },
+   "eiWelaTargetCount": {
+    "1": 2
+   },
+   "eiWelaUnitPattern": {
+    "0": "Projectiles\\Green\\ThistleProjectile",
+    "1": "Projectiles\\Green\\ThistleProjectile"
+   },
+   "eiCooldown": {
+    "1": 1700
+   },
+   "eiDamageType": {
+    "1": [
+     "dtRanged"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 14.0
+   },
+   "eiWelaActionpoint": {
+    "1": 233
+   },
+   "eiWelaActionduration": {
+    "1": 1400
+   },
+   "eiWelaModifier": {
+    "2": 0.4
+   }
+  },
+  "collision_radius": 0.45
+ },
+ "Units/Green/ThistleDrop": {
+  "script": "Units/Green/ThistleDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Green\\Thistle"
+   },
+   "eiWelaCount": {
+    "0": 2
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": false,
+  "tier": 1
+ },
+ "Units/Green/ThistleSpawner": {
+  "script": "Units/Green/ThistleSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Green\\Thistle"
+   },
+   "eiWelaCount": {
+    "0": 2
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 1
+ },
+ "Units/Green/Wisp": {
+  "script": "Units/Green/Wisp.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecGreen"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier1",
+     "upUnit",
+     "upFlying",
+     "upRanged"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atUnarmored"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 75.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 75.0
+   },
+   "eiWelaRange": {
+    "0": 6.0,
+    "1": 6.0
+   },
+   "eiWelaUnitPattern": {
+    "0": "Projectiles\\Green\\WispProjectile",
+    "1": "Projectiles\\Green\\WispProjectile"
+   },
+   "eiCooldown": {
+    "1": 2800
+   },
+   "eiDamageType": {
+    "1": [
+     "dtRanged"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 64.0
+   },
+   "eiWelaActionpoint": {
+    "1": 900
+   },
+   "eiWelaActionduration": {
+    "1": 1500
+   }
+  },
+  "collision_radius": 0.5
+ },
+ "Units/Green/WispDrop": {
+  "script": "Units/Green/WispDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Green\\Wisp"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": false,
+  "tier": 1
+ },
+ "Units/Green/WispSpawner": {
+  "script": "Units/Green/WispSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Green\\Wisp"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 1
+ },
+ "Units/Green/Woodwalker": {
+  "script": "Units/Green/Woodwalker.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecGreen"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier2",
+     "upUnit",
+     "upGround",
+     "upRanged"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atUnarmored"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 85.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 85.0
+   },
+   "eiResourceBalance.reMana": {
+    "*": 4
+   },
+   "eiResourceCap.reMana": {
+    "*": 16
+   },
+   "eiWelaRange": {
+    "0": 8.0,
+    "1": 8.0,
+    "2": 12.0
+   },
+   "eiWelaUnitPattern": {
+    "1": "Projectiles\\Green\\WoodwalkerProjectile",
+    "2": "Units\\Green\\Sapling"
+   },
+   "eiCooldown": {
+    "1": 2800,
+    "3": 3000
+   },
+   "eiDamageType": {
+    "1": [
+     "dtRanged"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 99.0,
+    "3": 1.0
+   },
+   "eiWelaActionpoint": {
+    "1": 350,
+    "2": 800
+   },
+   "eiWelaActionduration": {
+    "1": 1166,
+    "2": 1700
+   },
+   "eiResourceCost.reMana": {
+    "2": 4
+   },
+   "eiWelaCount": {
+    "2": 2
+   }
+  },
+  "collision_radius": 0.45
+ },
+ "Units/Green/WoodwalkerDrop": {
+  "script": "Units/Green/WoodwalkerDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Green\\Woodwalker"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": false,
+  "tier": 2
+ },
+ "Units/Green/WoodwalkerSpawner": {
+  "script": "Units/Green/WoodwalkerSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Green\\Woodwalker"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 2
+ },
+ "Units/Neutral/LaneNode": {
+  "script": "Units/Neutral/LaneNode.ets",
+  "values": {
+   "eiUnitProperties": {
+    "*": [
+     "upGround",
+     "upBase",
+     "upLaneNode"
+    ]
+   },
+   "eiResourceCap.reTeamPower1": {
+    "*": 15.0
+   },
+   "eiResourceCap.reTeamPower2": {
+    "*": 15.0
+   },
+   "eiWelaTargetCount": {
+    "1": 200
+   },
+   "eiWelaRange": {
+    "1": 16.5
+   },
+   "eiCooldown": {
+    "1": 500
+   },
+   "eiWelaDamage": {
+    "2": 1.0,
+    "3": 1.0,
+    "6": 1.0,
+    "7": 1.0
+   },
+   "eiWelaUnitPattern.0": {
+    "4": "Units\\Neutral\\LanetowerLevel1.ets",
+    "5": "Units\\Neutral\\LanetowerLevel1.ets"
+   },
+   "eiWelaUnitPattern.1": {
+    "4": "Units\\Neutral\\LanetowerLevel2.ets",
+    "5": "Units\\Neutral\\LanetowerLevel2.ets"
+   },
+   "eiWelaUnitPattern.2": {
+    "4": "Units\\Neutral\\LanetowerLevel2.ets",
+    "5": "Units\\Neutral\\LanetowerLevel2.ets"
+   },
+   "eiResourceCost.reTeamPower1": {
+    "4": 15.0
+   },
+   "eiResourceCost.reTeamPower2": {
+    "5": 15.0
+   }
+  }
+ },
+ "Units/Neutral/LaneNode_Blue": {
+  "script": "Units/Neutral/LaneNode_Blue.ets",
+  "values": {
+   "eiUnitProperties": {
+    "*": [
+     "upGround",
+     "upBase",
+     "upLaneNode"
+    ]
+   },
+   "eiResourceCap.reTeamPower1": {
+    "*": 15.0
+   },
+   "eiResourceCap.reTeamPower2": {
+    "*": 15.0
+   },
+   "eiWelaTargetCount": {
+    "1": 200
+   },
+   "eiWelaRange": {
+    "1": 16.5
+   },
+   "eiCooldown": {
+    "1": 500,
+    "10": 40000,
+    "2": 40000
+   },
+   "eiWelaDamage": {
+    "2": 1.0,
+    "3": 1.0,
+    "6": 1.0,
+    "7": 1.0
+   },
+   "eiWelaUnitPattern.0": {
+    "4": "Units\\Neutral\\LanetowerLevel1.ets",
+    "5": "Units\\Neutral\\LanetowerLevel1.ets"
+   },
+   "eiWelaUnitPattern.1": {
+    "4": "Units\\Neutral\\LanetowerLevel2.ets",
+    "5": "Units\\Neutral\\LanetowerLevel2.ets"
+   },
+   "eiWelaUnitPattern.2": {
+    "4": "Units\\Neutral\\LanetowerLevel2.ets",
+    "5": "Units\\Neutral\\LanetowerLevel2.ets"
+   },
+   "eiResourceCost.reTeamPower1": {
+    "4": 15.0
+   },
+   "eiResourceCost.reTeamPower2": {
+    "5": 15.0
+   }
+  },
+  "inherits": "Units/Neutral/LaneNode.ets"
+ },
+ "Units/Neutral/LaneNode_Red": {
+  "script": "Units/Neutral/LaneNode_Red.ets",
+  "values": {
+   "eiUnitProperties": {
+    "*": [
+     "upGround",
+     "upBase",
+     "upLaneNode"
+    ]
+   },
+   "eiResourceCap.reTeamPower1": {
+    "*": 15.0
+   },
+   "eiResourceCap.reTeamPower2": {
+    "*": 15.0
+   },
+   "eiWelaTargetCount": {
+    "1": 200
+   },
+   "eiWelaRange": {
+    "1": 16.5
+   },
+   "eiCooldown": {
+    "1": 40000,
+    "10": 40000
+   },
+   "eiWelaDamage": {
+    "2": 1.0,
+    "3": 1.0,
+    "6": 1.0,
+    "7": 1.0
+   },
+   "eiWelaUnitPattern.0": {
+    "4": "Units\\Neutral\\LanetowerLevel1.ets",
+    "5": "Units\\Neutral\\LanetowerLevel1.ets"
+   },
+   "eiWelaUnitPattern.1": {
+    "4": "Units\\Neutral\\LanetowerLevel2.ets",
+    "5": "Units\\Neutral\\LanetowerLevel2.ets"
+   },
+   "eiWelaUnitPattern.2": {
+    "4": "Units\\Neutral\\LanetowerLevel2.ets",
+    "5": "Units\\Neutral\\LanetowerLevel2.ets"
+   },
+   "eiResourceCost.reTeamPower1": {
+    "4": 15.0
+   },
+   "eiResourceCost.reTeamPower2": {
+    "5": 15.0
+   }
+  },
+  "inherits": "Units/Neutral/LaneNode.ets"
+ },
+ "Units/Neutral/Lanetower": {
+  "script": "Units/Neutral/Lanetower.ets",
+  "values": {
+   "eiUnitProperties": {
+    "*": [
+     "upFlying",
+     "upGround",
+     "upMonumental",
+     "upBuilding",
+     "upBase",
+     "upRanged",
+     "upLanetower"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atFortified"
+   },
+   "eiResourceBalance.reWelaCharge": {
+    "7": 0,
+    "*": [
+     3,
+     7,
+     7,
+     9,
+     9
+    ]
+   },
+   "eiResourceCap.reWelaCharge": {
+    "7": 20,
+    "*": [
+     6,
+     14,
+     14,
+     18,
+     18
+    ]
+   },
+   "eiWelaTargetCount": {
+    "1": 1
+   },
+   "eiCooldown": {
+    "1": 1000,
+    "5": [
+     10000,
+     9000,
+     8000,
+     6000,
+     6000
+    ],
+    "6": 500
+   },
+   "eiResourceCost.reWelaCharge": {
+    "1": 1,
+    "7": 20
+   },
+   "eiWelaRange": {
+    "1": 15.0,
+    "3": 30.0
+   },
+   "eiDamageType": {
+    "1": [
+     "dtTrue",
+     "dtRanged"
+    ],
+    "7": [
+     "dtTrue",
+     "dtRanged"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": [
+     100.0,
+     100.0,
+     100.0,
+     100.0,
+     100.0
+    ],
+    "5": 1.0,
+    "6": 1.0,
+    "7": 100.0,
+    "8": 0.0
+   },
+   "eiWelaUnitPattern": {
+    "2": "Units\\Neutral\\LaneNode",
+    "7": "Projectiles\\Neutral\\LaneTowerAntiNexusProjectile"
+   },
+   "eiWelaUnitPattern.1": {
+    "2": "Units\\Neutral\\LaneNode_Red"
+   },
+   "eiWelaUnitPattern.2": {
+    "2": "Units\\Neutral\\LaneNode_Blue"
+   }
+  },
+  "collision_radius": 1.0
+ },
+ "Units/Neutral/LanetowerLevel1": {
+  "script": "Units/Neutral/LanetowerLevel1.ets",
+  "values": {
+   "eiUnitProperties": {
+    "*": [
+     "upFlying",
+     "upGround",
+     "upMonumental",
+     "upBuilding",
+     "upBase",
+     "upRanged",
+     "upLanetower"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atFortified"
+   },
+   "eiResourceBalance.reWelaCharge": {
+    "7": 0,
+    "*": [
+     3,
+     7,
+     7,
+     9,
+     9
+    ]
+   },
+   "eiResourceCap.reWelaCharge": {
+    "7": 20,
+    "*": [
+     6,
+     14,
+     14,
+     18,
+     18
+    ]
+   },
+   "eiWelaTargetCount": {
+    "1": 1
+   },
+   "eiCooldown": {
+    "1": 1000,
+    "5": [
+     10000,
+     9000,
+     8000,
+     6000,
+     6000
+    ],
+    "6": 500
+   },
+   "eiResourceCost.reWelaCharge": {
+    "1": 1,
+    "7": 20
+   },
+   "eiWelaRange": {
+    "1": 15.0,
+    "3": 30.0
+   },
+   "eiDamageType": {
+    "1": [
+     "dtTrue",
+     "dtRanged"
+    ],
+    "7": [
+     "dtTrue",
+     "dtRanged"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": [
+     100.0,
+     100.0,
+     100.0,
+     100.0,
+     100.0
+    ],
+    "5": 1.0,
+    "6": 1.0,
+    "7": 100.0,
+    "8": 0.0
+   },
+   "eiWelaUnitPattern": {
+    "2": "Units\\Neutral\\LaneNode",
+    "7": "Projectiles\\Neutral\\LaneTowerAntiNexusProjectile",
+    "0": "Projectiles\\Neutral\\LanetowerLevel1Projectile",
+    "1": "Projectiles\\Neutral\\LanetowerLevel1Projectile",
+    "4": "Units\\Neutral\\LanetowerLevel2"
+   },
+   "eiWelaUnitPattern.1": {
+    "2": "Units\\Neutral\\LaneNode_Red"
+   },
+   "eiWelaUnitPattern.2": {
+    "2": "Units\\Neutral\\LaneNode_Blue"
+   },
+   "eiResourceCap.reHealth": {
+    "*": [
+     800.0,
+     1000.0,
+     1200.0,
+     1200.0,
+     1200.0
+    ]
+   },
+   "eiResourceBalance.reHealth": {
+    "*": [
+     800.0,
+     1000.0,
+     1200.0,
+     1200.0,
+     1200.0
+    ]
+   }
+  },
+  "inherits": "Units/Neutral/Lanetower.ets",
+  "collision_radius": 1.0
+ },
+ "Units/Neutral/LanetowerLevel2": {
+  "script": "Units/Neutral/LanetowerLevel2.ets",
+  "values": {
+   "eiUnitProperties": {
+    "*": [
+     "upFlying",
+     "upGround",
+     "upMonumental",
+     "upBuilding",
+     "upBase",
+     "upRanged",
+     "upLanetower"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atFortified"
+   },
+   "eiResourceBalance.reWelaCharge": {
+    "7": 0,
+    "*": [
+     3,
+     7,
+     7,
+     9,
+     9
+    ]
+   },
+   "eiResourceCap.reWelaCharge": {
+    "7": 20,
+    "*": [
+     6,
+     14,
+     14,
+     18,
+     18
+    ]
+   },
+   "eiWelaTargetCount": {
+    "1": 1
+   },
+   "eiCooldown": {
+    "1": 1000,
+    "5": [
+     10000,
+     9000,
+     8000,
+     6000,
+     6000
+    ],
+    "6": 500
+   },
+   "eiResourceCost.reWelaCharge": {
+    "1": 1,
+    "7": 20
+   },
+   "eiWelaRange": {
+    "1": 15.0,
+    "3": 30.0
+   },
+   "eiDamageType": {
+    "1": [
+     "dtTrue",
+     "dtRanged"
+    ],
+    "7": [
+     "dtTrue",
+     "dtRanged"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": [
+     100.0,
+     100.0,
+     100.0,
+     100.0,
+     100.0
+    ],
+    "5": 1.0,
+    "6": 1.0,
+    "7": 100.0,
+    "8": 0.0
+   },
+   "eiWelaUnitPattern": {
+    "2": "Units\\Neutral\\LaneNode",
+    "7": "Projectiles\\Neutral\\LaneTowerAntiNexusProjectile",
+    "0": "Projectiles\\Neutral\\LanetowerLevel2Projectile",
+    "1": "Projectiles\\Neutral\\LanetowerLevel2Projectile",
+    "4": "Units\\Neutral\\LanetowerLevel3"
+   },
+   "eiWelaUnitPattern.1": {
+    "2": "Units\\Neutral\\LaneNode_Red"
+   },
+   "eiWelaUnitPattern.2": {
+    "2": "Units\\Neutral\\LaneNode_Blue"
+   },
+   "eiResourceCap.reHealth": {
+    "*": [
+     1000.0,
+     1200.0,
+     1400.0,
+     1400.0,
+     1400.0
+    ]
+   },
+   "eiResourceBalance.reHealth": {
+    "*": [
+     1000.0,
+     1200.0,
+     1400.0,
+     1400.0,
+     1400.0
+    ]
+   }
+  },
+  "inherits": "Units/Neutral/Lanetower.ets",
+  "collision_radius": 1.0
+ },
+ "Units/Neutral/LanetowerLevel3": {
+  "script": "Units/Neutral/LanetowerLevel3.ets",
+  "values": {
+   "eiUnitProperties": {
+    "*": [
+     "upFlying",
+     "upGround",
+     "upMonumental",
+     "upBuilding",
+     "upBase",
+     "upRanged",
+     "upLanetower"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atFortified"
+   },
+   "eiResourceBalance.reWelaCharge": {
+    "7": 0,
+    "*": [
+     3,
+     7,
+     7,
+     9,
+     9
+    ]
+   },
+   "eiResourceCap.reWelaCharge": {
+    "7": 20,
+    "*": [
+     6,
+     14,
+     14,
+     18,
+     18
+    ]
+   },
+   "eiWelaTargetCount": {
+    "1": 1
+   },
+   "eiCooldown": {
+    "1": 1000,
+    "5": [
+     10000,
+     9000,
+     8000,
+     6000,
+     6000
+    ],
+    "6": 500
+   },
+   "eiResourceCost.reWelaCharge": {
+    "1": 1,
+    "7": 20
+   },
+   "eiWelaRange": {
+    "1": 15.0,
+    "3": 30.0
+   },
+   "eiDamageType": {
+    "1": [
+     "dtTrue",
+     "dtRanged"
+    ],
+    "7": [
+     "dtTrue",
+     "dtRanged"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": [
+     100.0,
+     100.0,
+     100.0,
+     100.0,
+     100.0
+    ],
+    "5": 1.0,
+    "6": 1.0,
+    "7": 100.0,
+    "8": 0.0
+   },
+   "eiWelaUnitPattern": {
+    "2": "Units\\Neutral\\LaneNode",
+    "7": "Projectiles\\Neutral\\LaneTowerAntiNexusProjectile",
+    "0": "Projectiles\\Neutral\\LanetowerLevel3Projectile",
+    "1": "Projectiles\\Neutral\\LanetowerLevel3Projectile"
+   },
+   "eiWelaUnitPattern.1": {
+    "2": "Units\\Neutral\\LaneNode_Red"
+   },
+   "eiWelaUnitPattern.2": {
+    "2": "Units\\Neutral\\LaneNode_Blue"
+   },
+   "eiResourceCap.reHealth": {
+    "*": [
+     1200.0,
+     1400.0,
+     1600.0,
+     1600.0,
+     1600.0
+    ]
+   },
+   "eiResourceBalance.reHealth": {
+    "*": [
+     1200.0,
+     1400.0,
+     1600.0,
+     1600.0,
+     1600.0
+    ]
+   }
+  },
+  "inherits": "Units/Neutral/Lanetower.ets",
+  "collision_radius": 1.0
+ },
+ "Units/Neutral/Nexus": {
+  "script": "Units/Neutral/Nexus.ets",
+  "values": {
+   "eiUnitData.udHasDeathEffect": {
+    "*": false
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upFlying",
+     "upGround",
+     "upMonumental",
+     "upBuilding",
+     "upRanged",
+     "upBase",
+     "upNexus",
+     "upSpellImmune"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atFortified"
+   },
+   "eiResourceCap.reWelaCharge": {
+    "*": [
+     8,
+     16,
+     16,
+     20,
+     20
+    ]
+   },
+   "eiResourceBalance.reWelaCharge": {
+    "*": [
+     8,
+     16,
+     16,
+     20,
+     20
+    ]
+   },
+   "eiCooldown": {
+    "1": 1000,
+    "6": [
+     10000,
+     9000,
+     8000,
+     6000,
+     6000
+    ]
+   },
+   "eiWelaTargetCount": {
+    "1": 1
+   },
+   "eiResourceCost.reWelaCharge": {
+    "1": 1
+   },
+   "eiWelaRange": {
+    "1": 15.0,
+    "3": 31.5
+   },
+   "eiDamageType": {
+    "1": [
+     "dtTrue",
+     "dtRanged"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": [
+     110.0,
+     110.0,
+     120.0,
+     120.0,
+     120.0
+    ],
+    "6": 1.0
+   }
+  },
+  "collision_radius": 3.5
+ },
+ "Units/Neutral/NexusLevel1": {
+  "script": "Units/Neutral/NexusLevel1.ets",
+  "values": {
+   "eiUnitData.udHasDeathEffect": {
+    "*": false
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upFlying",
+     "upGround",
+     "upMonumental",
+     "upBuilding",
+     "upRanged",
+     "upBase",
+     "upNexus",
+     "upSpellImmune"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atFortified"
+   },
+   "eiResourceCap.reWelaCharge": {
+    "*": [
+     8,
+     16,
+     16,
+     20,
+     20
+    ]
+   },
+   "eiResourceBalance.reWelaCharge": {
+    "*": [
+     8,
+     16,
+     16,
+     20,
+     20
+    ]
+   },
+   "eiCooldown": {
+    "1": 1000,
+    "6": [
+     10000,
+     9000,
+     8000,
+     6000,
+     6000
+    ],
+    "4": 360000
+   },
+   "eiWelaTargetCount": {
+    "1": 1
+   },
+   "eiResourceCost.reWelaCharge": {
+    "1": 1
+   },
+   "eiWelaRange": {
+    "1": 15.0,
+    "3": 31.5
+   },
+   "eiDamageType": {
+    "1": [
+     "dtTrue",
+     "dtRanged"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": [
+     110.0,
+     110.0,
+     120.0,
+     120.0,
+     120.0
+    ],
+    "6": 1.0
+   },
+   "eiResourceCap.reHealth": {
+    "*": [
+     2500.0,
+     3250.0,
+     3750.0,
+     3750.0,
+     3750.0
+    ]
+   },
+   "eiResourceBalance.reHealth": {
+    "*": [
+     2500.0,
+     3250.0,
+     3750.0,
+     3750.0,
+     3750.0
+    ]
+   },
+   "eiWelaUnitPattern": {
+    "1": "Projectiles\\Neutral\\NexusLevel1Projectile",
+    "4": "Units\\Neutral\\NexusLevel2"
+   }
+  },
+  "inherits": "Units/Neutral/Nexus.ets",
+  "collision_radius": 3.5
+ },
+ "Units/Neutral/NexusLevel2": {
+  "script": "Units/Neutral/NexusLevel2.ets",
+  "values": {
+   "eiUnitData.udHasDeathEffect": {
+    "*": false
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upFlying",
+     "upGround",
+     "upMonumental",
+     "upBuilding",
+     "upRanged",
+     "upBase",
+     "upNexus",
+     "upSpellImmune"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atFortified"
+   },
+   "eiResourceCap.reWelaCharge": {
+    "*": [
+     8,
+     16,
+     16,
+     20,
+     20
+    ]
+   },
+   "eiResourceBalance.reWelaCharge": {
+    "*": [
+     8,
+     16,
+     16,
+     20,
+     20
+    ]
+   },
+   "eiCooldown": {
+    "1": 1000,
+    "6": [
+     10000,
+     9000,
+     8000,
+     6000,
+     6000
+    ]
+   },
+   "eiWelaTargetCount": {
+    "1": 1
+   },
+   "eiResourceCost.reWelaCharge": {
+    "1": 1
+   },
+   "eiWelaRange": {
+    "1": 15.0,
+    "3": 31.5
+   },
+   "eiDamageType": {
+    "1": [
+     "dtTrue",
+     "dtRanged"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": [
+     110.0,
+     110.0,
+     120.0,
+     120.0,
+     120.0
+    ],
+    "6": 1.0
+   },
+   "eiResourceCap.reHealth": {
+    "*": [
+     2750.0,
+     3600.0,
+     4000.0,
+     4000.0,
+     4000.0
+    ]
+   },
+   "eiResourceBalance.reHealth": {
+    "*": [
+     2750.0,
+     3600.0,
+     4000.0,
+     4000.0,
+     4000.0
+    ]
+   },
+   "eiWelaUnitPattern": {
+    "1": "Projectiles\\Neutral\\NexusLevel2Projectile",
+    "4": "Units\\Neutral\\NexusLevel3"
+   }
+  },
+  "inherits": "Units/Neutral/Nexus.ets",
+  "collision_radius": 3.5
+ },
+ "Units/Neutral/NexusLevel3": {
+  "script": "Units/Neutral/NexusLevel3.ets",
+  "values": {
+   "eiUnitData.udHasDeathEffect": {
+    "*": false
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upFlying",
+     "upGround",
+     "upMonumental",
+     "upBuilding",
+     "upRanged",
+     "upBase",
+     "upNexus",
+     "upSpellImmune"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atFortified"
+   },
+   "eiResourceCap.reWelaCharge": {
+    "*": [
+     8,
+     16,
+     16,
+     20,
+     20
+    ]
+   },
+   "eiResourceBalance.reWelaCharge": {
+    "*": [
+     8,
+     16,
+     16,
+     20,
+     20
+    ]
+   },
+   "eiCooldown": {
+    "1": 1000,
+    "6": [
+     10000,
+     9000,
+     8000,
+     6000,
+     6000
+    ]
+   },
+   "eiWelaTargetCount": {
+    "1": 1
+   },
+   "eiResourceCost.reWelaCharge": {
+    "1": 1
+   },
+   "eiWelaRange": {
+    "1": 15.0,
+    "3": 31.5
+   },
+   "eiDamageType": {
+    "1": [
+     "dtTrue",
+     "dtRanged"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": [
+     110.0,
+     110.0,
+     120.0,
+     120.0,
+     120.0
+    ],
+    "6": 1.0
+   },
+   "eiResourceCap.reHealth": {
+    "*": [
+     3000.0,
+     3850.0,
+     4250.0,
+     4250.0,
+     4250.0
+    ]
+   },
+   "eiResourceBalance.reHealth": {
+    "*": [
+     3000.0,
+     3850.0,
+     4250.0,
+     4250.0,
+     4250.0
+    ]
+   },
+   "eiWelaUnitPattern": {
+    "1": "Projectiles\\Neutral\\NexusLevel3Projectile"
+   }
+  },
+  "inherits": "Units/Neutral/Nexus.ets",
+  "collision_radius": 3.5
+ },
+ "Units/Scenario/BossSiegeGolemAttack": {
+  "script": "Units/Scenario/BossSiegeGolemAttack.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecColorless"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier3",
+     "upFlying",
+     "upBuilding",
+     "upGround",
+     "upLegendary",
+     "upNexus",
+     "upUnhealable",
+     "upBase",
+     "upGolem",
+     "upSpellImmune"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atFortified"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 1200.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 1200.0
+   },
+   "eiResourceBalance.reWelaCharge": {
+    "*": 0
+   },
+   "eiResourceCap.reWelaCharge": {
+    "*": 480
+   },
+   "eiWelaRange": {
+    "0": 9999999.0,
+    "1": 9999999.0
+   },
+   "eiWelaUnitPattern": {
+    "0": "Projectiles\\Colorless\\BossSiegeGolemAttackProjectile",
+    "1": "Projectiles\\Colorless\\BossSiegeGolemAttackProjectile"
+   },
+   "eiDamageType": {
+    "1": [
+     "dtIgnoreArmor",
+     "dtTrue"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 0.041667,
+    "2": 1.0,
+    "3": 180.0
+   },
+   "eiCooldown": {
+    "1": 5000
+   },
+   "eiWelaActionpoint": {
+    "1": 933
+   },
+   "eiWelaActionduration": {
+    "1": 1833
+   }
+  },
+  "collision_radius": 2.55
+ },
+ "Units/Scenario/BossSiegeGolemAttackDuo": {
+  "script": "Units/Scenario/BossSiegeGolemAttackDuo.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecColorless"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier3",
+     "upFlying",
+     "upBuilding",
+     "upGround",
+     "upLegendary",
+     "upNexus",
+     "upUnhealable",
+     "upBase",
+     "upGolem",
+     "upSpellImmune"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atFortified"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 1200.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 1200.0
+   },
+   "eiResourceBalance.reWelaCharge": {
+    "*": 0
+   },
+   "eiResourceCap.reWelaCharge": {
+    "*": 480
+   },
+   "eiWelaRange": {
+    "0": 9999999.0,
+    "1": 9999999.0
+   },
+   "eiWelaUnitPattern": {
+    "0": "Projectiles\\Colorless\\BossSiegeGolemAttackProjectile",
+    "1": "Projectiles\\Colorless\\BossSiegeGolemAttackProjectile"
+   },
+   "eiDamageType": {
+    "1": [
+     "dtIgnoreArmor",
+     "dtTrue"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 0.041667,
+    "2": 1.0,
+    "3": 90.0
+   },
+   "eiCooldown": {
+    "1": 5000
+   },
+   "eiWelaActionpoint": {
+    "1": 933
+   },
+   "eiWelaActionduration": {
+    "1": 1833
+   }
+  },
+  "inherits": "Units/Scenario/BossSiegeGolemAttack.ets",
+  "collision_radius": 2.55
+ },
+ "Units/Scenario/GolemLaneTowerLevel1": {
+  "script": "Units/Scenario/GolemLaneTowerLevel1.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecColorless"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upMonumental",
+     "upLanetower",
+     "upTier1",
+     "upFlying",
+     "upGround",
+     "upRanged",
+     "upBuilding",
+     "upBase",
+     "upGolem"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atFortified"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 600.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 600.0
+   },
+   "eiResourceCap.reMana": {
+    "*": 15
+   },
+   "eiResourceBalance.reMana": {
+    "*": 5
+   },
+   "eiResourceCost.reMana": {
+    "1": 1
+   },
+   "eiWelaRange": {
+    "0": 16.0,
+    "1": 16.0
+   },
+   "eiWelaUnitPattern": {
+    "0": "Projectiles\\Colorless\\GolemLaneTowerLevel1Projectile",
+    "1": "Projectiles\\Colorless\\GolemLaneTowerLevel1Projectile"
+   },
+   "eiCooldown": {
+    "1": 1000,
+    "5": 3000
+   },
+   "eiDamageType": {
+    "1": [
+     "dtTrue",
+     "dtRanged"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 32.0,
+    "5": 1.0
+   }
+  },
+  "collision_radius": 0.95
+ },
+ "Units/Scenario/GolemLaneTowerLevel1_WithLaneNode": {
+  "script": "Units/Scenario/GolemLaneTowerLevel1_WithLaneNode.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecColorless"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upMonumental",
+     "upLanetower",
+     "upTier1",
+     "upFlying",
+     "upGround",
+     "upRanged",
+     "upBuilding",
+     "upBase",
+     "upGolem"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atFortified"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 600.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 600.0
+   },
+   "eiResourceCap.reMana": {
+    "*": 15
+   },
+   "eiResourceBalance.reMana": {
+    "*": 5
+   },
+   "eiResourceCost.reMana": {
+    "1": 1
+   },
+   "eiWelaRange": {
+    "0": 16.0,
+    "1": 16.0
+   },
+   "eiWelaUnitPattern": {
+    "0": "Projectiles\\Colorless\\GolemLaneTowerLevel1Projectile",
+    "1": "Projectiles\\Colorless\\GolemLaneTowerLevel1Projectile",
+    "2": "Units\\Neutral\\LaneNode.ets"
+   },
+   "eiCooldown": {
+    "1": 1000,
+    "5": 3000
+   },
+   "eiDamageType": {
+    "1": [
+     "dtTrue",
+     "dtRanged"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 32.0,
+    "5": 1.0
+   },
+   "eiWelaUnitPattern.1": {
+    "2": "Units\\Neutral\\LaneNode_Red.ets"
+   },
+   "eiWelaUnitPattern.2": {
+    "2": "Units\\Neutral\\LaneNode_Blue.ets"
+   }
+  },
+  "inherits": "Units/Scenario/GolemLaneTowerLevel1.ets",
+  "collision_radius": 0.95
+ },
+ "Units/Scenario/GolemLaneTowerLevel1Building": {
+  "script": "Units/Scenario/GolemLaneTowerLevel1Building.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Colorless\\GolemLaneTowerLevel1"
+   }
+  },
+  "card_kind": "BuildingCard",
+  "legendary": false,
+  "tier": 1
+ },
+ "Units/Scenario/GolemLaneTowerLevel2": {
+  "script": "Units/Scenario/GolemLaneTowerLevel2.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecColorless"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upMonumental",
+     "upLanetower",
+     "upTier2",
+     "upFlying",
+     "upGround",
+     "upRanged",
+     "upBuilding",
+     "upBase",
+     "upGolem"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atFortified"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 1200.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 1200.0
+   },
+   "eiResourceCap.reMana": {
+    "*": 15
+   },
+   "eiResourceBalance.reMana": {
+    "*": 5
+   },
+   "eiResourceCost.reMana": {
+    "1": 1
+   },
+   "eiWelaRange": {
+    "0": 16.0,
+    "1": 16.0
+   },
+   "eiWelaUnitPattern": {
+    "0": "Projectiles\\Colorless\\GolemLaneTowerLevel2Projectile",
+    "1": "Projectiles\\Colorless\\GolemLaneTowerLevel2Projectile"
+   },
+   "eiCooldown": {
+    "1": 1000,
+    "5": 3000
+   },
+   "eiDamageType": {
+    "1": [
+     "dtTrue",
+     "dtRanged"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 39.0,
+    "5": 1.0
+   }
+  },
+  "collision_radius": 1.1
+ },
+ "Units/Scenario/GolemLaneTowerLevel2_WithLaneNode": {
+  "script": "Units/Scenario/GolemLaneTowerLevel2_WithLaneNode.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecColorless"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upMonumental",
+     "upLanetower",
+     "upTier2",
+     "upFlying",
+     "upGround",
+     "upRanged",
+     "upBuilding",
+     "upBase",
+     "upGolem"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atFortified"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 1200.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 1200.0
+   },
+   "eiResourceCap.reMana": {
+    "*": 15
+   },
+   "eiResourceBalance.reMana": {
+    "*": 5
+   },
+   "eiResourceCost.reMana": {
+    "1": 1
+   },
+   "eiWelaRange": {
+    "0": 16.0,
+    "1": 16.0
+   },
+   "eiWelaUnitPattern": {
+    "0": "Projectiles\\Colorless\\GolemLaneTowerLevel2Projectile",
+    "1": "Projectiles\\Colorless\\GolemLaneTowerLevel2Projectile",
+    "2": "Units\\Neutral\\LaneNode.ets"
+   },
+   "eiCooldown": {
+    "1": 1000,
+    "5": 3000
+   },
+   "eiDamageType": {
+    "1": [
+     "dtTrue",
+     "dtRanged"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 39.0,
+    "5": 1.0
+   },
+   "eiWelaUnitPattern.1": {
+    "2": "Units\\Neutral\\LaneNode_Red.ets"
+   },
+   "eiWelaUnitPattern.2": {
+    "2": "Units\\Neutral\\LaneNode_Blue.ets"
+   }
+  },
+  "inherits": "Units/Scenario/GolemLaneTowerLevel2.ets",
+  "collision_radius": 1.1
+ },
+ "Units/Scenario/GolemLaneTowerLevel2Building": {
+  "script": "Units/Scenario/GolemLaneTowerLevel2Building.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Colorless\\GolemLaneTowerLevel2"
+   }
+  },
+  "card_kind": "BuildingCard",
+  "legendary": false,
+  "tier": 2
+ },
+ "Units/Scenario/GolemLaneTowerLevel3": {
+  "script": "Units/Scenario/GolemLaneTowerLevel3.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecColorless"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upMonumental",
+     "upLanetower",
+     "upTier3",
+     "upFlying",
+     "upGround",
+     "upRanged",
+     "upBuilding",
+     "upBase",
+     "upGolem"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atFortified"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 2050.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 2050.0
+   },
+   "eiResourceCap.reMana": {
+    "*": 15
+   },
+   "eiResourceBalance.reMana": {
+    "*": 5
+   },
+   "eiResourceCost.reMana": {
+    "1": 1
+   },
+   "eiWelaRange": {
+    "0": 16.0,
+    "1": 16.0
+   },
+   "eiWelaUnitPattern": {
+    "0": "Projectiles\\Colorless\\GolemLaneTowerLevel3Projectile",
+    "1": "Projectiles\\Colorless\\GolemLaneTowerLevel3Projectile"
+   },
+   "eiCooldown": {
+    "1": 1000,
+    "5": 3000
+   },
+   "eiDamageType": {
+    "1": [
+     "dtTrue",
+     "dtRanged"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 31.0,
+    "5": 1.0
+   },
+   "eiWelaTargetCount": {
+    "1": 2
+   }
+  },
+  "collision_radius": 1.1
+ },
+ "Units/Scenario/GolemLaneTowerLevel3_WithLaneNode": {
+  "script": "Units/Scenario/GolemLaneTowerLevel3_WithLaneNode.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecColorless"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upMonumental",
+     "upLanetower",
+     "upTier3",
+     "upFlying",
+     "upGround",
+     "upRanged",
+     "upBuilding",
+     "upBase",
+     "upGolem"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atFortified"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 2050.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 2050.0
+   },
+   "eiResourceCap.reMana": {
+    "*": 15
+   },
+   "eiResourceBalance.reMana": {
+    "*": 5
+   },
+   "eiResourceCost.reMana": {
+    "1": 1
+   },
+   "eiWelaRange": {
+    "0": 16.0,
+    "1": 16.0
+   },
+   "eiWelaUnitPattern": {
+    "0": "Projectiles\\Colorless\\GolemLaneTowerLevel3Projectile",
+    "1": "Projectiles\\Colorless\\GolemLaneTowerLevel3Projectile",
+    "2": "Units\\Neutral\\LaneNode.ets"
+   },
+   "eiCooldown": {
+    "1": 1000,
+    "5": 3000
+   },
+   "eiDamageType": {
+    "1": [
+     "dtTrue",
+     "dtRanged"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 31.0,
+    "5": 1.0
+   },
+   "eiWelaTargetCount": {
+    "1": 2
+   },
+   "eiWelaUnitPattern.1": {
+    "2": "Units\\Neutral\\LaneNode_Red.ets"
+   },
+   "eiWelaUnitPattern.2": {
+    "2": "Units\\Neutral\\LaneNode_Blue.ets"
+   }
+  },
+  "inherits": "Units/Scenario/GolemLaneTowerLevel3.ets",
+  "collision_radius": 1.1
+ },
+ "Units/Scenario/GolemLaneTowerLevel3Building": {
+  "script": "Units/Scenario/GolemLaneTowerLevel3Building.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\Colorless\\GolemLaneTowerLevel3"
+   }
+  },
+  "card_kind": "BuildingCard",
+  "legendary": false,
+  "tier": 3
+ },
+ "Units/Scenario/SandboxBossSiegeGolemAttack": {
+  "script": "Units/Scenario/SandboxBossSiegeGolemAttack.ets",
+  "values": {
+   "eiUnitData.udHasDeathEffect": {
+    "*": false
+   },
+   "eiUnitData.udMinimapIcon": {
+    "*": "MinimapBossIcon.png"
+   },
+   "eiUnitData.udMinimapIconSize": {
+    "*": 3.0
+   },
+   "eiColorIdentity": {
+    "*": "ecColorless"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier3",
+     "upFlying",
+     "upBuilding",
+     "upGround",
+     "upLegendary",
+     "upNexus",
+     "upUnhealable",
+     "upBase",
+     "upGolem"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atFortified"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 1200.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 1200.0
+   },
+   "eiResourceBalance.reWelaCharge": {
+    "*": 0
+   },
+   "eiResourceCap.reWelaCharge": {
+    "*": 240
+   },
+   "eiWelaRange": {
+    "0": 9999999.0,
+    "1": 9999999.0
+   },
+   "eiWelaUnitPattern": {
+    "0": "Projectiles\\Colorless\\BossSiegeGolemAttackProjectile",
+    "1": "Projectiles\\Colorless\\BossSiegeGolemAttackProjectile"
+   },
+   "eiDamageType": {
+    "1": [
+     "dtIgnoreArmor",
+     "dtTrue"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 0.041667,
+    "2": 1.0,
+    "3": 180.0
+   },
+   "eiCooldown": {
+    "1": 5000
+   },
+   "eiWelaActionpoint": {
+    "1": 933
+   },
+   "eiWelaActionduration": {
+    "1": 1833
+   }
+  },
+  "collision_radius": 2.55
+ },
+ "Units/Scenario/SandboxBossSiegeGolemAttackDuo": {
+  "script": "Units/Scenario/SandboxBossSiegeGolemAttackDuo.ets",
+  "values": {
+   "eiUnitData.udHasDeathEffect": {
+    "*": false
+   },
+   "eiUnitData.udMinimapIcon": {
+    "*": "MinimapBossIcon.png"
+   },
+   "eiUnitData.udMinimapIconSize": {
+    "*": 3.0
+   },
+   "eiColorIdentity": {
+    "*": "ecColorless"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier3",
+     "upFlying",
+     "upBuilding",
+     "upGround",
+     "upLegendary",
+     "upNexus",
+     "upUnhealable",
+     "upBase",
+     "upGolem"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atFortified"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 1200.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 1200.0
+   },
+   "eiResourceBalance.reWelaCharge": {
+    "*": 0
+   },
+   "eiResourceCap.reWelaCharge": {
+    "*": 240
+   },
+   "eiWelaRange": {
+    "0": 9999999.0,
+    "1": 9999999.0
+   },
+   "eiWelaUnitPattern": {
+    "0": "Projectiles\\Colorless\\BossSiegeGolemAttackProjectile",
+    "1": "Projectiles\\Colorless\\BossSiegeGolemAttackProjectile"
+   },
+   "eiDamageType": {
+    "1": [
+     "dtIgnoreArmor",
+     "dtTrue"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 0.041667,
+    "2": 1.0,
+    "3": 90.0
+   },
+   "eiCooldown": {
+    "1": 5000
+   },
+   "eiWelaActionpoint": {
+    "1": 933
+   },
+   "eiWelaActionduration": {
+    "1": 1833
+   }
+  },
+  "inherits": "Units/Scenario/SandboxBossSiegeGolemAttack.ets",
+  "collision_radius": 2.55
+ },
+ "Units/Scenario/TutorialTrigger": {
+  "script": "Units/Scenario/TutorialTrigger.ets",
+  "values": {
+   "eiWelaTargetCount": {
+    "1": 200
+   },
+   "eiWelaRange": {
+    "1": 16.5
+   },
+   "eiCooldown": {
+    "1": 250
+   }
+  }
+ },
+ "Units/White/Archer": {
+  "script": "Units/White/Archer.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecWhite"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier1",
+     "upUnit",
+     "upGround",
+     "upRanged",
+     "upHasDeathRattle"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atUnarmored"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 19.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 19.0
+   },
+   "eiWelaRange": {
+    "0": 10.0,
+    "1": 10.0,
+    "4": 10.0
+   },
+   "eiWelaUnitPattern": {
+    "0": "Projectiles\\White\\ArcherProjectile",
+    "1": "Projectiles\\White\\ArcherProjectile",
+    "4": "Projectiles\\White\\ArcherDeathCryProjectile"
+   },
+   "eiCooldown": {
+    "1": 2000
+   },
+   "eiDamageType": {
+    "1": [
+     "dtRanged"
+    ],
+    "4": [
+     "dtRanged"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 20.0,
+    "4": 20.0
+   },
+   "eiWelaActionpoint": {
+    "1": 350
+   },
+   "eiWelaActionduration": {
+    "1": 833
+   },
+   "eiWelaModifier": {
+    "2": 1.5,
+    "3": 2.0
+   }
+  },
+  "collision_radius": 0.45
+ },
+ "Units/White/ArcherDrop": {
+  "script": "Units/White/ArcherDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\White\\Archer"
+   },
+   "eiWelaCount": {
+    "0": 2
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": false,
+  "tier": 1
+ },
+ "Units/White/ArcherSpawner": {
+  "script": "Units/White/ArcherSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\White\\Archer"
+   },
+   "eiWelaCount": {
+    "0": 2
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 1
+ },
+ "Units/White/Avenger": {
+  "script": "Units/White/Avenger.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecWhite"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier3",
+     "upUnit",
+     "upRanged",
+     "upFlying"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atLight"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 230.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 230.0
+   },
+   "eiWelaRange": {
+    "0": 6.0,
+    "1": 6.0
+   },
+   "eiWelaUnitPattern": {
+    "2": "Projectiles\\White\\AvengerProjectileBounce",
+    "3": "Projectiles\\White\\AvengerProjectile"
+   },
+   "eiCooldown": {
+    "1": 2000
+   },
+   "eiDamageType": {
+    "1": [
+     "dtRanged"
+    ],
+    "2": [
+     "dtRanged"
+    ],
+    "3": [
+     "dtRanged"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 42.0,
+    "2": 42.0,
+    "3": 42.0
+   },
+   "eiWelaActionpoint": {
+    "1": 550
+   },
+   "eiWelaActionduration": {
+    "1": 966
+   }
+  },
+  "collision_radius": 0.7
+ },
+ "Units/White/AvengerDrop": {
+  "script": "Units/White/AvengerDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\White\\Avenger"
+   },
+   "eiWelaCount": {
+    "0": 2
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": false,
+  "tier": 3
+ },
+ "Units/White/AvengerSpawner": {
+  "script": "Units/White/AvengerSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\White\\Avenger"
+   },
+   "eiWelaCount": {
+    "0": 2
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 3
+ },
+ "Units/White/Ballista": {
+  "script": "Units/White/Ballista.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecWhite"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier1",
+     "upUnit",
+     "upGround",
+     "upRanged"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atLight"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 64.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 64.0
+   },
+   "eiWelaRange": {
+    "0": 14.0,
+    "1": 14.0
+   },
+   "eiWelaUnitPattern": {
+    "0": "Projectiles\\White\\BallistaProjectile",
+    "1": "Projectiles\\White\\BallistaProjectile"
+   },
+   "eiCooldown": {
+    "1": 2800
+   },
+   "eiDamageType": {
+    "1": [
+     "dtRanged",
+     "dtSiege"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 23.0
+   },
+   "eiWelaAreaOfEffect": {
+    "1": 0.1
+   },
+   "eiWelaActionpoint": {
+    "1": 0
+   },
+   "eiWelaActionduration": {
+    "1": 1166
+   },
+   "eiWelaModifier": {
+    "2": 5.0
+   }
+  },
+  "collision_radius": 0.85
+ },
+ "Units/White/BallistaDrop": {
+  "script": "Units/White/BallistaDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\White\\Ballista"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": false,
+  "tier": 1
+ },
+ "Units/White/BallistaSpawner": {
+  "script": "Units/White/BallistaSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\White\\Ballista"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 1
+ },
+ "Units/White/Defender": {
+  "script": "Units/White/Defender.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecWhite"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier3",
+     "upUnit",
+     "upMelee",
+     "upGround",
+     "upLegendary"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atHeavy"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 1050.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 1050.0
+   },
+   "eiWelaRange": {
+    "0": 1.0,
+    "1": 1.0,
+    "2": 6.0,
+    "3": 6.0,
+    "5": 6.0,
+    "7": 11.0
+   },
+   "eiDamageType": {
+    "1": [
+     "dtMelee"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 270.0
+   },
+   "eiCooldown": {
+    "1": 1700,
+    "5": 1500
+   },
+   "eiWelaActionpoint": {
+    "1": 533
+   },
+   "eiWelaActionduration": {
+    "1": 1067
+   },
+   "eiWelaTargetCount": {
+    "2": 200,
+    "3": 200,
+    "5": 200
+   },
+   "eiLinkPattern": {
+    "2": "Links\\LotharAura",
+    "3": "Links\\LotharAura"
+   },
+   "eiWelaActive": {
+    "2": false
+   },
+   "eiWelaUnitPattern": {
+    "7": "Projectiles\\White\\LotharWallOfLightProjectile"
+   }
+  },
+  "collision_radius": 0.6
+ },
+ "Units/White/DefenderDrop": {
+  "script": "Units/White/DefenderDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\White\\Defender"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": true,
+  "tier": 3
+ },
+ "Units/White/DefenderSpawner": {
+  "script": "Units/White/DefenderSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\White\\Defender"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 3
+ },
+ "Units/White/Footman": {
+  "script": "Units/White/Footman.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecWhite"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier1",
+     "upUnit",
+     "upMelee",
+     "upGround"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atMedium"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 32.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 32.0
+   },
+   "eiWelaRange": {
+    "0": 1.0,
+    "1": 1.0
+   },
+   "eiDamageType": {
+    "1": [
+     "dtMelee"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 13.0,
+    "2": 10.0
+   },
+   "eiCooldown": {
+    "1": 2000,
+    "2": 5000
+   },
+   "eiWelaActionpoint": {
+    "1": 300
+   },
+   "eiWelaActionduration": {
+    "1": 800
+   },
+   "eiWelaModifier": {
+    "2": 0.0
+   }
+  },
+  "collision_radius": 0.55
+ },
+ "Units/White/FootmanDrop": {
+  "script": "Units/White/FootmanDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\White\\Footman"
+   },
+   "eiWelaCount": {
+    "0": 4
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": false,
+  "tier": 1
+ },
+ "Units/White/FootmanSpawner": {
+  "script": "Units/White/FootmanSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\White\\Footman"
+   },
+   "eiWelaCount": {
+    "0": 4
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 1
+ },
+ "Units/White/HeavyGunner": {
+  "script": "Units/White/HeavyGunner.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecWhite"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier2",
+     "upUnit",
+     "upGround",
+     "upRangedGroundOnly",
+     "upRanged"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atLight"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 240.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 240.0
+   },
+   "eiResourceBalance.reMana": {
+    "*": 0
+   },
+   "eiResourceCap.reMana": {
+    "*": 4
+   },
+   "eiResourceCost.reMana": {
+    "2": 4
+   },
+   "eiWelaRange": {
+    "1": 6.0,
+    "2": 6.0
+   },
+   "eiWelaUnitPattern": {
+    "1": "Projectiles\\White\\HeavyGunnerProjectile",
+    "2": "Projectiles\\White\\HeavyGunnerInfusedProjectile"
+   },
+   "eiCooldown": {
+    "1": 2800,
+    "2": 2800
+   },
+   "eiDamageType": {
+    "1": [
+     "dtRanged",
+     "dtSplash"
+    ],
+    "2": [
+     "dtRanged",
+     "dtSplash"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 60.0,
+    "2": 60.0,
+    "4": 1.0,
+    "5": 100.0
+   },
+   "eiWelaAreaOfEffect": {
+    "1": 2.5,
+    "2": 3.0
+   },
+   "eiWelaActionpoint": {
+    "1": 300,
+    "2": 300
+   },
+   "eiWelaActionduration": {
+    "1": 1166,
+    "2": 1166
+   }
+  },
+  "collision_radius": 0.45
+ },
+ "Units/White/HeavyGunnerDrop": {
+  "script": "Units/White/HeavyGunnerDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\White\\HeavyGunner"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": false,
+  "tier": 2
+ },
+ "Units/White/HeavyGunnerSpawner": {
+  "script": "Units/White/HeavyGunnerSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\White\\HeavyGunner"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 2
+ },
+ "Units/White/Marksman": {
+  "script": "Units/White/Marksman.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecWhite"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier2",
+     "upUnit",
+     "upGround",
+     "upRanged"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atUnarmored"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 28.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 28.0
+   },
+   "eiWelaRange": {
+    "0": 13.5,
+    "1": 13.5
+   },
+   "eiWelaUnitPattern": {
+    "0": "Projectiles\\White\\MarksmanProjectile",
+    "1": "Projectiles\\White\\MarksmanProjectile"
+   },
+   "eiCooldown": {
+    "1": 5000,
+    "2": 10000
+   },
+   "eiDamageType": {
+    "1": [
+     "dtRanged"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 190.0
+   },
+   "eiWelaActionpoint": {
+    "1": 733
+   },
+   "eiWelaActionduration": {
+    "1": 1166
+   },
+   "eiWelaModifier": {
+    "2": 6.0
+   }
+  },
+  "collision_radius": 0.45
+ },
+ "Units/White/MarksmanDrop": {
+  "script": "Units/White/MarksmanDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\White\\Marksman"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": false,
+  "tier": 2
+ },
+ "Units/White/MarksmanSpawner": {
+  "script": "Units/White/MarksmanSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\White\\Marksman"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 2
+ },
+ "Units/White/Monk": {
+  "script": "Units/White/Monk.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecWhite"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier1",
+     "upUnit",
+     "upMelee",
+     "upGround"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atUnarmored"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 265.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 265.0
+   },
+   "eiResourceBalance.reMana": {
+    "*": 4
+   },
+   "eiResourceCap.reMana": {
+    "*": 4
+   },
+   "eiWelaRange": {
+    "1": 1.0,
+    "5": 6.0
+   },
+   "eiDamageType": {
+    "1": [
+     "dtMelee"
+    ],
+    "2": [
+     "dtMelee"
+    ],
+    "3": [
+     "dtMelee"
+    ],
+    "4": [
+     "dtMelee"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 38.0,
+    "4": 38.0,
+    "3": 48.0,
+    "6": 1.0
+   },
+   "eiCooldown": {
+    "1": 2800,
+    "6": 3000
+   },
+   "eiWelaActionpoint": {
+    "1": 300,
+    "5": 400
+   },
+   "eiWelaActionduration": {
+    "1": 700,
+    "5": 650
+   },
+   "eiResourceCost.reMana": {
+    "5": 4
+   },
+   "eiWelaUnitPattern": {
+    "5": "Projectiles\\White\\MonkPotion"
+   }
+  },
+  "collision_radius": 0.75
+ },
+ "Units/White/MonkDrop": {
+  "script": "Units/White/MonkDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\White\\Monk"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": false,
+  "tier": 1
+ },
+ "Units/White/MonkSpawner": {
+  "script": "Units/White/MonkSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\White\\Monk"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 1
+ },
+ "Units/White/MonumentOfLight": {
+  "script": "Units/White/MonumentOfLight.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecWhite"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier3",
+     "upGround",
+     "upBuilding",
+     "upNoAutoAttack",
+     "upSupporter"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atFortified"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 230.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 230.0
+   },
+   "eiResourceBalance.reMana": {
+    "*": 3
+   },
+   "eiResourceCap.reMana": {
+    "*": 12
+   },
+   "eiResourceCost.reMana": {
+    "2": 3
+   },
+   "eiWelaActionpoint": {
+    "2": 400
+   },
+   "eiWelaActionduration": {
+    "2": 0
+   },
+   "eiWelaAreaOfEffect": {
+    "2": 8.0,
+    "3": 8.0,
+    "4": 8.0
+   },
+   "eiDamageType": {
+    "3": [
+     "dtFlatHeal",
+     "dtOverheal"
+    ],
+    "4": [
+     "dtSplash",
+     "dtAbility"
+    ]
+   },
+   "eiWelaDamage": {
+    "3": 100.0,
+    "4": 20.0,
+    "5": 1.0
+   },
+   "eiCooldown": {
+    "5": 3000
+   }
+  },
+  "collision_radius": 0.55
+ },
+ "Units/White/MonumentOfLightBuilding": {
+  "script": "Units/White/MonumentOfLightBuilding.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\White\\MonumentOfLight"
+   }
+  },
+  "card_kind": "BuildingCard",
+  "legendary": false,
+  "tier": 3
+ },
+ "Units/White/PatronSaint": {
+  "script": "Units/White/PatronSaint.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecWhite"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier3",
+     "upUnit",
+     "upGround",
+     "upRanged",
+     "upRangedGroundOnly",
+     "upLegendary"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atMedium"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 680.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 680.0
+   },
+   "eiWelaRange": {
+    "0": 4.0,
+    "1": 4.0,
+    "2": 6.0,
+    "3": 6.0
+   },
+   "eiWelaUnitPattern": {
+    "1": "Projectiles\\White\\PatronSaintProjectile"
+   },
+   "eiDamageType": {
+    "1": [
+     "dtRanged",
+     "dtSplash"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 110.0
+   },
+   "eiCooldown": {
+    "1": 2300
+   },
+   "eiWelaActionpoint": {
+    "1": 433
+   },
+   "eiWelaActionduration": {
+    "1": 2000
+   },
+   "eiWelaAreaOfEffect": {
+    "1": 2.0
+   },
+   "eiWelaTargetCount": {
+    "2": 200,
+    "3": 200
+   },
+   "eiLinkPattern": {
+    "2": "Links\\GuardedAura",
+    "3": "Links\\GuardedAura"
+   },
+   "eiWelaActive": {
+    "2": false
+   }
+  },
+  "collision_radius": 0.6
+ },
+ "Units/White/PatronSaintDrop": {
+  "script": "Units/White/PatronSaintDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\White\\PatronSaint"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": true,
+  "tier": 3
+ },
+ "Units/White/PatronSaintSpawner": {
+  "script": "Units/White/PatronSaintSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\White\\PatronSaint"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 3
+ },
+ "Units/White/Priest": {
+  "script": "Units/White/Priest.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecWhite"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier1",
+     "upUnit",
+     "upGround",
+     "upRanged",
+     "upSupporter"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atUnarmored"
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 53.0
+   },
+   "eiResourceCap.reHealth": {
+    "*": 53.0
+   },
+   "eiResourceBalance.reMana": {
+    "*": 5
+   },
+   "eiResourceCap.reMana": {
+    "*": 5
+   },
+   "eiWelaRange": {
+    "0": 8.0,
+    "1": 8.0,
+    "2": 8.0
+   },
+   "eiWelaUnitPattern": {
+    "0": "Projectiles\\White\\PriestProjectile",
+    "1": "Projectiles\\White\\PriestProjectile"
+   },
+   "eiCooldown": {
+    "1": 2000,
+    "4": 3000
+   },
+   "eiDamageType": {
+    "1": [
+     "dtRanged"
+    ],
+    "2": [
+     "dtFlatHeal",
+     "dtOverheal"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 18.0,
+    "2": 100.0,
+    "4": 1.0
+   },
+   "eiWelaActionpoint": {
+    "1": 450,
+    "2": 400
+   },
+   "eiWelaActionduration": {
+    "1": 1333,
+    "2": 2000
+   },
+   "eiResourceCost.reMana": {
+    "2": 5
+   }
+  },
+  "collision_radius": 0.6
+ },
+ "Units/White/PriestDrop": {
+  "script": "Units/White/PriestDrop.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\White\\Priest"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Drop",
+  "legendary": false,
+  "tier": 1
+ },
+ "Units/White/PriestSpawner": {
+  "script": "Units/White/PriestSpawner.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\White\\Priest"
+   },
+   "eiWelaCount": {
+    "0": 1
+   }
+  },
+  "card_kind": "Spawner",
+  "legendary": false,
+  "tier": 1
+ },
+ "Units/White/Suntower": {
+  "script": "Units/White/Suntower.ets",
+  "values": {
+   "eiColorIdentity": {
+    "*": "ecWhite"
+   },
+   "eiUnitProperties": {
+    "*": [
+     "upTier2",
+     "upGround",
+     "upBuilding",
+     "upRanged"
+    ]
+   },
+   "eiArmorType": {
+    "*": "atFortified"
+   },
+   "eiResourceCap.reHealth": {
+    "*": 465.0
+   },
+   "eiResourceBalance.reHealth": {
+    "*": 465.0
+   },
+   "eiWelaRange": {
+    "0": 11.0,
+    "1": 11.0,
+    "2": 5.5,
+    "3": 5.5
+   },
+   "eiWelaUnitPattern": {
+    "0": "Projectiles\\White\\SuntowerProjectile",
+    "1": "Projectiles\\White\\SuntowerProjectile"
+   },
+   "eiCooldown": {
+    "1": 2000
+   },
+   "eiDamageType": {
+    "1": [
+     "dtRanged"
+    ]
+   },
+   "eiWelaDamage": {
+    "1": 50.0
+   },
+   "eiWelaTargetCount": {
+    "2": 200,
+    "3": 200
+   },
+   "eiLinkPattern": {
+    "2": "Links\\HomelandAura",
+    "3": "Links\\HomelandAura"
+   }
+  },
+  "collision_radius": 0.95
+ },
+ "Units/White/SuntowerBuilding": {
+  "script": "Units/White/SuntowerBuilding.ets",
+  "values": {
+   "eiWelaUnitPattern": {
+    "0": "Units\\White\\SunTower"
+   }
+  },
+  "card_kind": "BuildingCard",
+  "legendary": false,
+  "tier": 2
+ }
+}

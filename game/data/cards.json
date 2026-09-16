@@ -1,0 +1,1602 @@
+[
+ {
+  "uid": "30b4f36d-03d4-413c-8e9c-dc9f70346c15",
+  "type": "ctSpawner",
+  "colors": [
+   "ecWhite"
+  ],
+  "script": "Units/White/ArcherSpawner",
+  "tier": 1,
+  "name": "Archer"
+ },
+ {
+  "uid": "0fc18397-7dfc-4df8-938c-940e5dbb34f0",
+  "type": "ctSpawner",
+  "colors": [
+   "ecWhite"
+  ],
+  "script": "Units/White/AvengerSpawner",
+  "tier": 3,
+  "name": "Avenger"
+ },
+ {
+  "uid": "19439e1a-aec8-4a83-909b-cd8741d81271",
+  "type": "ctSpawner",
+  "colors": [
+   "ecWhite"
+  ],
+  "script": "Units/White/BallistaSpawner",
+  "tier": 1,
+  "name": "Ballista"
+ },
+ {
+  "uid": "8b1471e4-a394-4d11-836c-06e9187135a7",
+  "type": "ctSpawner",
+  "colors": [
+   "ecWhite"
+  ],
+  "script": "Units/White/DefenderSpawner",
+  "tier": 3,
+  "name": "Lothar, Wall of Light"
+ },
+ {
+  "uid": "212b4d7e-65f9-43fa-a3df-50b31dd3da8f",
+  "type": "ctSpawner",
+  "colors": [
+   "ecWhite"
+  ],
+  "script": "Units/White/FootmanSpawner",
+  "tier": 1,
+  "name": "Footman"
+ },
+ {
+  "uid": "11fbcd20-31d6-43d7-aba0-528163cdcb3d",
+  "type": "ctSpawner",
+  "colors": [
+   "ecWhite"
+  ],
+  "script": "Units/White/HeavyGunnerSpawner",
+  "tier": 2,
+  "name": "Heavy Gunner"
+ },
+ {
+  "uid": "43d78d4c-793e-4023-9c89-8caf1942b0d6",
+  "type": "ctSpawner",
+  "colors": [
+   "ecWhite"
+  ],
+  "script": "Units/White/MarksmanSpawner",
+  "tier": 2,
+  "name": "Marksman"
+ },
+ {
+  "uid": "cfd5b8a3-b414-423f-9fd4-6414cfb8ca67",
+  "type": "ctSpawner",
+  "colors": [
+   "ecWhite"
+  ],
+  "script": "Units/White/PriestSpawner",
+  "tier": 1,
+  "name": "Priest"
+ },
+ {
+  "uid": "0fb667e6-5c8b-4488-85ba-d932dbff8148",
+  "type": "ctSpawner",
+  "colors": [
+   "ecWhite"
+  ],
+  "script": "Units/White/MonkSpawner",
+  "tier": 1,
+  "name": "Monk"
+ },
+ {
+  "uid": "51c25adb-3f4b-4e89-a972-15c2080933b9",
+  "type": "ctDrop",
+  "colors": [
+   "ecWhite"
+  ],
+  "script": "Units/White/ArcherDrop",
+  "tier": 1,
+  "name": "Archer"
+ },
+ {
+  "uid": "ad3f1e1f-8c32-444e-acdc-9e01416890a1",
+  "type": "ctDrop",
+  "colors": [
+   "ecWhite"
+  ],
+  "script": "Units/White/AvengerDrop",
+  "tier": 3,
+  "name": "Avenger"
+ },
+ {
+  "uid": "d6775352-3586-4a2d-af0f-b3149d59dbec",
+  "type": "ctDrop",
+  "colors": [
+   "ecWhite"
+  ],
+  "script": "Units/White/BallistaDrop",
+  "tier": 1,
+  "name": "Ballista"
+ },
+ {
+  "uid": "21780eb8-3d2c-4c97-b279-59971475f3f8",
+  "type": "ctDrop",
+  "colors": [
+   "ecWhite"
+  ],
+  "script": "Units/White/DefenderDrop",
+  "tier": 3,
+  "name": "Lothar, Wall of Light"
+ },
+ {
+  "uid": "4a3d81c7-8c6b-454d-9469-95f6cf394c9b",
+  "type": "ctDrop",
+  "colors": [
+   "ecWhite"
+  ],
+  "script": "Units/White/FootmanDrop",
+  "tier": 1,
+  "name": "Footman"
+ },
+ {
+  "uid": "5f0ce2b0-9e9b-4d1e-8c73-b55a7dd07963",
+  "type": "ctDrop",
+  "colors": [
+   "ecWhite"
+  ],
+  "script": "Units/White/HeavyGunnerDrop",
+  "tier": 2,
+  "name": "Heavy Gunner"
+ },
+ {
+  "uid": "2af612dd-726d-4fa3-85ef-0d4192095da2",
+  "type": "ctDrop",
+  "colors": [
+   "ecWhite"
+  ],
+  "script": "Units/White/MarksmanDrop",
+  "tier": 2,
+  "name": "Marksman"
+ },
+ {
+  "uid": "16bb2970-7977-4914-9d1c-287806f4e3db",
+  "type": "ctDrop",
+  "colors": [
+   "ecWhite"
+  ],
+  "script": "Units/White/PriestDrop",
+  "tier": 1,
+  "name": "Priest"
+ },
+ {
+  "uid": "f1dc5d00-f59f-4616-b3d7-beed8119cbad",
+  "type": "ctDrop",
+  "colors": [
+   "ecWhite"
+  ],
+  "script": "Units/White/MonkDrop",
+  "tier": 1,
+  "name": "Monk"
+ },
+ {
+  "uid": "d8e38876-95b0-4566-9185-fbac1d02e143",
+  "type": "ctDrop",
+  "colors": [
+   "ecWhite"
+  ],
+  "script": "Units/White/PatronSaintDrop",
+  "tier": 3,
+  "name": "Selga, Patron Saint of Light"
+ },
+ {
+  "uid": "893292ed-8619-4514-b7e2-8cf80eceb397",
+  "type": "ctBuilding",
+  "colors": [
+   "ecWhite"
+  ],
+  "script": "Units/White/MonumentOfLightBuilding",
+  "tier": 3,
+  "name": "Monument of Light"
+ },
+ {
+  "uid": "3e6d5b8a-6d04-4427-9b8b-b498e7c4ee04",
+  "type": "ctBuilding",
+  "colors": [
+   "ecWhite"
+  ],
+  "script": "Units/White/SuntowerBuilding",
+  "tier": 2,
+  "name": "Watchtower"
+ },
+ {
+  "uid": "527dd787-d8e9-4817-b45a-13b72495dbf7",
+  "type": "ctSpell",
+  "colors": [
+   "ecWhite"
+  ],
+  "script": "Spells/White/HailOfArrows.sps",
+  "tier": 2,
+  "name": "Hail of Arrows"
+ },
+ {
+  "uid": "a62ca9b8-35ec-4995-a44e-182fbe686523",
+  "type": "ctSpell",
+  "colors": [
+   "ecWhite"
+  ],
+  "script": "Spells/White/PromiseOfLife.sps",
+  "tier": 2,
+  "name": "Promise of Life"
+ },
+ {
+  "uid": "c9ed10c4-bfda-4b7c-b8e9-e3c78981f9bf",
+  "type": "ctSpell",
+  "colors": [
+   "ecWhite"
+  ],
+  "script": "Spells/White/SurgeOfLight.sps",
+  "tier": 1,
+  "name": "Surge of Light"
+ },
+ {
+  "uid": "e79286f7-cbea-474a-8717-7ef96bfd832a",
+  "type": "ctSpell",
+  "colors": [
+   "ecWhite"
+  ],
+  "script": "Spells/White/LightPulse.sps",
+  "tier": 1,
+  "name": "Light Pulse"
+ },
+ {
+  "uid": "151333f7-1e43-4f80-9740-7ecf27da1404",
+  "type": "ctSpell",
+  "colors": [
+   "ecWhite"
+  ],
+  "script": "Spells/White/ShieldsUp.sps",
+  "tier": 1,
+  "name": "Shields Up!"
+ },
+ {
+  "uid": "aea72381-f9fb-4bab-bd42-42548b20262a",
+  "type": "ctSpell",
+  "colors": [
+   "ecWhite"
+  ],
+  "script": "Spells/White/SolarFlare.sps",
+  "tier": 3,
+  "name": "Solar Flare"
+ },
+ {
+  "uid": "ad662053-56a2-4d57-bb17-288c43cc6612",
+  "type": "ctSpawner",
+  "colors": [
+   "ecGreen"
+  ],
+  "script": "Units/Green/GroundbreakerSpawner",
+  "tier": 3,
+  "name": "Mulch Digger"
+ },
+ {
+  "uid": "494c87c8-6df5-4b91-aa5c-53178be43ec8",
+  "type": "ctSpawner",
+  "colors": [
+   "ecGreen"
+  ],
+  "script": "Units/Green/WispSpawner",
+  "tier": 1,
+  "name": "Wisp"
+ },
+ {
+  "uid": "d3b707ce-1619-4e14-a61c-bce039083381",
+  "type": "ctSpawner",
+  "colors": [
+   "ecGreen"
+  ],
+  "script": "Units/Green/OracleSpawner",
+  "tier": 3,
+  "name": "Oracle"
+ },
+ {
+  "uid": "82b5fa7d-b4f5-461a-be32-2366db17a24a",
+  "type": "ctSpawner",
+  "colors": [
+   "ecGreen"
+  ],
+  "script": "Units/Green/RootDudeSpawner",
+  "tier": 2,
+  "name": "Rootdood"
+ },
+ {
+  "uid": "32ac1b2a-c98a-4d6f-a25b-fef1c6d463dc",
+  "type": "ctSpawner",
+  "colors": [
+   "ecGreen"
+  ],
+  "script": "Units/Green/RootlingSpawner",
+  "tier": 1,
+  "name": "Rootling"
+ },
+ {
+  "uid": "e47ee3c7-5acf-45a5-954e-bec81eda2022",
+  "type": "ctSpawner",
+  "colors": [
+   "ecGreen"
+  ],
+  "script": "Units/Green/ThistleSpawner",
+  "tier": 1,
+  "name": "Thistle"
+ },
+ {
+  "uid": "ed0e3831-4b25-4437-9a88-797832387a95",
+  "type": "ctSpawner",
+  "colors": [
+   "ecGreen"
+  ],
+  "script": "Units/Green/WoodwalkerSpawner",
+  "tier": 2,
+  "name": "Woodwalker"
+ },
+ {
+  "uid": "08563ec3-ebb6-4865-9bcb-89aae6dc560c",
+  "type": "ctSpawner",
+  "colors": [
+   "ecGreen"
+  ],
+  "script": "Units/Green/HeartOfTheForestSpawner",
+  "tier": 1,
+  "name": "Heart of the Forest"
+ },
+ {
+  "uid": "6be2f2c1-2916-4f85-84c4-1159d31596e6",
+  "type": "ctSpawner",
+  "colors": [
+   "ecGreen"
+  ],
+  "script": "Units/Green/SporeSpawner",
+  "tier": 2,
+  "name": "Spore"
+ },
+ {
+  "uid": "499b7ca8-b1f8-4c84-a2d1-8dd0660a4ce2",
+  "type": "ctSpawner",
+  "colors": [
+   "ecGreen"
+  ],
+  "script": "Units/Green/BrratuSpawner",
+  "tier": 3,
+  "name": "Brratu, Keeper of Nature"
+ },
+ {
+  "uid": "f51d56a6-8f25-4f53-ad2d-bb6e4b2c7c1c",
+  "type": "ctSpawner",
+  "colors": [
+   "ecGreen"
+  ],
+  "script": "Units/Green/SaplingSpawner",
+  "tier": 1,
+  "name": "Sapling"
+ },
+ {
+  "uid": "3e17f75d-eb92-4fbe-8e7e-857fdec8f3fe",
+  "type": "ctDrop",
+  "colors": [
+   "ecGreen"
+  ],
+  "script": "Units/Green/GroundbreakerDrop",
+  "tier": 3,
+  "name": "Mulch Digger"
+ },
+ {
+  "uid": "be51818a-4a38-47d1-a06e-178b60b23bfa",
+  "type": "ctDrop",
+  "colors": [
+   "ecGreen"
+  ],
+  "script": "Units/Green/WispDrop",
+  "tier": 1,
+  "name": "Wisp"
+ },
+ {
+  "uid": "cb1b6a30-980c-4a2e-81ad-72c3b336b2ec",
+  "type": "ctDrop",
+  "colors": [
+   "ecGreen"
+  ],
+  "script": "Units/Green/OracleDrop",
+  "tier": 3,
+  "name": "Oracle"
+ },
+ {
+  "uid": "88064f15-f5bb-45f7-8170-b9caa19249db",
+  "type": "ctDrop",
+  "colors": [
+   "ecGreen"
+  ],
+  "script": "Units/Green/RootDudeDrop",
+  "tier": 2,
+  "name": "Rootdood"
+ },
+ {
+  "uid": "cc7f4ee1-ee58-47ff-9279-f4716aff562a",
+  "type": "ctDrop",
+  "colors": [
+   "ecGreen"
+  ],
+  "script": "Units/Green/RootlingDrop",
+  "tier": 1,
+  "name": "Rootling"
+ },
+ {
+  "uid": "cadcde81-8c98-4091-ad62-7bc9cc3e179a",
+  "type": "ctDrop",
+  "colors": [
+   "ecGreen"
+  ],
+  "script": "Units/Green/ThistleDrop",
+  "tier": 1,
+  "name": "Thistle"
+ },
+ {
+  "uid": "d55cdfba-c432-4b7e-9a7a-55a8b51e6a54",
+  "type": "ctDrop",
+  "colors": [
+   "ecGreen"
+  ],
+  "script": "Units/Green/WoodwalkerDrop",
+  "tier": 2,
+  "name": "Woodwalker"
+ },
+ {
+  "uid": "18a8178c-6954-44df-97ae-be44ea3bee1f",
+  "type": "ctDrop",
+  "colors": [
+   "ecGreen"
+  ],
+  "script": "Units/Green/HeartOfTheForestDrop",
+  "tier": 1,
+  "name": "Heart of the Forest"
+ },
+ {
+  "uid": "b2635c4d-c693-403b-980a-cb2e45703078",
+  "type": "ctDrop",
+  "colors": [
+   "ecGreen"
+  ],
+  "script": "Units/Green/SporeDrop",
+  "tier": 2,
+  "name": "Spore"
+ },
+ {
+  "uid": "1b4dbb14-635e-4bc0-8c46-8d07fe3b526d",
+  "type": "ctDrop",
+  "colors": [
+   "ecGreen"
+  ],
+  "script": "Units/Green/BrratuDrop",
+  "tier": 3,
+  "name": "Brratu, Keeper of Nature"
+ },
+ {
+  "uid": "67e7217d-4b1a-4366-a3e5-b71bca952d1a",
+  "type": "ctDrop",
+  "colors": [
+   "ecGreen"
+  ],
+  "script": "Units/Green/SaplingDrop",
+  "tier": 1,
+  "name": "Sapling"
+ },
+ {
+  "uid": "5e616d06-5022-4e13-8c1a-b16313d0a369",
+  "type": "ctBuilding",
+  "colors": [
+   "ecGreen"
+  ],
+  "script": "Units/Green/ForestGuardianBuilding",
+  "tier": 2,
+  "name": "Forest Guardian"
+ },
+ {
+  "uid": "745363e6-12ac-47dd-acaf-e6956b9c9526",
+  "type": "ctBuilding",
+  "colors": [
+   "ecGreen"
+  ],
+  "script": "Units/Green/SaplingFarmBuilding",
+  "tier": 1,
+  "name": "Sapling Bush"
+ },
+ {
+  "uid": "902aa87b-7b2c-4508-91b9-bb20944c26d8",
+  "type": "ctSpell",
+  "colors": [
+   "ecGreen"
+  ],
+  "script": "Spells/Green/EntanglingRoots.sps",
+  "tier": 1,
+  "name": "Entangling Roots"
+ },
+ {
+  "uid": "e7399731-f68e-46d8-9c32-bc18679ba52e",
+  "type": "ctSpell",
+  "colors": [
+   "ecGreen"
+  ],
+  "script": "Spells/Green/GiantGrowth.sps",
+  "tier": 1,
+  "name": "Giant Growth"
+ },
+ {
+  "uid": "a0c3d296-9f04-4cf3-b80d-7f207928b22d",
+  "type": "ctSpell",
+  "colors": [
+   "ecGreen"
+  ],
+  "script": "Spells/Green/EvolveThistle.sps",
+  "tier": 3,
+  "name": "Evolve: Thistle"
+ },
+ {
+  "uid": "3b2e5e43-aa5c-4957-8d0f-9831e46846ea",
+  "type": "ctSpell",
+  "colors": [
+   "ecGreen"
+  ],
+  "script": "Spells/Green/EvolveOracle.sps",
+  "tier": 2,
+  "name": "Evolve: Oracle"
+ },
+ {
+  "uid": "14501389-854c-4634-ac55-bf55950546f7",
+  "type": "ctSpell",
+  "colors": [
+   "ecGreen"
+  ],
+  "script": "Spells/Green/HealingGarden.sps",
+  "tier": 2,
+  "name": "Pulse of the Forest"
+ },
+ {
+  "uid": "6cccc3b4-4a60-4da9-bb06-04576bd9c2a9",
+  "type": "ctSpell",
+  "colors": [
+   "ecGreen"
+  ],
+  "script": "Spells/Green/SaplingCharge.sps",
+  "tier": 3,
+  "name": "Sapling Charge"
+ },
+ {
+  "uid": "1b2f89a9-d13f-408f-aae5-593fdffe1da3",
+  "type": "ctSpawner",
+  "colors": [
+   "ecBlack"
+  ],
+  "script": "Units/Black/VoidBaneSpawner",
+  "tier": 1,
+  "name": "Void Bane"
+ },
+ {
+  "uid": "4db51640-3a58-447e-b743-a61ba44db1fc",
+  "type": "ctSpawner",
+  "colors": [
+   "ecBlack"
+  ],
+  "script": "Units/Black/VoidBowmanSpawner",
+  "tier": 1,
+  "name": "Skeleton Archer"
+ },
+ {
+  "uid": "31f855cc-b85e-4325-b673-9de5ebb7389f",
+  "type": "ctSpawner",
+  "colors": [
+   "ecBlack"
+  ],
+  "script": "Units/Black/VoidSkeletonSpawner",
+  "tier": 1,
+  "name": "Skeleton"
+ },
+ {
+  "uid": "839aa57d-6080-422d-87d2-1361f830205a",
+  "type": "ctSpawner",
+  "colors": [
+   "ecBlack"
+  ],
+  "script": "Units/Black/VoidWormSpawner",
+  "tier": 1,
+  "name": "Frostworm"
+ },
+ {
+  "uid": "719edbd1-0bf1-4992-9e9d-6dec068c28e9",
+  "type": "ctSpawner",
+  "colors": [
+   "ecBlack"
+  ],
+  "script": "Units/Black/VoidCauldronSpawner",
+  "tier": 2,
+  "name": "Soul Cauldron"
+ },
+ {
+  "uid": "c83b7eae-1337-4771-8e86-1978ef5e512f",
+  "type": "ctSpawner",
+  "colors": [
+   "ecBlack"
+  ],
+  "script": "Units/Black/VoidSlimeSpawner",
+  "tier": 2,
+  "name": "Mirror Slime"
+ },
+ {
+  "uid": "a22ae2f6-3be4-4113-8b74-0210c16d6e72",
+  "type": "ctSpawner",
+  "colors": [
+   "ecBlack"
+  ],
+  "script": "Units/Black/FrostgoyleSpawner",
+  "tier": 2,
+  "name": "Frostgoyle"
+ },
+ {
+  "uid": "2e995bd0-1287-475b-9479-6c36f64cdd63",
+  "type": "ctSpawner",
+  "colors": [
+   "ecBlack"
+  ],
+  "script": "Units/Black/VoidWraithSpawner",
+  "tier": 3,
+  "name": "Lich"
+ },
+ {
+  "uid": "08acfdc0-353f-4300-9f17-9323df2dd8be",
+  "type": "ctDrop",
+  "colors": [
+   "ecBlack"
+  ],
+  "script": "Units/Black/VoidBaneDrop",
+  "tier": 1,
+  "name": "Void Bane"
+ },
+ {
+  "uid": "8e3a2311-2d4b-4ba2-a1a0-e464b8a9066e",
+  "type": "ctDrop",
+  "colors": [
+   "ecBlack"
+  ],
+  "script": "Units/Black/VoidBowmanDrop",
+  "tier": 1,
+  "name": "Skeleton Archer"
+ },
+ {
+  "uid": "bb588865-ea26-4cec-930a-7753ca688afe",
+  "type": "ctDrop",
+  "colors": [
+   "ecBlack"
+  ],
+  "script": "Units/Black/VoidSkeletonDrop",
+  "tier": 1,
+  "name": "Skeleton"
+ },
+ {
+  "uid": "255b7bfc-c783-4de9-987c-14a7d9d67a38",
+  "type": "ctDrop",
+  "colors": [
+   "ecBlack"
+  ],
+  "script": "Units/Black/VoidWormDrop",
+  "tier": 1,
+  "name": "Frostworm"
+ },
+ {
+  "uid": "6b1674a6-540f-414f-b1b9-e0727c16aa9d",
+  "type": "ctDrop",
+  "colors": [
+   "ecBlack"
+  ],
+  "script": "Units/Black/VoidCauldronDrop",
+  "tier": 2,
+  "name": "Soul Cauldron"
+ },
+ {
+  "uid": "390b7f96-2514-41f2-a766-0b19728dea63",
+  "type": "ctDrop",
+  "colors": [
+   "ecBlack"
+  ],
+  "script": "Units/Black/VoidSlimeDrop",
+  "tier": 2,
+  "name": "Mirror Slime"
+ },
+ {
+  "uid": "b1298880-5a1e-4ea6-8996-c870a8b8b341",
+  "type": "ctDrop",
+  "colors": [
+   "ecBlack"
+  ],
+  "script": "Units/Black/FrostgoyleDrop",
+  "tier": 2,
+  "name": "Frostgoyle"
+ },
+ {
+  "uid": "18b3c477-ae79-406e-af47-70c124ef6c3f",
+  "type": "ctDrop",
+  "colors": [
+   "ecBlack"
+  ],
+  "script": "Units/Black/VoidWraithDrop",
+  "tier": 3,
+  "name": "Lich"
+ },
+ {
+  "uid": "81325cdc-aa3b-4fba-a10b-5b1859652b0a",
+  "type": "ctDrop",
+  "colors": [
+   "ecBlack"
+  ],
+  "script": "Units/Black/TyrusDrop",
+  "tier": 3,
+  "name": "Tyrus, Lord of Souls"
+ },
+ {
+  "uid": "2f5d127b-fff1-4103-8df6-5234fdbfbe63",
+  "type": "ctDrop",
+  "colors": [
+   "ecBlack"
+  ],
+  "script": "Units/Black/VecraDrop",
+  "tier": 3,
+  "name": "Vecra, Monarch of Frost"
+ },
+ {
+  "uid": "15745e9e-2b63-41bf-ade7-393fef69e20d",
+  "type": "ctBuilding",
+  "colors": [
+   "ecBlack"
+  ],
+  "script": "Units/Black/FrostgoyleFountainBuilding",
+  "tier": 2,
+  "name": "Frostgoyle Fountain"
+ },
+ {
+  "uid": "9e053b0b-e2f3-4a0f-95a0-1f909214304b",
+  "type": "ctBuilding",
+  "colors": [
+   "ecBlack"
+  ],
+  "script": "Units/Black/VoidAltarBuilding",
+  "tier": 3,
+  "name": "Soul Altar"
+ },
+ {
+  "uid": "0642574f-fc6b-4da4-9766-2cc296c9d16a",
+  "type": "ctSpell",
+  "colors": [
+   "ecBlack"
+  ],
+  "script": "Spells/Black/Frostspear.sps",
+  "tier": 1,
+  "name": "Frost Shock"
+ },
+ {
+  "uid": "626e356a-4716-4576-8dce-4258b67a623b",
+  "type": "ctSpell",
+  "colors": [
+   "ecBlack"
+  ],
+  "script": "Spells/Black/Frenzy.sps",
+  "tier": 1,
+  "name": "Frenzy"
+ },
+ {
+  "uid": "8fcce8be-380f-4aa1-b59b-8dce7ead68a5",
+  "type": "ctSpell",
+  "colors": [
+   "ecBlack"
+  ],
+  "script": "Spells/Black/OnTheEdge.sps",
+  "tier": 2,
+  "name": "Void Miasma"
+ },
+ {
+  "uid": "b5c11a5b-3f35-465a-a625-c6d97a27586c",
+  "type": "ctSpell",
+  "colors": [
+   "ecBlack"
+  ],
+  "script": "Spells/Black/Freeze.sps",
+  "tier": 2,
+  "name": "Freeze"
+ },
+ {
+  "uid": "ed98d788-32de-4b77-9785-f46a654b7306",
+  "type": "ctSpell",
+  "colors": [
+   "ecBlack"
+  ],
+  "script": "Spells/Black/PermaFrost.sps",
+  "tier": 2,
+  "name": "Deep Freeze"
+ },
+ {
+  "uid": "1ea85356-c5b1-4895-84e1-0ad7ceb9cd25",
+  "type": "ctSpell",
+  "colors": [
+   "ecBlack"
+  ],
+  "script": "Spells/Black/RipOutSoul.sps",
+  "tier": 2,
+  "name": "Soul Maelstrom"
+ },
+ {
+  "uid": "7334d609-9c1a-4b99-a463-459e54572e82",
+  "type": "ctSpell",
+  "colors": [
+   "ecBlack"
+  ],
+  "script": "Spells/Black/ShatterIce.sps",
+  "tier": 3,
+  "name": "Shatter Ice"
+ },
+ {
+  "uid": "2adaae11-1e18-4d82-bd0b-e350db49d6e7",
+  "type": "ctSpawner",
+  "colors": [
+   "ecBlue"
+  ],
+  "script": "Units/Blue/DamperDroneSpawner",
+  "tier": 1,
+  "name": "Breacher"
+ },
+ {
+  "uid": "e253f975-4971-4aac-bf15-dab47eacf1b3",
+  "type": "ctSpawner",
+  "colors": [
+   "ecBlue"
+  ],
+  "script": "Units/Blue/GatlingDroneSpawner",
+  "tier": 1,
+  "name": "Gatling Drone"
+ },
+ {
+  "uid": "59567d94-1d18-40aa-bdc0-aaaa4961f82f",
+  "type": "ctSpawner",
+  "colors": [
+   "ecBlue"
+  ],
+  "script": "Units/Blue/AtlasSpawner",
+  "tier": 1,
+  "name": "Atlas, The Recurring Walker"
+ },
+ {
+  "uid": "99850656-3a3d-4e75-b4a5-9b4b28566bcf",
+  "type": "ctSpawner",
+  "colors": [
+   "ecBlue"
+  ],
+  "script": "Units/Blue/ShieldDroneSpawner",
+  "tier": 2,
+  "name": "Echo Projector"
+ },
+ {
+  "uid": "428b49e0-b595-4f87-b266-0ff30b9458b6",
+  "type": "ctSpawner",
+  "colors": [
+   "ecBlue"
+  ],
+  "script": "Units/Blue/PhaseDroneSpawner",
+  "tier": 2,
+  "name": "Sentinel"
+ },
+ {
+  "uid": "a177d679-b39d-4acc-8bf1-cf8c15a39d6e",
+  "type": "ctSpawner",
+  "colors": [
+   "ecBlue"
+  ],
+  "script": "Units/Blue/InductionerSpawner",
+  "tier": 2,
+  "name": "Conductor"
+ },
+ {
+  "uid": "2cf7d252-a490-4d12-b0db-12fa3f65bc90",
+  "type": "ctSpawner",
+  "colors": [
+   "ecBlue"
+  ],
+  "script": "Units/Blue/AirdominatorSpawner",
+  "tier": 3,
+  "name": "Oppressor"
+ },
+ {
+  "uid": "99a6f2bf-11ea-4604-b45a-080c38079fbc",
+  "type": "ctSpawner",
+  "colors": [
+   "ecBlue"
+  ],
+  "script": "Units/Blue/BombardierSpawner",
+  "tier": 3,
+  "name": "MOAG"
+ },
+ {
+  "uid": "6ae06699-eb38-4406-82e5-57ecf84f05e3",
+  "type": "ctDrop",
+  "colors": [
+   "ecBlue"
+  ],
+  "script": "Units/Blue/DamperDroneDrop",
+  "tier": 1,
+  "name": "Breacher"
+ },
+ {
+  "uid": "fa9a8fb1-709d-4d9a-ae0b-f3c1bd373e92",
+  "type": "ctDrop",
+  "colors": [
+   "ecBlue"
+  ],
+  "script": "Units/Blue/GatlingDroneDrop",
+  "tier": 1,
+  "name": "Gatling Drone"
+ },
+ {
+  "uid": "8bcbcf56-a10b-4d08-ac3b-7642a96c03cd",
+  "type": "ctDrop",
+  "colors": [
+   "ecBlue"
+  ],
+  "script": "Units/Blue/AtlasDrop",
+  "tier": 1,
+  "name": "Atlas, The Recurring Walker"
+ },
+ {
+  "uid": "ac94c13d-ecd4-4315-8edf-bc6a0578787c",
+  "type": "ctDrop",
+  "colors": [
+   "ecBlue"
+  ],
+  "script": "Units/Blue/ShieldDroneDrop",
+  "tier": 2,
+  "name": "Echo Projector"
+ },
+ {
+  "uid": "937c13c0-0b05-474a-bfca-9a58a29840f9",
+  "type": "ctDrop",
+  "colors": [
+   "ecBlue"
+  ],
+  "script": "Units/Blue/PhaseDroneDrop",
+  "tier": 2,
+  "name": "Sentinel"
+ },
+ {
+  "uid": "d84d3bc8-cc20-49cd-850e-add89caf6469",
+  "type": "ctDrop",
+  "colors": [
+   "ecBlue"
+  ],
+  "script": "Units/Blue/InductionerDrop",
+  "tier": 2,
+  "name": "Conductor"
+ },
+ {
+  "uid": "94321982-2815-4b5f-b69d-5406fe51dff7",
+  "type": "ctDrop",
+  "colors": [
+   "ecBlue"
+  ],
+  "script": "Units/Blue/AirDominatorDrop",
+  "tier": 3,
+  "name": "Oppressor"
+ },
+ {
+  "uid": "27da1428-3c4f-4984-afc9-4337a7f0694f",
+  "type": "ctDrop",
+  "colors": [
+   "ecBlue"
+  ],
+  "script": "Units/Blue/BombardierDrop",
+  "tier": 3,
+  "name": "MOAG"
+ },
+ {
+  "uid": "d03f561e-257e-4ed0-8b60-3b75b93f04f8",
+  "type": "ctBuilding",
+  "colors": [
+   "ecBlue"
+  ],
+  "script": "Units/Blue/GatlingTurretBuilding",
+  "tier": 1,
+  "name": "Gatling Turret"
+ },
+ {
+  "uid": "9772187b-4fc2-4836-bd76-1a6aef4c514d",
+  "type": "ctBuilding",
+  "colors": [
+   "ecBlue"
+  ],
+  "script": "Units/Blue/ObserverDroneBuilding",
+  "tier": 1,
+  "name": "Aimbot"
+ },
+ {
+  "uid": "1e5e5ab0-0303-41b6-8c7e-9dfe15bcdd6b",
+  "type": "ctBuilding",
+  "colors": [
+   "ecBlue"
+  ],
+  "script": "Units/Blue/AmmoFactoryBuilding",
+  "tier": 2,
+  "name": "Ammo Factory"
+ },
+ {
+  "uid": "9456d83a-fc80-45ea-9b17-d3abdb9f2c70",
+  "type": "ctBuilding",
+  "colors": [
+   "ecBlue"
+  ],
+  "script": "Units/Blue/MissileTurretBuilding",
+  "tier": 2,
+  "name": "Missile Turret"
+ },
+ {
+  "uid": "747c7921-758c-4cd6-a114-8b40c5983bc8",
+  "type": "ctBuilding",
+  "colors": [
+   "ecBlue"
+  ],
+  "script": "Units/Blue/AegisBuilding",
+  "tier": 3,
+  "name": "Aegis IX, The Last Frontier "
+ },
+ {
+  "uid": "bfd3d896-863b-469d-9b5b-ca8a1123c5e9",
+  "type": "ctSpell",
+  "colors": [
+   "ecBlue"
+  ],
+  "script": "Spells/Blue/EnergyRift.sps",
+  "tier": 1,
+  "name": "Energy Rift"
+ },
+ {
+  "uid": "0d21dcff-3bc5-474f-a320-8702ca6fbc82",
+  "type": "ctSpell",
+  "colors": [
+   "ecBlue"
+  ],
+  "script": "Spells/Blue/AmmoRefill.sps",
+  "tier": 1,
+  "name": "Reload"
+ },
+ {
+  "uid": "f0f57263-91a4-403f-9791-6cb2c0663f28",
+  "type": "ctSpell",
+  "colors": [
+   "ecBlue"
+  ],
+  "script": "Spells/Blue/Relocate.sps",
+  "tier": 1,
+  "name": "Relocate"
+ },
+ {
+  "uid": "2b3cf678-a40c-4782-ad51-a54f3011d604",
+  "type": "ctSpell",
+  "colors": [
+   "ecBlue"
+  ],
+  "script": "Spells/Blue/InverseGravity.sps",
+  "tier": 2,
+  "name": "Inverse Gravity"
+ },
+ {
+  "uid": "ca9224e6-cea9-4adc-b2ee-9c2e22a58684",
+  "type": "ctSpell",
+  "colors": [
+   "ecBlue"
+  ],
+  "script": "Spells/Blue/FactoryReset.sps",
+  "tier": 2,
+  "name": "Factory Reset"
+ },
+ {
+  "uid": "ad9586b2-3697-41fa-9973-e6ef197a391f",
+  "type": "ctSpell",
+  "colors": [
+   "ecBlue"
+  ],
+  "script": "Spells/Blue/FluxField.sps",
+  "tier": 2,
+  "name": "Flux Field"
+ },
+ {
+  "uid": "8e13cdb7-ea45-4afd-a1f7-6c1a2af6a7de",
+  "type": "ctSpell",
+  "colors": [
+   "ecBlue"
+  ],
+  "script": "Spells/Blue/OrbitalStrike.sps",
+  "tier": 3,
+  "name": "Orbital Strike"
+ },
+ {
+  "uid": "37682981-4d24-4823-b596-4ec4b137f78e",
+  "type": "ctSpawner",
+  "colors": [
+   "ecColorless"
+  ],
+  "script": "Units/Golems/GolemsSmallMeleeGolemSpawner",
+  "tier": 1,
+  "name": "golemssmallmeleegolemspawner"
+ },
+ {
+  "uid": "a163c919-c376-4a5f-ac42-a984ab10448c",
+  "type": "ctSpawner",
+  "colors": [
+   "ecColorless"
+  ],
+  "script": "Units/Golems/GolemsMediumMeleeGolemSpawner",
+  "tier": 2,
+  "name": "Granite Vanguard"
+ },
+ {
+  "uid": "42a04494-9aae-4311-9ad7-e0e4ddd4e4f4",
+  "type": "ctSpawner",
+  "colors": [
+   "ecColorless"
+  ],
+  "script": "Units/Golems/GolemsBigMeleeGolemSpawner",
+  "tier": 3,
+  "name": "golemsbigmeleegolemspawner"
+ },
+ {
+  "uid": "725ee15d-f806-4b79-a6f8-945e06523e0d",
+  "type": "ctSpawner",
+  "colors": [
+   "ecColorless"
+  ],
+  "script": "Units/Golems/GolemsSmallRangedGolemSpawner",
+  "tier": 1,
+  "name": "golemssmallrangedgolemspawner"
+ },
+ {
+  "uid": "fe0c51f3-a060-4869-afe7-23b785eccf5c",
+  "type": "ctSpawner",
+  "colors": [
+   "ecColorless"
+  ],
+  "script": "Units/Golems/GolemsSmallCasterGolemSpawner",
+  "tier": 1,
+  "name": "golemssmallcastergolemspawner"
+ },
+ {
+  "uid": "c000900e-cf90-4e83-8198-b869b8e3ff29",
+  "type": "ctSpawner",
+  "colors": [
+   "ecColorless"
+  ],
+  "script": "Units/Golems/GolemsBigCasterGolemSpawner",
+  "tier": 3,
+  "name": "golemsbigcastergolemspawner"
+ },
+ {
+  "uid": "2a045181-9350-42da-856a-1f6d88117e1b",
+  "type": "ctSpawner",
+  "colors": [
+   "ecColorless"
+  ],
+  "script": "Units/Golems/GolemsSmallFlyingGolemSpawner",
+  "tier": 2,
+  "name": "golemssmallflyinggolemspawner"
+ },
+ {
+  "uid": "23a2d2d4-faf5-4af6-85c0-997500ed0307",
+  "type": "ctSpawner",
+  "colors": [
+   "ecColorless"
+  ],
+  "script": "Units/Golems/GolemsBigFlyingGolemSpawner",
+  "tier": 3,
+  "name": "golemsbigflyinggolemspawner"
+ },
+ {
+  "uid": "a111e17c-00ca-490d-83b5-ae146ab42f45",
+  "type": "ctSpawner",
+  "colors": [
+   "ecColorless"
+  ],
+  "script": "Units/Golems/GolemsSiegeGolemSpawner",
+  "tier": 2,
+  "name": "golemssiegegolemspawner"
+ },
+ {
+  "uid": "87facebc-f094-41da-83d4-d4c09a571fa0",
+  "type": "ctDrop",
+  "colors": [
+   "ecColorless"
+  ],
+  "script": "Units/Golems/GolemsSmallMeleeGolemDrop",
+  "tier": 1,
+  "name": "golemssmallmeleegolemdrop"
+ },
+ {
+  "uid": "f68be11b-21bc-4819-88d3-6c1f2b479322",
+  "type": "ctDrop",
+  "colors": [
+   "ecColorless"
+  ],
+  "script": "Units/Golems/GolemsMediumMeleeGolemDrop",
+  "tier": 2,
+  "name": "Granite Vanguard"
+ },
+ {
+  "uid": "ac6c6bf4-3e5c-41c5-a01b-110cdf8bc0b5",
+  "type": "ctDrop",
+  "colors": [
+   "ecColorless"
+  ],
+  "script": "Units/Golems/GolemsBigMeleeGolemDrop",
+  "tier": 3,
+  "name": "golemsbigmeleegolemdrop"
+ },
+ {
+  "uid": "cb975a37-9514-4eb0-88ea-a00d732fe1b4",
+  "type": "ctDrop",
+  "colors": [
+   "ecColorless"
+  ],
+  "script": "Units/Golems/GolemsSmallRangedGolemDrop",
+  "tier": 1,
+  "name": "golemssmallrangedgolemdrop"
+ },
+ {
+  "uid": "e82aec92-3f4d-4de8-880a-8fc17490db04",
+  "type": "ctDrop",
+  "colors": [
+   "ecColorless"
+  ],
+  "script": "Units/Golems/GolemsSmallCasterGolemDrop",
+  "tier": 1,
+  "name": "golemssmallcastergolemdrop"
+ },
+ {
+  "uid": "5509fbc2-4e3d-485c-8369-38b0132b4b4f",
+  "type": "ctDrop",
+  "colors": [
+   "ecColorless"
+  ],
+  "script": "Units/Golems/GolemsBigCasterGolemDrop",
+  "tier": 3,
+  "name": "golemsbigcastergolemdrop"
+ },
+ {
+  "uid": "2c0a8529-72e9-40c4-b34c-05300778e2aa",
+  "type": "ctDrop",
+  "colors": [
+   "ecColorless"
+  ],
+  "script": "Units/Golems/GolemsSmallFlyingGolemDrop",
+  "tier": 2,
+  "name": "golemssmallflyinggolemdrop"
+ },
+ {
+  "uid": "0b86a588-ec6c-4ae1-a029-f1e85e53899e",
+  "type": "ctDrop",
+  "colors": [
+   "ecColorless"
+  ],
+  "script": "Units/Golems/GolemsBigFlyingGolemDrop",
+  "tier": 3,
+  "name": "golemsbigflyinggolemdrop"
+ },
+ {
+  "uid": "aa359732-9770-4ce0-a145-8069efbebaa5",
+  "type": "ctDrop",
+  "colors": [
+   "ecColorless"
+  ],
+  "script": "Units/Golems/GolemsSiegeGolemDrop",
+  "tier": 2,
+  "name": "golemssiegegolemdrop"
+ },
+ {
+  "uid": "6e1b4102-f795-470f-948a-3dfd5555c544",
+  "type": "ctDrop",
+  "colors": [
+   "ecColorless"
+  ],
+  "script": "Units/Golems/GolemsBossGolemDrop",
+  "tier": 3,
+  "name": "Granite Guardian"
+ },
+ {
+  "uid": "3c6b7af4-6ed6-400e-a5b6-702ebb50ffb6",
+  "type": "ctBuilding",
+  "colors": [
+   "ecColorless"
+  ],
+  "script": "Units/Golems/GolemsSmallGolemTowerBuilding",
+  "tier": 1,
+  "name": "golemssmallgolemtowerbuilding"
+ },
+ {
+  "uid": "7e6d25bb-932b-45f0-bec5-f80cc8c86852",
+  "type": "ctBuilding",
+  "colors": [
+   "ecColorless"
+  ],
+  "script": "Units/Golems/GolemsBigGolemTowerBuilding",
+  "tier": 3,
+  "name": "golemsbiggolemtowerbuilding"
+ },
+ {
+  "uid": "df65a92f-8e0d-4190-a1a1-1fda710bc5c2",
+  "type": "ctBuilding",
+  "colors": [
+   "ecColorless"
+  ],
+  "script": "Units/Golems/GolemsMeleeGolemTowerBuilding",
+  "tier": 2,
+  "name": "golemsmeleegolemtowerbuilding"
+ },
+ {
+  "uid": "834b422d-cad6-4c06-9f18-c2612f19d86d",
+  "type": "ctSpell",
+  "colors": [
+   "ecColorless"
+  ],
+  "script": "Spells/Golems/EchoesOfTheFuture.sps",
+  "tier": 1,
+  "name": "echoesofthefuture"
+ },
+ {
+  "uid": "a216f0e1-9287-473e-8974-4f09d3a07b4f",
+  "type": "ctSpell",
+  "colors": [
+   "ecColorless"
+  ],
+  "script": "Spells/Golems/Cataclysm.sps",
+  "tier": 1,
+  "name": "cataclysm"
+ },
+ {
+  "uid": "226c716c-694d-4108-b4a5-26c46cd0ffd9",
+  "type": "ctSpell",
+  "colors": [
+   "ecColorless"
+  ],
+  "script": "Spells/Golems/Petrify.sps",
+  "tier": 2,
+  "name": "Petrify"
+ },
+ {
+  "uid": "0dbdb542-2e81-4278-8e8f-d6c4b154a434",
+  "type": "ctSpell",
+  "colors": [
+   "ecColorless"
+  ],
+  "script": "Spells/Golems/StoneCircle.sps",
+  "tier": 2,
+  "name": "stonecircle"
+ },
+ {
+  "uid": "3bbf6ae8-36da-4326-8ad3-c0f859b62ebb",
+  "type": "ctSpell",
+  "colors": [
+   "ecColorless"
+  ],
+  "script": "Spells/Golems/Earthquake.sps",
+  "tier": 3,
+  "name": "earthquake"
+ },
+ {
+  "uid": "3c8eb374-e04b-4c20-b394-ffda5ef1834b",
+  "type": "ctSpawner",
+  "colors": [
+   "ecColorless"
+  ],
+  "script": "Units/Colorless/SmallMeleeGolemSpawner",
+  "tier": 1,
+  "name": "Granite Scout"
+ },
+ {
+  "uid": "50585e07-2f44-4d4e-9a85-c736727f822f",
+  "type": "ctSpawner",
+  "colors": [
+   "ecColorless"
+  ],
+  "script": "Units/Colorless/MediumMeleeGolemSpawner",
+  "tier": 2,
+  "name": "Granite Vanguard"
+ },
+ {
+  "uid": "6c4a4875-e884-4072-9e71-2f255ab6e487",
+  "type": "ctSpawner",
+  "colors": [
+   "ecColorless"
+  ],
+  "script": "Units/Colorless/BigMeleeGolemSpawner",
+  "tier": 3,
+  "name": "Granite Chieftain"
+ },
+ {
+  "uid": "0a104943-4bce-4185-a372-a3ebf241c6ab",
+  "type": "ctSpawner",
+  "colors": [
+   "ecColorless"
+  ],
+  "script": "Units/Colorless/SmallRangedGolemSpawner",
+  "tier": 1,
+  "name": "Stone Weaver"
+ },
+ {
+  "uid": "dbf48014-5627-42a8-b21d-edf871194904",
+  "type": "ctSpawner",
+  "colors": [
+   "ecColorless"
+  ],
+  "script": "Units/Colorless/SmallCasterGolemSpawner",
+  "tier": 1,
+  "name": "Crystal Chanter"
+ },
+ {
+  "uid": "bc45a23d-16f6-4d65-b0ec-5e8472bcc33c",
+  "type": "ctSpawner",
+  "colors": [
+   "ecColorless"
+  ],
+  "script": "Units/Colorless/BigCasterGolemSpawner",
+  "tier": 3,
+  "name": "Crystal Crescendo"
+ },
+ {
+  "uid": "adb48ea1-2e70-430f-adf3-a20631f3bc2e",
+  "type": "ctSpawner",
+  "colors": [
+   "ecColorless"
+  ],
+  "script": "Units/Colorless/SmallFlyingGolemSpawner",
+  "tier": 2,
+  "name": "Crystal Observer"
+ },
+ {
+  "uid": "41cfe2b9-f701-4e21-a52a-97d9253896be",
+  "type": "ctSpawner",
+  "colors": [
+   "ecColorless"
+  ],
+  "script": "Units/Colorless/BigFlyingGolemSpawner",
+  "tier": 3,
+  "name": "Crystal Overseer"
+ },
+ {
+  "uid": "eb818adc-2cbb-4c5b-b9a7-ca37454e506e",
+  "type": "ctSpawner",
+  "colors": [
+   "ecColorless"
+  ],
+  "script": "Units/Colorless/SiegeGolemSpawner",
+  "tier": 2,
+  "name": "Crystal Enforcer"
+ },
+ {
+  "uid": "1008eaa7-3edc-4929-84bd-16ce34229ec4",
+  "type": "ctDrop",
+  "colors": [
+   "ecColorless"
+  ],
+  "script": "Units/Colorless/SmallMeleeGolemDrop",
+  "tier": 1,
+  "name": "Granite Scout"
+ },
+ {
+  "uid": "d1476b05-b537-4fbf-88e5-142478648b49",
+  "type": "ctDrop",
+  "colors": [
+   "ecColorless"
+  ],
+  "script": "Units/Colorless/MediumMeleeGolemDrop",
+  "tier": 2,
+  "name": "Granite Vanguard"
+ },
+ {
+  "uid": "b32092c6-24dc-49b1-9d33-82e2803b2b46",
+  "type": "ctDrop",
+  "colors": [
+   "ecColorless"
+  ],
+  "script": "Units/Colorless/BigMeleeGolemDrop",
+  "tier": 3,
+  "name": "Granite Chieftain"
+ },
+ {
+  "uid": "cc5ff47e-d099-466a-bb1b-7fd28d896cf2",
+  "type": "ctDrop",
+  "colors": [
+   "ecColorless"
+  ],
+  "script": "Units/Colorless/SmallRangedGolemDrop",
+  "tier": 1,
+  "name": "Stone Weaver"
+ },
+ {
+  "uid": "36cd039d-45d7-4120-9905-91f701c10944",
+  "type": "ctDrop",
+  "colors": [
+   "ecColorless"
+  ],
+  "script": "Units/Colorless/SmallCasterGolemDrop",
+  "tier": 1,
+  "name": "Crystal Chanter"
+ },
+ {
+  "uid": "ed8a6758-3176-4ce1-b61a-53aec88877c0",
+  "type": "ctDrop",
+  "colors": [
+   "ecColorless"
+  ],
+  "script": "Units/Colorless/BigCasterGolemDrop",
+  "tier": 3,
+  "name": "Crystal Crescendo"
+ },
+ {
+  "uid": "9f705b01-1dbc-453e-a66d-6a16e6e91112",
+  "type": "ctDrop",
+  "colors": [
+   "ecColorless"
+  ],
+  "script": "Units/Colorless/SmallFlyingGolemDrop",
+  "tier": 2,
+  "name": "Crystal Observer"
+ },
+ {
+  "uid": "5b2cbf6c-3e44-44e5-bd7a-9ed9c02702a9",
+  "type": "ctDrop",
+  "colors": [
+   "ecColorless"
+  ],
+  "script": "Units/Colorless/BigFlyingGolemDrop",
+  "tier": 3,
+  "name": "Crystal Overseer"
+ },
+ {
+  "uid": "f836db3f-53d3-4079-84b9-a288594d65cf",
+  "type": "ctDrop",
+  "colors": [
+   "ecColorless"
+  ],
+  "script": "Units/Colorless/SiegeGolemDrop",
+  "tier": 2,
+  "name": "Crystal Enforcer"
+ },
+ {
+  "uid": "5e0f23c3-e179-45fd-88fc-1034d3eea338",
+  "type": "ctBuilding",
+  "colors": [
+   "ecColorless"
+  ],
+  "script": "Units/Colorless/SmallGolemTowerBuilding",
+  "tier": 1,
+  "name": "Crystal Shrine"
+ },
+ {
+  "uid": "fcf7e1b7-35d4-4c61-b3e1-49507877bfb5",
+  "type": "ctBuilding",
+  "colors": [
+   "ecColorless"
+  ],
+  "script": "Units/Colorless/BigGolemTowerBuilding",
+  "tier": 3,
+  "name": "Crystal Temple"
+ },
+ {
+  "uid": "c57c13bf-c542-4dc1-8396-b69e2bb7e093",
+  "type": "ctBuilding",
+  "colors": [
+   "ecColorless"
+  ],
+  "script": "Units/Colorless/MeleeGolemTowerBuilding",
+  "tier": 2,
+  "name": "Granite Bouncer"
+ }
+]

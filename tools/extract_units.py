@@ -1,0 +1,156 @@
+"""Extract unit/card data from the original Rise of Legions scripts into game/data/*.json.
+
+Sources (read-only): reference/rise-of-legions/Scripts/**/*.ets|*.sps, BaseConflict.Constants.Cards.pas, Lang/cards.csv
+Output: game/data/units.json, game/data/cards.json
+
+Only the CreateData section of each script is parsed (pure numbers), skipping {$IFDEF CLIENT} blocks.
+League-dependent values like f([a,b,c,d,e], Entity.CardLeague) are kept as 5-element lists.
+"""
+import csv
+import json
+import re
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+REF = ROOT / "reference" / "rise-of-legions"
+SCRIPTS = REF / "Scripts"
+OUT = ROOT / "game" / "data"
+
+RE_SET = re.compile(
+    r"Entity\.Blackboard\.Set(Indexed)?Value\(\s*(\w+)\s*,\s*\[([^\]]*)\]\s*,\s*(?:(\w+)\s*,\s*)?(.+?)\);\s*(?://.*)?$"
+)
+RE_RADIUS = re.compile(r"Entity\.CollisionRadius\s*:=\s*([0-9.]+)")
+RE_INIT_CARD = re.compile(r"Init(Drop|Spawner|BuildingCard)Data\(Entity,\s*(True|False)\s*,\s*(?:\{@\w+\})?(\d)")
+RE_LEAGUE_ARR = re.compile(r"^(?:([0-9.]+)\s*\*\s*)?[fi]\(\s*\[([^\]]*)\]\s*,\s*Entity\.CardLeague(?:\([^)]*\))?\s*\)$")
+RE_INHERITS = re.compile(r"InheritsFrom\s*:\s*string\s*=\s*'([^']+)'")
+RE_ARITH = re.compile(r"^[0-9.+\-*/() ]+$")
+
+
+def strip_annotations(s: str) -> str:
+    return re.sub(r"\{@\w+\}", "", s)
+
+
+def create_data_body(text: str) -> str:
+    """Return the CreateData procedure body with CLIENT-only blocks removed."""
+    m = re.search(r"procedure CreateData\(.*?\);(.*?)^end;", text, re.S | re.M)
+    if not m:
+        return ""
+    body = m.group(1)
+    body = re.sub(r"\{\$IFDEF CLIENT\}.*?\{\$ENDIF\}", "", body, flags=re.S)
+    body = re.sub(r"\{\$IFDEF SERVER\}|\{\$ENDIF\}", "", body)
+    return body
+
+
+def parse_value(raw: str):
+    raw = strip_annotations(raw).strip()
+    m = RE_LEAGUE_ARR.match(raw)
+    if m:
+        scale = float(m.group(1)) if m.group(1) else 1.0
+        values = [parse_value(x) for x in m.group(2).split(",")]
+        return [v * scale for v in values] if scale != 1.0 else values
+    if raw in ("True", "False"):
+        return raw == "True"
+    if raw.startswith("[") and raw.endswith("]"):
+        return [x.strip() for x in raw[1:-1].split(",") if x.strip()]
+    if raw.startswith("'") and raw.endswith("'"):
+        return raw[1:-1]
+    m = re.fullmatch(r"\(?\s*([0-9.]+)\s*/\s*([0-9.]+)\s*\)?", raw)
+    if m:
+        return float(m.group(1)) / float(m.group(2))
+    try:
+        return int(raw)
+    except ValueError:
+        pass
+    try:
+        return float(raw)
+    except ValueError:
+        pass
+    if RE_ARITH.match(raw):
+        return eval(raw, {"__builtins__": {}}, {})  # digits and operators only
+    return raw  # expression we do not evaluate; kept verbatim
+
+
+def parse_script(path: Path) -> dict:
+    text = path.read_text(encoding="utf-8", errors="replace")
+    body = create_data_body(text)
+    data: dict = {"script": str(path.relative_to(SCRIPTS)).replace("\\", "/"), "values": {}}
+    m = RE_INHERITS.search(text)
+    if m:
+        parent = parse_script(SCRIPTS / m.group(1).replace("\\", "/"))
+        data["inherits"] = parent["script"]
+        for k in ("collision_radius", "card_kind", "legendary", "tier"):
+            if k in parent:
+                data[k] = parent[k]
+        for event, by_group in parent["values"].items():
+            data["values"][event] = dict(by_group)
+    m = RE_RADIUS.search(body)
+    if m:
+        data["collision_radius"] = float(m.group(1))
+    m = RE_INIT_CARD.search(body)
+    if m:
+        data["card_kind"] = m.group(1)
+        data["legendary"] = m.group(2) == "True"
+        data["tier"] = int(m.group(3))
+    for line in body.splitlines():
+        line = line.strip()
+        m = RE_SET.match(line)
+        if not m:
+            continue
+        indexed, event, groups, index, raw = m.groups()
+        groups = [int(g) for g in re.findall(r"\d+", groups)] or []
+        if "GROUP_" in m.group(3):
+            groups = [0]  # GROUP_DROP_SPAWNER / GROUP_SPELL_SPAWNER / GROUP_TEMPLATE_SPAWNER are all 0
+        value = parse_value(raw)
+        key = event if not indexed else f"{event}.{index}"
+        entry = data["values"].setdefault(key, {})
+        for g in (groups or ["*"]):
+            entry[str(g)] = value
+    return data
+
+
+def extract_units() -> dict:
+    units = {}
+    for path in sorted(SCRIPTS.glob("Units/**/*.ets")):
+        units[str(path.relative_to(SCRIPTS).with_suffix("")).replace("\\", "/")] = parse_script(path)
+    return units
+
+
+def extract_cards() -> list:
+    pas = (REF / "BaseConflict.Constants.Cards.pas").read_text(encoding="utf-8", errors="replace")
+    names = {}
+    with (REF / "Lang" / "cards.csv").open(encoding="utf-8", newline="") as f:
+        for row in csv.DictReader(f, delimiter=";"):
+            names[row["Column"]] = row["en"]
+    cards = []
+    for m in re.finditer(
+        r"AddCard\('([0-9a-f-]+)',\s*TCardInfo\.Create\((ct\w+),\s*\[([^\]]*)\],\s*'([^']+)',\s*(\d)\)", pas
+    ):
+        uid, ctype, colors, script, tier = m.groups()
+        base = script.replace("\\", "/")
+        short = Path(base).stem.lower()
+        cards.append({
+            "uid": uid,
+            "type": ctype,
+            "colors": [c.strip() for c in colors.split(",") if c.strip()],
+            "script": base,
+            "tier": int(tier),
+            "name": names.get(f"card_name_{short}") or names.get(f"card_name_{short.removesuffix('drop').removesuffix('spawner').removesuffix('building')}", short),
+        })
+    return cards
+
+
+def main() -> int:
+    OUT.mkdir(parents=True, exist_ok=True)
+    units = extract_units()
+    cards = extract_cards()
+    (OUT / "units.json").write_text(json.dumps(units, indent=1), encoding="utf-8")
+    (OUT / "cards.json").write_text(json.dumps(cards, indent=1), encoding="utf-8")
+    print(f"units: {len(units)}  cards: {len(cards)}")
+    missing = [u for u, d in units.items() if "eiResourceCap.reHealth" not in d["values"] and "card_kind" not in d]
+    print(f"units without health (spawner/drop cards expected): {len(missing)}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
