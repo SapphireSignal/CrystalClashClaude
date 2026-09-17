@@ -36,9 +36,11 @@ var _red_cursor: int = 0
 @onready var _camera: Camera3D = $Camera3D
 @onready var _environment: WorldEnvironment = $WorldEnvironment
 var _map: MapView
-var _look_at := Vector2(96, -23)   # ground point the camera looks at (CameraFixedToLane: z = -23); starts on the own (blue, +x) nexus like the client
-var _zoom := ZOOM                  # TClientCameraComponent.FZoom: distance = zoom * 10 along CAMERAOFFSET
-const ZOOM := 3.8                  # coGameplayCameraMaxZoom = the start zoom; the live client has no wheel zoom (owner)
+var _look_at := Vector2(-96, -23)  # ground point the camera looks at (CameraFixedToLane: z = -23); starts on the own (blue, -x) nexus like the client
+var _zoom := ZOOM_MAX              # TClientCameraComponent.FZoom: distance = zoom * 10 along CAMERAOFFSET
+const ZOOM_MIN := 2.6              # coGameplayCameraMinZoom
+const ZOOM_MAX := 3.8              # coGameplayCameraMaxZoom (the start zoom, TClientCameraComponent.Create)
+const ZOOM_SPEED := 0.2            # ZOOMSPEED per wheel notch
 const CAMERA_FOV := 0.6853981635   # coEngineCameraFoV (vertical, radians)
 var _drag_anchor: Variant = null    # ground point under the mouse when the right drag started
 
@@ -95,6 +97,12 @@ func _unhandled_input(event: InputEvent) -> void:
 				_armed_slot = -1
 			else:
 				_hud.select(_unit_at(_mouse_world_2d(), true))
+		elif event.pressed and event.button_index == MOUSE_BUTTON_WHEEL_UP:
+			_zoom = maxf(ZOOM_MIN, _zoom - ZOOM_SPEED)
+			_place_camera(_look_at)
+		elif event.pressed and event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+			_zoom = minf(ZOOM_MAX, _zoom + ZOOM_SPEED)
+			_place_camera(_look_at)
 	elif event is InputEventMouseMotion and _drag_anchor != null:
 		var now := _mouse_world_2d()   # keep the grabbed ground point under the cursor
 		_place_camera(_look_at + (_drag_anchor - now))

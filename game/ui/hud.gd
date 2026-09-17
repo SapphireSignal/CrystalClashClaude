@@ -133,9 +133,8 @@ func refresh() -> void:
 	unit_bars.refresh()
 	info.refresh(_sim)
 	card_hint.refresh(_sim.time_ms)
-	if not _sim.game_started:   # live client: countdown to the first game tick
-		var seconds := ceili((_sim.next_game_tick_at - _sim.time_ms) / 1000.0)
-		announcements.show_text(str(maxi(seconds, 1)), Lang.t("core_game_countdown"), _sim.time_ms)
+	# 2022 client: 'waiting' while players load (nothing to wait for in the sandbox), nothing during the warm-up,
+	# 'stage_1' at the first game tick (TClientGUIComponent.OnClientInit / OnGameTick).
 	announcements.refresh(_sim.time_ms)
 	final_screen.refresh()
 	_fps.text = "%d FPS" % Engine.get_frames_per_second()

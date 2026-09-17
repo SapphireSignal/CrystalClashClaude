@@ -5,21 +5,12 @@ const PATH := "res://game/data/lang/en.json"
 
 static var _table: Dictionary = {}
 
-## Strings the live client shows that the 2022 snapshot's Lang tables lack (docs/reference-material.md).
-const LIVE_CLIENT_TEXT := {
-	"core_game_countdown": "Game is about to begin",
-}
-
-
 static func _load() -> void:
 	if not _table.is_empty():
 		return
 	var file := FileAccess.open(PATH, FileAccess.READ)
 	assert(file != null, "missing %s, run tools/extract_lang.py" % PATH)
 	_table = JSON.parse_string(file.get_as_text())
-	for key in LIVE_CLIENT_TEXT:
-		if not _table.has(key):
-			_table[key] = LIVE_CLIENT_TEXT[key]
 
 
 static func has_key(key: String) -> bool:

@@ -9,7 +9,6 @@ var passed: int = 0
 
 
 func _initialize() -> void:
-	SimMap.legacy_sides = true   # tests use the 2022 scripts' coordinates (blue at -x); the game runs the live sides
 	var dir := DirAccess.open("res://tests")
 	for file in dir.get_files():
 		if file.begins_with("test_") and file.ends_with(".gd"):

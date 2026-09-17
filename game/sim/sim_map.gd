@@ -74,16 +74,10 @@ func clamp_to_zone(zone_name: String, p: Vector2) -> Vector2:
 
 
 ## Base layout per team: {"nexus": Vector2, "lanetowers": [Vector2], "lane_nodes": [Vector2]}.
-## Live-client sides: Blue (team 1) at +x, Red (team 2) at -x (reference minimap / base screenshots,
-## docs/reference-material.md). The 2022 scripts (PvPRed.dws / PvPBlue.dws / PvPBase.dws) had blue at -x;
-## the tests keep those coordinates through legacy_sides (set by tests/run_tests.gd).
-static var legacy_sides := false
-
-
-## x sign of a team's base side.
+## Sides as in the 2022 scripts (PvPRed.dws / PvPBlue.dws / PvPBase.dws): Blue (team 1) at -x, Red (team 2) at +x.
+## (The live Crystal Clash client mirrors this; it will come with its own files, docs/reference-material.md.)
 func side(team: int) -> float:
-	var blue := -1.0 if legacy_sides else 1.0
-	return blue if team == 1 else -blue
+	return -1.0 if team == 1 else 1.0
 
 
 func base_layout(team: int) -> Dictionary:

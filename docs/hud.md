@@ -65,8 +65,8 @@ with `Margin-left 80`. Height 75, slots (`build-slot-wrapper`) 85x90 with 1 px p
   centre 13.5 % up (`highlight_spawner.png` 215 % width, 24 % up for spawners). Not ready: darken-soft.
 - Cooldown: radial fill (`ProgressMask*.tga` circle) covering `1 - ChargeProgress` while charges < cap;
   numeric seconds (`FloatToCooldown`) centred when charges < 1 (not for epics), font 50 %.
-- Small layout measured on the live client (2026-09-17): slot pitch 66, frame 66 at the wrapper top (2 px below the
-  window edge), badges anchored to the 64 px wrapper bottom, **no hotkey badge drawn** (live delta; not built).
+- Small layout (verified on the owner's screenshots, 2026-09-17): slot pitch 66, frame 66 at the wrapper top (2 px below
+  the window edge), badges anchored to the 64 px wrapper bottom. The live client draws no hotkey badge (delta; we keep the .dui's).
 - `charge-text` bottom-left (-2,-2) 22 % high on `charge_background.png` (22x22); `hotkey` bottom centre 20 %
   high on `hotkey_background.png` (46x41), text = the user's binding for slot N (defaults `1`..`9`, `0`, `-`, `=`
   on a US layout; German `ß` / `´` in the source), alt bindings Shift+1..6 for slots 7-12.

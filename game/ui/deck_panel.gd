@@ -20,7 +20,8 @@ var panel_height := HEIGHT
 var locked_shift := 0.55
 var spawner_margin := SPAWNER_MARGIN
 var slot_height := SLOT_H   # build-slot-wrapper height: 90 normal, 64 small (the 66 px frame then overflows the bottom by 2 px)
-var slot_step := SLOT_STEP  # wrapper pitch: 87 normal, 66 small (measured 66 on the live client; badges anchor to the wrapper bottom)
+var slot_step := SLOT_STEP  # wrapper pitch: 87 normal, 66 small (66x64 wrappers); badges anchor to the wrapper bottom
+const HOTKEYS := ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "="]
 const GLOW_PERIOD_MS := 2000.0     # $glow keyframes: opacity 1 -> 0.6 -> 1, scale 1.02 -> 1 -> 1.02, ease-in-out
 const OVERRIDE_SHADER := preload("res://game/ui/color_override.gdshader")
 
@@ -235,8 +236,12 @@ func _build_slot(commander: Commander, index: int) -> SlotView:
 	v.charge_text = HudStyle.label("0", int(charge_h * 0.65), HudStyle.WHITE, HudStyle.FONT_BOLD)
 	HudStyle.place(v.charge_text, Rect2(-2, slot_height - charge_h + 2, charge_h, charge_h))
 	v.root.add_child(v.charge_text)
-	# The 2022 .dui has a hotkey badge bottom centre (hotkey_background.png); the live client draws none
-	# (owner's screenshots: only the charge count), so it is not built.
+	var hot_h := slot_height * 0.2
+	var hot_w := hot_h * 46.0 / 41.0
+	v.root.add_child(HudStyle.picture(HudStyle.tex("HUD/DeckPanel/hotkey_background.png"), Rect2((SLOT_W - hot_w) / 2.0, slot_height - hot_h, hot_w, hot_h)))
+	var hot := HudStyle.label(HOTKEYS[index] if index < HOTKEYS.size() else "", int(hot_h * 0.65), HudStyle.WHITE, HudStyle.FONT_BOLD)
+	HudStyle.place(hot, Rect2((SLOT_W - hot_w) / 2.0, slot_height - hot_h, hot_w, hot_h))
+	v.root.add_child(hot)
 	return v
 
 

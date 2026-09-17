@@ -125,17 +125,14 @@ Act as two people at once:
   strips, one tile) or with whole-frame correlation that masks the frame bottom: both misled us twice.
   Window: stretch **disabled** (the original draws its HUD in absolute pixels at every resolution, no design-space
   scaling); `Hud._layout` pins the panels to the window edges and switches to the client's `.small` layout below
-  1710x816 (`core_game_scaling.scss`: resources/minimap/top bar 80 %, deck slots 66x64, card hint 267 wide). **Sides**: the live client has Blue at +x (own base top-right, lane
-  leaving to the bottom-left, blue top-right on the minimap): `SimMap.side()`; tests run with
-  `SimMap.legacy_sides = true` (2022 layout, blue at -x) so their coordinates stay the scripts'.
-- 2026-09-17 The developers may hand over the live **Crystal Clash** files (owner, 2026-09-17). When they arrive,
-  put them read-only in `reference/crystal-clash/` (gitignored, `.gdignore`), point the extractors/converters at
-  it (scripts, maps, graphics, GUI, settings) and drop the Steam patch-notes audit. Until then the 2022 repo rules:
-  build Rise of Legions as it is in the repo; live-only differences seen in the owner's screenshots (capture disc,
-  causeway beaches, reworked tower stats, no hotkey badge) are recorded in `docs/reference-material.md` but not
-  hand-built. Screenshots stay valid for engine-level checks (camera, lighting, HUD pixels, effect scale).
-- 2026-09-17 **No camera zoom**: the live client has no mouse-wheel zoom (owner). The camera stays at zoom 3.8
-  (distance 38 along CAMERAOFFSET); `tools/screenshot.gd zoom=` close-ups are for detail checks only.
+  1710x816 (`core_game_scaling.scss`: resources/minimap/top bar 80 %, deck slots 66x64, card hint 267 wide). **Sides**: the 2022 scripts' (Blue at -x, Red at +x, `SimMap.side()`).
+- 2026-09-17 **Plan (owner)**: build **Rise of Legions exactly as the 2022 repo** until the developers hand over the
+  live Crystal Clash files (expected via the owner). Everything that was bent toward the live client from screenshots
+  (blue at +x, opaque blue water, no wheel zoom, no hotkey badge, countdown text) was reverted at checkpoint 56; the
+  screenshot-derived deltas stay listed in `docs/reference-material.md` for the later refresh. Screenshots remain valid
+  for engine-level checks (camera, lighting, HUD pixels, effect scale). When the files arrive: put them read-only in
+  `reference/crystal-clash/` (gitignored, `.gdignore`), point the extractors/converters at it, inventory the changes
+  against 2022 first, then regenerate data/maps/effects/GUI and patch changed logic. Drop the Steam patch-notes audit.
 - 2026-09-16 `reference/media/` is filled by the owner only (lobby/ and ingame/ screenshots). Never read or
   copy from the owner's personal Pictures / OneDrive folders.
 

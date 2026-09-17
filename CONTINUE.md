@@ -55,8 +55,8 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
   lost its flat ground and sun. The sandbox (Single map) now looks like the reference screenshots.
 
 - **Checkpoint 32:** grass tufts (`TGrassTuft.ComputeAndSave` ported into `convert_map.py`, baked to
-  `grass.glb`, 1435 / 1207 tufts), the original camera (`main.gd`: zoom 3.8 fixed, no wheel zoom (owner, checkpoint 54),
-  distance = zoom x 10, FOV 0.6853981635 rad, `coEngineCameraFoV`), `MapView.LIGHT_SCALE` 0.7 so the lane
+  `grass.glb`, 1435 / 1207 tufts), the original camera (`main.gd`: zoom 3.8 default, 2.6..3.8, 0.2 per wheel
+  notch, distance = zoom x 10, FOV 0.6853981635 rad, `coEngineCameraFoV`), `MapView.LIGHT_SCALE` 0.7 so the lane
   stones render at ~190 like the reference (Godot lights in linear space, the original in gamma space,
   `Standardshader.fx:515`).
 
@@ -167,6 +167,10 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
   is drawn after the deco band (covers the band's top edge like the live client) and before the cards.
 
 ## FIX FIRST (owner's request, before anything else)
+00. **Done (checkpoint 56): back to the 2022 repo (owner).** Reverted every live-client adaptation: sides (blue at -x,
+   `SimMap.side()`, `legacy_sides` gone), water from the `.wat` values, wheel zoom 2.6..3.8 back, hotkey badges back,
+   the warm-up countdown text removed (2022 shows nothing during the warm-up, `stage_1` at the first tick). The
+   Crystal Clash hand-over plan is in CLAUDE.md Decisions; screenshot deltas stay in `docs/reference-material.md`.
 0. **Done (checkpoint 53): lane node ring + two extractor fixes.** `tools/convert_particles.py` reads `<x>`/`<y>`
    axis tags case-insensitively (16 effects had zero sizes/colours: LaneNode, Capture0-2, Stun, SummoningSickness,
    RootDebuff, DarkTrollFireWave, 5 White effects, lib_field, lib_vertical_lines); `tools/extract_units.py` parses
