@@ -51,7 +51,7 @@ Content 281x281 bottom-left aligned (y offset 21). Rows x 49, width 214, height 
 ## DeckPanel (bottom centre)
 `RegisterDeckSlot`: spawners go to `DeckSlotsSpawner`, others to stage 1/2/3 by `Techlevel`; slot order is the
 deck order (`Deck` sort). Layout = horizontal stack: `instant` (stage 1, 2, 3 groups) then `spawner` group
-with `Margin-left 80`. Height 75, slots (`build-slot-wrapper`) 85x90 with 1 px padding each side.
+with `Margin-left 80`. Height 75, slots (`build-slot-wrapper`) 85x90 with 1 px padding each side (pitch 85; measured 85 on the 1920 Rise of Legions shots).
 - Deco behind each stack at 80 % height: `deck_main_left/mid/right.png` (66/82/125 x 63, mid stretched) and
   `deck_spawner_left/mid/right.png` (73/55/67 x 63).
 - Group 2/3 while locked (`.disabled`): slots shifted down 55 %, a `tier-timer` plate above

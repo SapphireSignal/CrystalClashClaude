@@ -11,7 +11,7 @@ signal spawner_jump
 const HEIGHT := 75.0
 const SLOT_W := 85.0
 const SLOT_H := 90.0
-const SLOT_STEP := 87.0        # 1 px padding each side
+const SLOT_STEP := 85.0        # wrapper 85 wide incl. its 1 px padding each side (measured 85 on the 1920 reference)
 const SPAWNER_MARGIN := 80.0
 ## `.core-game.small` (core_game_scaling.scss): the deck panel is 64 px high with 66x64 slots, spawner margin 48,
 ## locked groups shifted 38 % (normal: 75 high, 85x90 slots, margin 80, 55 %). The HUD scales the panel by
