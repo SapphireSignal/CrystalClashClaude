@@ -75,6 +75,27 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
   BoneAttachment3D + BoneOffset, model scale countered) and `VisibleWithWelaReady` effects toggle with
   `sim._wela_ready` (the footmen's shield rings). `tools/screenshot.gd -- 15 17 zoom=nexus play=2` shows them.
 
+## FIX FIRST (owner's request, before anything else)
+The owner compared `tools/screenshot.gd -- 15 18 zoom=nexus play=2` with `reference/media/ingame/*.webp`
+(live client, small HUD layout). Fix these HUD overlaps / gaps, screenshot after each, then continue below:
+1. Resource panel: row captions are ~22 px and sit on the top edge of the dark rows; the reference has ~13 px
+   text inside the rows, rows start ~20 px lower, the tier roman is bold and centred on the book, the tech
+   timer is small. Re-measure the row rectangles against `ressource_panel.png` (see `docs/hud.md`) and the
+   reference crop, fix `resource_panel.gd`.
+2. Deck panel: the charge badge and the hotkey badge overlap the frame / icon bottom; the charge number must
+   hang below-left outside the icon, hotkeys are hidden in the reference (keep them, but place them under the
+   slot). The 85 px slots hide the dark backplate (`deck_main_*.png`) completely: the icons should only
+   slightly overlap it. Locked tier plates must let the sunken slots peek out below; the mirrored right end
+   of the multi plate shows a seam. Ready glow is too strong (double-ring look).
+3. World: the lane node capture circle is missing (`TTextureRangeIndicatorComponent` in
+   `Scripts/Units/Neutral/LaneNode.ets`: `RangeLine.tga`, `DrawCircle(0.5)`, slices, `ShowTeamColor`,
+   `ShowWeaponRange`) -> a ground quad/decal per lane node tinted with the capturing team colour.
+4. The footmen's shield-block ring shows as scattered dots: check the effect scale rule
+   (`ScaleWith(eiCollisionRadius)` x model size / 1.7) against the reference and the debug view
+   (`.tmp/effect_view.gd` is gone; recreate a small one if needed).
+5. Lane stones still brighter/flatter than the reference: revisit `MapView.LIGHT_SCALE` and the terrain
+   material (roughness, Material.png) with a side-by-side crop.
+
 ## Next step (in order, one at a time, run the game after each)
 1. Particles polish: (a) `AtFireTarget` / `ClonesToTarget` effects; (c) light particles as
    OmniLight3D (100 emitters), `ptTrace` ribbons, nested `ptEffect`; (d) deactivation (`DeactivateOn*`,
