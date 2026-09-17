@@ -103,10 +103,6 @@ func _build_group(commander: Commander, tier: int, indices: Array) -> Group:
 	g.root.mouse_filter = MOUSE_FILTER_IGNORE
 	g.width = SLOT_STEP * indices.size()
 	g.root.size = Vector2(g.width, panel_height)
-	if tier >= 2:
-		g.plate = _build_plate(indices.size())   # ZOffset -5: behind the deco (-4) and the slots
-		g.plate.position = Vector2(0, 0)   # 100 % of the panel height
-		g.root.add_child(g.plate)
 	var deco_h := panel_height * 0.8
 	var deco := "spawner" if tier == 0 else "main"
 	var left := HudStyle.tex("HUD/DeckPanel/deck_%s_left.png" % deco)
@@ -119,6 +115,10 @@ func _build_group(commander: Commander, tier: int, indices: Array) -> Group:
 	g.root.add_child(HudStyle.picture(left, Rect2(-lw * 0.3, deco_y, lw, deco_h)))
 	g.root.add_child(HudStyle.picture(mid, Rect2(lw * 0.7, deco_y, g.width - lw * 0.7 - rw * 0.7, deco_h)))
 	g.root.add_child(HudStyle.picture(right, Rect2(g.width - rw * 0.7, deco_y, rw, deco_h)))
+	if tier >= 2:   # the plate covers the deco band's top edge (live client) but stays behind the cards
+		g.plate = _build_plate(indices.size())
+		g.plate.position = Vector2(0, 0)   # 100 % of the panel height
+		g.root.add_child(g.plate)
 	var slots_root := Control.new()
 	slots_root.name = "Slots"
 	slots_root.mouse_filter = MOUSE_FILTER_IGNORE

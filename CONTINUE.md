@@ -163,7 +163,8 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
 - **Checkpoint 51: tier plates corrected.** The multi plate = mid over the group inset 21 design px per side
   (measured: a 3-slot plate is 170 px for 198 px of slots, adjacent plates never touch), end pieces with the
   slant outwards (left end = mirrored art), countdown + lock icon laid out as one centred pair (lock 6 px
-  after the text, `DeckPanel.refresh`). `.tmp/plates_cmp.png` shows reference vs ours.
+  after the text, `DeckPanel.refresh`). `.tmp/plates_cmp.png` shows reference vs ours. Checkpoint 52: the plate
+  is drawn after the deco band (covers the band's top edge like the live client) and before the cards.
 
 ## FIX FIRST (owner's request, before anything else)
 1. **Done (checkpoint 37): lane node capture circle verified.** The ring renders (mesh, y 0.01, orientation:
