@@ -65,6 +65,15 @@ var approach: bool = false             # TBrainApproachComponent: walk toward th
 var link_time: int = 250               # TBrainWelaLinkComponent.LinkTime: re-acquire cadence (DEFAULT_LINK_BUILD_TIME)
 var preemptive_link: bool = false      # TBrainWelaLinkComponent.Preemptive: stands still while linked
 var fires_at_create_group: int = -1    # TLinkBrainComponent.FiresAtCreate([g]) on a link entity
+var prioritize_most_distant: bool = false   # TWelaTargetingRadialComponent.PrioritizeMostDistant
+var prioritize_damage_types: int = 0   # TWelaEfficiencyDamageTypeComponent.Prioritize (targets whose weapon has any)
+var shared_cooldown_groups: Array = [] # TWelaReadyCooldownComponent on several groups: one cooldown for all
+var companion_groups: Array = []       # TBrainWelaFightComponent on several groups: the others fire along
+var warhead_to_self: bool = false      # TWarheadSpottyResourceComponent.RedirectToSelf
+var redirect_to_ground: bool = false   # TWelaEffectRedirecterComponent.RedirectToGround: fires at the owner's position
+var ready_not_full: bool = false       # TWelaReadyResourceCompareComponent.CheckNotFull
+var damage_scale_resource: String = ""   # TModifierWelaDamageComponent.ScaleWithResource on a unit weapon (Brratu)
+var damage_scale_group: int = -1
 # effects
 var heals: bool = false
 var damages: bool = false
@@ -176,11 +185,22 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 			"TBrainWelaFightComponent":
 				var w: Wela = get.call(g, Kind.FIGHT)
 				w.kind = Kind.FIGHT if w.kind == Kind.SUB else w.kind
+				for gg in groups:
+					if gg != g:
+						w.companion_groups.append(gg)
 				for c in calls:
 					if c[0] == "Blocking":
 						w.blocking = true
 					elif c[0] == "ThinksPassively":
 						w.passive = true
+			"TWelaEfficiencyDamageTypeComponent":
+				for c in calls:
+					if c[0] == "Prioritize":
+						get.call(g, Kind.SUB).prioritize_damage_types = SimConstants.damage_mask(c[1][0])
+			"TWelaEffectRedirecterComponent":
+				for c in calls:
+					if c[0] == "RedirectToGround":
+						get.call(g, Kind.SUB).redirect_to_ground = true
 			"TBrainWelaSelftargetGroundComponent":
 				var w: Wela = get.call(g, Kind.SELF_GROUND)
 				w.kind = Kind.SELF_GROUND
@@ -236,6 +256,8 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 							w.validate_group = UnitDb.group_id(c[1][0][0], map)
 						elif c[0] == "IgnoreOwnCollisionradius":
 							w.ignore_own_radius = true
+						elif c[0] == "PrioritizeMostDistant":
+							w.prioritize_most_distant = true
 						elif c[0] == "PicksRandomTargetsWithRepetition":
 							w.picks_random_targets = true
 							w.picks_with_repetition = true
@@ -375,9 +397,13 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 						w.apply_script_values = passed
 						w.apply_script_same_team = same_team
 			"TBrainWelaSelftargetComponent":
-				var w: Wela = get.call(g, Kind.SELF_PASSIVE)
+				var passive := false
+				for c in calls:
+					if c[0] == "ThinksPassively":
+						passive = true
+				var w: Wela = get.call(g, Kind.SELF_PASSIVE if passive else Kind.SELF_GROUND)
 				if w.kind == Kind.SUB:
-					w.kind = Kind.SELF_PASSIVE
+					w.kind = Kind.SELF_PASSIVE if passive else Kind.SELF_GROUND   # Blocking self-target acts like a self-ground action
 			"TWelaEffectRemoveAfterUseComponent":
 				var w: Wela = get.call(g, Kind.SUB)
 				w.remove_after_use = true
@@ -419,21 +445,33 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 						"ReferenceIsAbsolute": w.ready_absolute = true
 						"CheckEmpty": w.suicide_when_empty = true
 						"CheckNotEmpty": w.ready_not_empty = true
+						"CheckNotFull": w.ready_not_full = true
 			"TModifierWelaDamageComponent":
 				var w: Wela = get.call(g, Kind.SUB)
 				var scales := false
 				var res_group := g
+				var value_group := g
+				var resource := ""
 				for c in calls:
 					if c[0] == "ScaleWithResource" and c[1][0] == "reWelaCharge":
 						scales = true
+					elif c[0] == "ScaleWithResource":
+						resource = c[1][0]
 					elif c[0] == "ResourceGroup":
 						res_group = UnitDb.group_id(c[1][0][0], map)
+					elif c[0] == "SetValueGroup":
+						value_group = UnitDb.group_id(c[1][0][0], map)
 				if scales:
 					w.damage_scales_with_charges_of = res_group
+				elif resource != "":
+					w.damage_scale_resource = resource   # Brratu: +0.2 x current health
+					w.damage_scale_group = value_group
 			"TWelaReadyCooldownComponent":
 				for gg in groups:
 					if by_group.has(gg) and not args.is_empty():
 						by_group[gg].ready_at_start = str(args[0]).to_lower() == "true"
+					if groups.size() > 1:
+						get.call(gg, Kind.SUB).shared_cooldown_groups = groups
 			"TWelaReadyUnitPropertyComponent":
 				var w: Wela = get.call(g, Kind.SUB)
 				for c in calls:
@@ -528,7 +566,9 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 						target_group = UnitDb.group_id(c[1][0][0], map)
 					elif c[0] == "ChangesMax":
 						get.call(g, Kind.SUB).changes_max = true
-				if res == "reWelaCharge" and by_group.has(g) and by_group[g].kind == Kind.SELF_PASSIVE:
+					elif c[0] == "RedirectToSelf":
+						get.call(g, Kind.SUB).warhead_to_self = true
+				if res == "reWelaCharge" and by_group.has(g) and by_group[g].kind in [Kind.SELF_PASSIVE, Kind.SELF_GROUND]:
 					by_group[g].kind = Kind.SUB   # ammo recharge groups are handled by _recharge_ammo
 				if res == "reWelaCharge" and target_group >= 0:
 					get.call(g, Kind.SUB).charge_gain_group = target_group
@@ -552,7 +592,8 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 				get.call(g, Kind.ON_DEATH).kind = Kind.ON_DEATH
 			"TAutoBrainOnUnitPropertyComponent":
 				var w: Wela = get.call(g, Kind.ON_PROPERTY)
-				w.kind = Kind.ON_PROPERTY
+				if w.kind == Kind.SUB:
+					w.kind = Kind.ON_PROPERTY   # a fight group may also trigger on a property (Groundbreaker's rupture when lifted)
 				for c in calls:
 					if c[0] == "TriggerOn":
 						w.trigger_props.append_array(c[1][0])
@@ -631,6 +672,8 @@ func owner_ready(owner: SimEntity) -> bool:
 		if not _compare(value, ready_op, ready_reference):
 			return false
 	if ready_resource == "reMana" and ready_not_empty and owner.mana <= 0:
+		return false
+	if ready_resource == "reWelaChargeCapacity" and ready_not_full and owner.charge_capacity >= owner.charge_capacity_cap:
 		return false
 	if suicide_when_empty and owner.ammo > 0:   # CheckEmpty(reWelaCharge): only once the charges are spent
 		return false

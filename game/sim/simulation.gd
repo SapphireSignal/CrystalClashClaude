@@ -194,7 +194,7 @@ func apply_buff(e: SimEntity, script_name: String, params: Dictionary = {}, sour
 	if b.stops_movement and e.moving:
 		_stand(e)
 	for w in e.welas:   # TAutoBrainOnUnitPropertyComponent.TriggerOn (HeavyGunner gains mana when blessed)
-		if w.kind != Wela.Kind.ON_PROPERTY or w.used:
+		if w.trigger_props.is_empty() or w.used:
 			continue
 		for p in w.trigger_props:
 			if b.properties.has(p):
@@ -440,10 +440,14 @@ func _cast_spell(team: int, c: Commander, slot: Commander.DeckSlot, target: Vari
 
 ## TThinkImpulseOnceComponent: every fight group fires at up to eiWelaTargetCount targets in range right
 ## away; a group with TWelaEffectSuicideComponent then removes the effect entity.
+var _in_think_once: bool = false   # one-shot effects remove themselves after all their groups fired
+
+
 func _think_once(e: SimEntity) -> void:
 	if not e.thinks_once or e.thought_once:
 		return
 	e.thought_once = true
+	_in_think_once = true
 	for w in e.welas:
 		if w.kind == Wela.Kind.SELF_GROUND:
 			_fire_group(e, w.group, e)
@@ -452,6 +456,7 @@ func _think_once(e: SimEntity) -> void:
 		var count := e.bb.get_int("eiWelaTargetCount", w.group, 1)
 		for target in _pick_targets(e, w, e.range_of(w.group), count):
 			_fire_group(e, w.group, target)
+	_in_think_once = false
 	for w in e.welas:
 		if w.suicide and w.kind != Wela.Kind.SELF_GROUND and not w.suicide_when_empty:
 			_remove_silently(e)
@@ -873,6 +878,10 @@ func _prefire(e: SimEntity, w: Wela, target: SimEntity) -> void:
 	e.fire_at = time_ms + e.actionpoint(w.group)
 	e.locked_until = time_ms + maxi(e.actionpoint(w.group), e.actionduration(w.group))
 	w.cooldown_ready_at = e.fire_at + e.cooldown(w.group)
+	for sg in w.shared_cooldown_groups:   # ForestGuardian: both artillery groups share one cooldown
+		var sw := e.wela(sg)
+		if sw != null:
+			sw.cooldown_ready_at = w.cooldown_ready_at
 	if w.group == SimConstants.GROUP_MAINWEAPON:
 		e.cooldown_ready_at = w.cooldown_ready_at
 
@@ -937,12 +946,15 @@ func _fire_group(e: SimEntity, group: int, target: SimEntity) -> void:
 	elif w.changes_max and w.resource == "reHealth":   # eiResourceCapTransaction: raise the cap and fill it
 		target.max_health += amount
 		target.health += amount
+	elif w.resource == "reWelaChargeCapacity":
+		var who := e if w.warhead_to_self else target
+		who.charge_capacity = mini(who.charge_capacity_cap, who.charge_capacity + int(amount))
 	elif w.kills:
 		if target.alive and target != e:
 			target.exiled = w.exiles
 			_kill(target, e)
 	elif w.splash:
-		_fire_splash(e, group, target.position)
+		_fire_splash(e, group, e.position if w.redirect_to_ground else target.position)
 	elif w.heals:
 		heal(target, amount, dtype, e)
 	elif w.damages:
@@ -952,7 +964,7 @@ func _fire_group(e: SimEntity, group: int, target: SimEntity) -> void:
 	for item in w.extra_apply_scripts:
 		if target.alive and Buff.exists(item[0]):
 			_apply_scripted(target, item[0], item[1], item[2], e)
-	if w.suicide and e.alive and w.kind != Wela.Kind.FIGHT and not e.thinks_once:   # TWelaEffectSuicideComponent
+	if w.suicide and e.alive and w.kind != Wela.Kind.FIGHT and not _in_think_once:   # TWelaEffectSuicideComponent
 		if e.is_targetable():
 			_kill(e)   # a real unit dies (Sapling timed life)
 		else:
@@ -967,7 +979,7 @@ func _fire_group(e: SimEntity, group: int, target: SimEntity) -> void:
 		var rw := e.wela(rg)
 		if rw != null:
 			rw.used = true
-	if w.remove_after_use and w.kind != Wela.Kind.FIGHT:
+	if w.remove_after_use:
 		w.used = true
 		e.removed_groups[group] = true
 	if w.spawns:   # TWelaEffectFactoryComponent: units appear at the target position
@@ -991,6 +1003,10 @@ func _fire_group(e: SimEntity, group: int, target: SimEntity) -> void:
 		e.charges[w.charge_gain_group] = e.charges_of(w.charge_gain_group) + 1
 	for sg in w.instant_target_groups:   # splash warheads around the target position
 		_fire_splash(e, sg, target.position)
+	for cg in w.companion_groups:   # a brain on several groups fires them all (Oracle [2,3])
+		var cw := e.wela(cg)
+		if cw != null:
+			_fire_group(e, cg, e if cw.warhead_to_self else target)
 	if not w.chain_first:
 		_fire_chains(e, w, target)
 	for rg in w.reset_cooldown_groups:   # TWelaEffectResetCooldownComponent.Expire
@@ -1315,9 +1331,12 @@ func _pick_target(e: SimEntity, w: Wela, range: float) -> SimEntity:
 		var dist := e.position.distance_to(other.position) - other.collision_radius - (0.0 if w.ignore_own_radius else e.collision_radius)
 		if dist > range:
 			continue
-		var key := (rng.randf() * range if w.picks_random_targets else dist) + (100000.0 if other.has("upLowPrio") else 0.0)
+		var key := (rng.randf() * range if w.picks_random_targets else (-dist if w.prioritize_most_distant else dist)) \
+			+ (100000.0 if other.has("upLowPrio") else 0.0)
 		if (w.prefer_allies and other.team != e.team) or (w.prefer_enemies and other.team == e.team):
 			key += 10000000.0
+		if w.prioritize_damage_types != 0 and (other.damage_type(SimConstants.GROUP_MAINWEAPON) & w.prioritize_damage_types):
+			key -= 1000000.0   # TWelaEfficiencyDamageTypeComponent (Rootdude prefers melee units)
 		if w.efficiency_missing_health:
 			key -= (other.max_health - other.health) * 1000.0
 		if w.efficiency_max_health != 0:
@@ -1407,6 +1426,10 @@ func _move_projectiles() -> void:
 			if hit:
 				if p.gives_mana:
 					gain_mana(target, int(p.damage))
+				elif p.raises_max_health:   # Oracle's sapling: +60 max hp and +1 charge
+					target.max_health += p.damage
+					target.health += p.damage
+					target.ammo = mini(target.ammo_cap, target.ammo + p.gives_charges)
 				elif p.aoe > 0.0:
 					_projectile_splash(p, target)
 				elif not p.damages and p.impact_script != "":   # a pure buff carrier (Blessing of Strength)
@@ -1517,6 +1540,9 @@ func _move_to(e: SimEntity, target_id: int, target_pos: Vector2, use_waypoints: 
 
 
 func _compute_path(e: SimEntity) -> void:
+	if e.no_pathfinding:
+		e.path = []
+		return
 	var goal := e.move_goal(self)
 	var nexus := enemy_nexus(e.team)
 	var direction := Lanes.direction_toward(e.position, nexus.position) if nexus else Lanes.NORMAL
@@ -1532,6 +1558,17 @@ func _move(e: SimEntity) -> void:
 	var pf := map.pathfinding
 	var walking := e.speed() * SimConstants.TICK_MS
 	var goal := e.move_goal(self)
+	if e.no_pathfinding:   # TMovementComponent.IdleDirect: straight to the goal, through everything (Brratu)
+		var to_goal := goal - e.position
+		if to_goal.length() <= walking:
+			_face(e, goal)
+			_set_position(e, goal)
+			_stand(e)
+		else:
+			var next_pos := e.position + to_goal.normalized() * walking
+			_face(e, next_pos)
+			_set_position(e, next_pos)
+		return
 	var target_tile := pf.index_of(pf.tile_of(goal))
 	if e.path.is_empty():
 		if e.current_tile == target_tile:

@@ -23,6 +23,8 @@ var on_hit_must_have: Array = []
 var on_hit_must_not_have: Array = []
 var impact_script: String = ""      # TWarheadApplyScriptComponent on the impact group itself (HeartOfTheForestProjectile)
 var damages: bool = false            # has a damage warhead
+var raises_max_health: bool = false  # TWarheadSpottyResourceComponent(reHealth).ChangesMax (Oracle: +60 max hp)
+var gives_charges: int = 0           # TWarheadSpottyResourceComponent(reWelaCharge): +eiWelaDamage of that group
 # TBrainProjectileComponent.Bounces: after a hit jump to a random unhit enemy within bounce_range, up to
 # eiWelaCount times; a depleting shot (Wisp) loses the damage it dealt (TAutoBrainOnDealDamageComponent
 # WriteAmountTo(eiWelaDamage) with modifier -1) and stops when nothing is left
@@ -62,9 +64,19 @@ func _init(p_unit_id: String, league: int) -> void:
 						bounces_max = bb.get_int("eiWelaCount", int(comp["groups"][0]), 0)
 						bounce_range = bb.get_float("eiWelaRange", int(bounce_group), 0.0)
 			"TWarheadSpottyResourceComponent":
+				var res := ""
+				var changes_max := false
 				for c in calls:
-					if c[0] == "SetResourceType" and c[1][0] == "reMana":
-						gives_mana = true
+					if c[0] == "SetResourceType":
+						res = c[1][0]
+					elif c[0] == "ChangesMax":
+						changes_max = true
+				if res == "reMana":
+					gives_mana = true
+				elif res == "reHealth" and changes_max:
+					raises_max_health = true
+				elif res == "reWelaCharge":
+					gives_charges = int(bb.get_float("eiWelaDamage", int(comp["groups"][0]), 1.0))
 			"TAutoBrainOnDealDamageComponent":
 				var writes_damage := false
 				for c in calls:

@@ -22,6 +22,9 @@ var base_armor: SimConstants.ArmorType = SimConstants.ArmorType.UNARMORED
 var base_speed: float = SimConstants.DEFAULT_SPEED   # units per ms
 var mana: int = 0
 var mana_cap: int = 0
+var charge_capacity: int = 0         # reWelaChargeCapacity (Oracle: saplings eaten)
+var charge_capacity_cap: int = 0
+var no_pathfinding: bool = false     # eiUnitData.udUsePathfinding False: walks straight, ignores tiles (Brratu)
 var charges: Dictionary = {}         # group -> reWelaCharge balance kept per group (spell modes, fields)
 var thinks_once: bool = false        # TThinkImpulseOnceComponent: spell effect acts once on creation
 var thought_once: bool = false
@@ -95,6 +98,9 @@ func setup(p_unit_id: String, p_league: int) -> void:
 	base_speed = bb.get_float("eiSpeed", Blackboard.ANY_GROUP, SimConstants.DEFAULT_SPEED)
 	mana_cap = bb.get_int("eiResourceCap.reMana", Blackboard.ANY_GROUP, 0)
 	mana = bb.get_int("eiResourceBalance.reMana", Blackboard.ANY_GROUP, mana_cap)
+	charge_capacity_cap = bb.get_int("eiResourceCap.reWelaChargeCapacity", Blackboard.ANY_GROUP, 0)
+	charge_capacity = bb.get_int("eiResourceBalance.reWelaChargeCapacity", Blackboard.ANY_GROUP, 0)
+	no_pathfinding = bb.get_value("eiUnitData.udUsePathfinding", Blackboard.ANY_GROUP, true) == false
 	if bb.has_value("eiResourceCap.reWelaCharge"):
 		ammo_cap = bb.get_int("eiResourceCap.reWelaCharge")
 		ammo = bb.get_int("eiResourceBalance.reWelaCharge", Blackboard.ANY_GROUP, ammo_cap)
@@ -226,13 +232,16 @@ func armor() -> SimConstants.ArmorType:
 func damage(group: int = SimConstants.GROUP_MAINWEAPON) -> float:
 	var d := bb.get_float("eiWelaDamage", group, 0.0)
 	var props := all_properties()
+	for w in welas:   # TModifierWelaDamageComponent.ScaleWithResource on the unit (Brratu: + modifier x health)
+		if w.group == group and w.damage_scale_resource == "reHealth":
+			d += bb.get_float("eiWelaModifier", w.damage_scale_group, 0.0) * health
 	for b in buffs:
 		d = b.modify_damage(d, group, props)
 	return d
 
 
 func cooldown(group: int = SimConstants.GROUP_MAINWEAPON) -> int:
-	var c := float(bb.get_int("eiCooldown", group, 1000))
+	var c := float(bb.get_int("eiCooldown", group, 0))   # no TWelaReadyCooldownComponent = always ready
 	for b in buffs:
 		if b.cooldown_groups.has(group):
 			c *= b.cooldown_factor

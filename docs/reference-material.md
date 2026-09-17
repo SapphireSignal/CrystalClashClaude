@@ -55,3 +55,16 @@ These are current and take precedence over Codex's older captures. Facts read fr
   units."), Surge of Light. Those numbers are the live balance and may differ from the 2022 source.
 - Shop tabs: SKINS, ICONS, BUNDLES, PREMIUM, CRYSTALS, REDEEM BONUS CODE; skins are renamed/recolored units
   (e.g. "BRR4, Replacement of Nature" = Brratu skin, "Hellfire Turret", "Spring Gunner", "Hermit").
+- Shop details: ICONS (player icons for 950-2000 crystals), BUNDLES (Bronze $5.99: all bronze cards + 3 days premium +
+  2,000 crystals + 1 deck slot; Silver $14.99: 30 days premium, 5,000 crystals, 2 deck slots; Gold $29.99: 60 days,
+  10,000 crystals, 4 deck slots), PREMIUM (1/3/7/30/180/360 days for 600/1000/1500/4000/22000/41000 crystals;
+  "150% credits and experience after each match, two additional rerolls for daily quests"), CRYSTALS
+  (2,500 $4.99 .. 50,000+10,000 bonus $99.99), REDEEM BONUS CODE (XXXX-XXXX-XXXX-XXXX-XXXX, Refer a friend:
+  30 premium days each, friend must reach level 5; friend id is a 7-digit number).
+- Friends panel (top-right icon): friend id, online/offline list, Refer a friend / Add a friend. Quests panel:
+  Weekly (6 days) "Win 25 Matches" 6000 gold; Daily (3/3) e.g. "Win 3 matches using white cards" 1200 gold chest,
+  "Play 50 white cards", "Win 1 match using a single-colored deck", one reroll (1/1).
+- Level Up Rewards: per level 5000 gold + 100 crystals; every 10 levels (150) 12000 gold + 2000 crystals + icon.
+- Queue: PLAY button turns into a timer, "In Queue. Please be patient... 00:00, 9 players online, Leave queue".
+  "Choose your deck!" modal lists decks with icon + name + tier badge. Tutorial tab: "Learn the basics of the game in
+  a quick guided tutorial", Start.

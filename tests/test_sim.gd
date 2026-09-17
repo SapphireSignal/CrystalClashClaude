@@ -1442,3 +1442,124 @@ func test_spore_field() -> void:
 		sim.step()
 	runner.check(sim.time_ms >= 15000 and sim.time_ms < 15100, "grounded for 15 s (got %d)" % sim.time_ms)
 	runner.check(flyer.has("upImmobilized") and flyer.has("upFlying"), "take-off: immobilized briefly, flying again")
+
+
+func test_woodwalker_and_sapling_farm_summons() -> void:
+	var sim := Simulation.new(7, 4)
+	sim.spawn_bases()
+	var walker := sim.spawn("Units/Green/Woodwalker", Simulation.TEAM_BLUE, Vector2(-60, -23))
+	runner.check_eq(walker.mana, 4, "starts with 4 mana")
+	var saplings := func(): return sim.alive_entities(Simulation.TEAM_BLUE).filter(func(e): return e.unit_id == "Units/Green/Sapling").size()
+	for i in 30:   # 800 ms actionpoint
+		sim.step()
+	runner.check_eq(saplings.call(), 2, "4 mana: summons 2 saplings")
+	runner.check_eq(walker.mana, 0, "mana spent")
+	var t := sim.time_ms
+	while walker.mana < 4 and sim.time_ms < t + 15000:
+		sim.step()
+	runner.check(sim.time_ms - t >= 11000 and sim.time_ms - t < 12200, "+1 mana / 3 s, next summon after 12 s (got %d)" % (sim.time_ms - t))
+	var farm := sim.spawn("Units/Green/SaplingFarm", Simulation.TEAM_RED, Vector2(60, -23))
+	var red_saplings := func(): return sim.alive_entities(Simulation.TEAM_RED).filter(func(e): return e.unit_id == "Units/Green/Sapling").size()
+	for i in 20:   # 500 ms actionpoint
+		sim.step()
+	runner.check_eq(red_saplings.call(), 3, "farm: 5 mana -> 3 saplings at once")
+	runner.check_eq(farm.mana, 0, "farm mana spent")
+
+
+func test_rootdude() -> void:
+	var sim := Simulation.new(7, 4)
+	var dude := sim.spawn("Units/Green/Rootdude", Simulation.TEAM_BLUE, Vector2(0, -23))
+	dude.base_speed = 0.0
+	runner.check_eq(dude.mana, 0, "no mana at start")
+	var archer := sim.spawn("Units/White/Archer", Simulation.TEAM_RED, Vector2(9, -23))
+	var monk := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(6, -23))
+	archer.locked_until = 1 << 30
+	monk.locked_until = 1 << 30
+	dude.health = 100.0
+	sim.heal(dude, 60.0, 0, null)
+	runner.check_eq(dude.mana, 1, "+1 mana per 50 hp healed")
+	for i in 30:
+		sim.step()
+	runner.check(monk.has("upRooted") and not archer.has("upRooted"), "root braid prefers melee units over the farther archer")
+	runner.check_eq(dude.mana, 0, "one mana per braid")
+	sim.heal(dude, 50.0, 0, null)
+	for i in 30:
+		sim.step()
+	runner.check(archer.has("upRooted"), "next braid: the rooted monk is immune, the archer is next")
+	sim.apply_buff(dude, "BlessingStrength")
+	runner.check_eq(dude.mana, 4, "an enchantment fills the mana")
+
+
+func test_forest_guardian_shared_cooldown() -> void:
+	var sim := Simulation.new(7, 4)
+	var guardian := sim.spawn("Units/Green/ForestGuardian", Simulation.TEAM_BLUE, Vector2(0, -23))
+	var monk := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(8, -23))
+	monk.locked_until = 1 << 30
+	var tower := sim.spawn("Units/Neutral/LanetowerLevel1", Simulation.TEAM_RED, Vector2(20, -23))
+	var shots: Array = []
+	var on_proj := func(p): shots.append([sim.time_ms, p.target_id, p.damage])
+	sim.projectile_spawned.connect(on_proj)
+	for i in 200:
+		sim.step()
+	runner.check(shots.size() >= 2, "guardian fires (got %d shots)" % shots.size())
+	if shots.size() >= 2:
+		runner.check(shots[1][0] - shots[0][0] >= 2800, "shots 2800 ms apart (got %d)" % (shots[1][0] - shots[0][0]))
+	runner.check(shots.filter(func(s): return s[1] == tower.id).is_empty(), "the unit shot comes first in the chain and wins the shared cooldown")
+	sim._kill(monk)
+	shots.clear()
+	for i in 120:
+		sim.step()
+	sim.projectile_spawned.disconnect(on_proj)
+	var lobs := shots.filter(func(s): return s[1] == tower.id)
+	runner.check(not lobs.is_empty() and is_equal_approx(lobs[0][2], 16.0), "with no unit in 11, a 16-damage lob at the building 20 away")
+	runner.check(guardian.lifetime_ms == 90000, "building lifetime 90 s")
+
+
+func test_groundbreaker_rupture() -> void:
+	var sim := Simulation.new(7, 4)
+	var breaker := sim.spawn("Units/Green/Groundbreaker", Simulation.TEAM_BLUE, Vector2(0, -23))
+	runner.check(breaker.has("upBurrowed") and breaker.has("upInvincible"), "spawns burrowed and invincible")
+	var monk := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(6, -23))
+	monk.locked_until = 1 << 30
+	sim.deal_damage(breaker, 50.0, SimConstants.DamageType.MELEE, monk)
+	runner.check_near(breaker.health, 345.0, "no damage while burrowed")
+	while monk.health == 265.0 and sim.time_ms < 6000:
+		sim.step()
+	runner.check_near(monk.health, 265.0 - 120.0, "rupture: 120 splash at its own position")
+	runner.check(not breaker.has("upBurrowed") and not breaker.has("upInvincible"), "unburrowed after the rupture")
+
+
+func test_oracle_feast() -> void:
+	var sim := Simulation.new(7, 4)
+	var oracle := sim.spawn("Units/Green/Oracle", Simulation.TEAM_BLUE, Vector2(0, -23))
+	runner.check_eq(oracle.charge_capacity_cap, 12, "eats up to 12 saplings")
+	for i in 14:
+		var s := sim.spawn("Units/Green/Sapling", Simulation.TEAM_BLUE, Vector2(2 + (i % 4) * 0.8, -23 + (i / 4) * 0.8))
+		s.base_speed = 0.0
+	for i in 250:
+		sim.step()
+	var left := sim.alive_entities(Simulation.TEAM_BLUE).filter(func(e): return e.unit_id == "Units/Green/Sapling").size()
+	runner.check_eq(left, 2, "12 saplings sacrificed, 2 spared")
+	runner.check_eq(oracle.charge_capacity, 12, "capacity counter full")
+	runner.check_near(oracle.max_health, 610.0 + 12 * 60.0, "+60 max hp per sapling")
+	runner.check_eq(oracle.ammo, 12, "+1 charge per sapling")
+
+
+func test_brratu() -> void:
+	var sim := Simulation.new(7, 4)
+	sim.spawn_bases()
+	var brratu := sim.spawn("Units/Green/Brratu", Simulation.TEAM_BLUE, Vector2(-60, -23))
+	runner.check_near(brratu.damage(), 34.0 + 0.2 * 1800.0, "damage 34 + 0.2 x health")
+	brratu.health = 900.0
+	runner.check_near(brratu.damage(), 34.0 + 180.0, "scales with current health")
+	sim.apply_buff(brratu, "BlessingStrength")
+	runner.check_near(brratu.max_health, 1800.0 + 40.0 + 300.0, "ancient wisdom: +300 max hp per enchantment")
+	sim._teleport(brratu, Vector2(-33, -23))   # away from the blue lane tower's guns
+	var monk := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(-30, -23))
+	monk.locked_until = 1 << 30
+	var start := brratu.position
+	while sim.time_ms < 8000:
+		sim.step()
+	runner.check_near(monk.health, 265.0, "ignores units, only attacks buildings")
+	runner.check(brratu.position.x > start.x + 5.0, "walks straight down the lane at 2 u/s past the monk")
+	runner.check(brratu.no_pathfinding, "no pathfinding")
