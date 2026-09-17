@@ -128,6 +128,6 @@ func _draw_camera_quad() -> void:
 		if t < 0.0:
 			return
 		var hit := from + dir * t
-		pts.append(world_to_minimap(Vector2(hit.x, hit.z), false))
+		pts.append(world_to_minimap(Vector2(hit.x, -hit.z), false))   # global -> sim (World is mirrored on Z)
 	pts.append(pts[0])
 	_overlay.draw_polyline(pts, Color(1, 1, 1, 0.9), 1.0)

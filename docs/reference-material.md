@@ -124,6 +124,11 @@ These are current and take precedence over Codex's older captures. Facts read fr
   The game-start shot (blue nexus, "Game is about to begin") shows the own base
   top-right with the lane leaving to the bottom-left, and the minimap has blue top-right: the live client puts
   Blue at +x (2022 scripts: -x). Applied as `SimMap.side()`; the tests keep the 2022 layout.
+- Handedness (2026-09-17): rendering the sim/map coordinates directly in Godot with the original camera side
+  gives the exact mirror image of the reference (lane top-left to bottom-right). Flipping only the camera to
+  the other side made the symmetric shapes match but left shadows (rock wall shadow on the wrong lane side),
+  texture details (the arrow marking's line) and wall pieces mirrored. Fix: mirror the world (`Main/World`
+  scale z -1) and keep the camera mirrored; verified at the lane node and the base (`.tmp/mirror_fixed.png`).
 - Lighting (2026-09-17, game-start shot): patch medians ref vs ours after `MapView` ambient x0.35 / sun x1.06:
   sand SW 157/159, sand W 228/219, shadowed jungle 65/58, platform 174/172. The original's gamma-space
   `colour * (NdotL * sun + ambient)` makes shadow 63 % of lit on screen; the linear scales reproduce that.

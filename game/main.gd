@@ -27,7 +27,12 @@ var _jump_return: Variant = null   # camera look-at to return to after a spawner
 var _red_next_play_at: int = 15000
 var _red_cursor: int = 0
 
-@onready var _units_root: Node3D = $Units
+## The original engine is left-handed (DirectX); Godot is right-handed. `World` is scaled -1 on Z so the
+## sim / map coordinates (used verbatim inside it) render as the exact mirror Godot would otherwise show,
+## i.e. exactly like the original client (shadow sides, texture details, docs/reference-material.md).
+## Everything in global space (camera, mouse rays, HUD projections) converts with z_global = -z_sim.
+@onready var _world: Node3D = $World
+@onready var _units_root: Node3D = $World/Units
 @onready var _camera: Camera3D = $Camera3D
 @onready var _environment: WorldEnvironment = $WorldEnvironment
 var _map: MapView
@@ -49,10 +54,10 @@ func _ready() -> void:
 	sim.team_lost.connect(func(t): print("team %d lost" % t))
 	sim.spawn_bases()
 	_map = MapView.new()   # the original map: terrain, water, lights, vegetation, decorations
-	add_child(_map)
+	_world.add_child(_map)
 	_map.load_map(sim.map.name)
 	var grid := BuildGrid.new()   # the spawner tiles of both build zones
-	add_child(grid)
+	_world.add_child(grid)
 	grid.setup(sim)
 	_environment.environment.ambient_light_color = _map.ambient_color
 	_environment.environment.ambient_light_energy = _map.ambient_energy
@@ -203,7 +208,7 @@ func _make_decal() -> MeshInstance3D:
 	mat.albedo_texture = HudStyle.tex("HUD/Selection.png")
 	decal.material_override = mat
 	decal.visible = false
-	add_child(decal)
+	_world.add_child(decal)
 	return decal
 
 
@@ -287,7 +292,7 @@ func _mouse_world_2d() -> Vector2:
 		return Vector2.ZERO
 	var t := -from.y / dir.y
 	var hit := from + dir * t
-	return Vector2(hit.x, hit.z)
+	return Vector2(hit.x, -hit.z)   # global -> sim (World is mirrored on Z)
 
 
 func _place_camera(look_at_2d: Vector2) -> void:
@@ -298,8 +303,9 @@ func _place_camera(look_at_2d: Vector2) -> void:
 	# at the reference window size scored by per-block alignment with the game-start screenshot put this vector
 	# (pitch 54.3, yaw 47.4, distance 38 at zoom 3.8, original FOV) at ~6 px mean block error, better than any
 	# flatter / closer / narrower variant (docs/reference-material.md). Blue sits at +x (SimMap).
+	# In global (mirrored) space the original CAMERAOFFSET (-0.3947, 0.8121, -0.4297) becomes +z.
 	var offset := Vector3(-0.394721269607544, 0.812130928039551, 0.429695725440979) * _zoom * 10.0
-	var target := Vector3(look_at_2d.x, 0, look_at_2d.y)
+	var target := Vector3(look_at_2d.x, 0, -look_at_2d.y)   # sim -> global
 	_camera.position = target + offset
 	_camera.look_at(target, Vector3.UP)
 

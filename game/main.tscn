@@ -18,6 +18,9 @@ environment = SubResource("env")
 fov = 55.0
 far = 500.0
 
-[node name="Units" type="Node3D" parent="."]
+[node name="World" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 0, 0)
+
+[node name="Units" type="Node3D" parent="World"]
 
 [node name="HUD" type="CanvasLayer" parent="."]

@@ -97,8 +97,10 @@ func _add_lights(lights: Dictionary) -> void:
 		node.light_energy = float(c[3]) * SUN_SCALE
 		node.shadow_enabled = true
 		node.shadow_blur = 1.5   # SHADOW_SAMPLING_RANGE 1: a small PCF blur
+		node.top_level = true   # placed in global space: the map lives under the Z-mirrored World node (main.gd)
 		add_child(node)
-		node.look_at_from_position(Vector3(0, 60, 0), Vector3(0, 60, 0) + dir, Vector3.UP if absf(dir.y) < 0.99 else Vector3.RIGHT)
+		var dir_global := Vector3(dir.x, dir.y, -dir.z)
+		node.look_at_from_position(Vector3(0, 60, 0), Vector3(0, 60, 0) + dir_global, Vector3.UP if absf(dir.y) < 0.99 else Vector3.RIGHT)
 
 
 ## TVegetationMesh instances: one MultiMesh per mesh + diffuse texture, transform = T * R(pitch, yaw, roll) * S.

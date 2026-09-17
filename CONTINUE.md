@@ -127,6 +127,12 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
   scene blurred + recoloured to `$blur-color` behind their art (`HudStyle.blur`, `blur_backdrop.gdshader`); the
   minimap no longer shows the sharp world through its translucent water (`docs/hud.md`).
 
+- **Checkpoint 47: world mirrored (handedness).** `Main/World` Node3D scaled -1 on Z holds map, units, effects,
+  build grid, decal; camera/mouse/HUD convert z_global = -z_sim; map lights `top_level` with mirrored direction.
+  Verified at the lane node and the base (`.tmp/mirror_fixed.png`): wall shadows and texture details now on the
+  reference's sides. Next checks: rock wall pieces vs reference at high zoom (facing sign if still one rock
+  off), water look at the node (reference: deep blue with waves), top bar red-left/blue-right.
+
 ## FIX FIRST (owner's request, before anything else)
 1. **Done (checkpoint 37): lane node capture circle verified.** The ring renders (mesh, y 0.01, orientation:
    start +Z about +Y, gaps across the lane, arcs along it, exactly `DrawCircle` Up=UNITZ Left=UNITX); it was

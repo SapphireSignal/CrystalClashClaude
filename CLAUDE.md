@@ -113,6 +113,11 @@ Act as two people at once:
   translation column (transpose the 3x3), hierarchy `Parent * Child`, skinning `Combined * Offset * v`, pivots
   collapsed into their bone, triangle winding reversed back for glTF. Model front axis is +Z, frames at 30 fps.
   Blender is only a probe tool.
+- 2026-09-17 **Handedness**: the original engine is left-handed (DirectX), Godot right-handed. All 3D content
+  lives under `Main/World` scaled -1 on Z (sim/map coordinates verbatim inside it); the camera, mouse rays and
+  HUD projections convert with z_global = -z_sim (`main.gd`, `unit_bars.gd`, `minimap.gd`); map lights are
+  `top_level` with the mirrored direction. Flipping only the camera side (what we did before) reproduces the
+  symmetric shapes but mirrors shadows, texture details and rock walls (owner's "markings flipped").
 - 2026-09-17 Camera: the 2022 `CAMERAOFFSET` **is** the live client's camera, settled by rendering sweeps at
   the reference window size and scoring per-block alignment with the game-start screenshot (best of 180:
   pitch 54 / yaw 47 / distance 38 / original FOV, 4.8 px mean block error; `docs/reference-material.md`).

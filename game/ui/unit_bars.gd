@@ -66,7 +66,7 @@ func _draw() -> void:
 		if bars.is_empty():
 			continue
 		var top := BUILDING_TOP if e.is_building() else UNIT_TOP
-		var world := Vector3(e.position.x, top + 1.0, e.position.y)
+		var world := Vector3(e.position.x, top + 1.0, -e.position.y)   # sim -> global (World is mirrored on Z)
 		if _camera.is_position_behind(world):
 			continue
 		var screen := _camera.unproject_position(world)
