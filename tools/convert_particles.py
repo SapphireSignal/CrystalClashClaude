@@ -17,6 +17,7 @@ from xml.etree import ElementTree
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "reference" / "rise-of-legions" / "Graphics" / "Effects" / "ParticleEffects"
+EFFECT_TEXTURES = ROOT / "reference" / "rise-of-legions" / "Graphics" / "Effects" / "Textures"   # only RangeLine*: names collide with particle textures (Trace.tga)
 OUT = ROOT / "assets" / "effects"
 TEXTURES_OUT = OUT / "textures"
 
@@ -170,7 +171,7 @@ def main(filters: list[str]) -> int:
         return 1
     TEXTURES_OUT.mkdir(parents=True, exist_ok=True)
     textures = 0
-    for src in SRC.rglob("*"):
+    for src in list(SRC.rglob("*")) + list(EFFECT_TEXTURES.glob("RangeLine*")):
         if src.suffix.lower() in (".tga", ".png"):
             dst = TEXTURES_OUT / src.name
             if not dst.exists() or dst.stat().st_mtime < src.stat().st_mtime:

@@ -14,6 +14,8 @@ const SLOT_H := 90.0
 const SLOT_STEP := 87.0        # 1 px padding each side
 const SPAWNER_MARGIN := 80.0
 const HOTKEYS := ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "="]
+const GLOW_PERIOD_MS := 2000.0     # $glow keyframes: opacity 1 -> 0.6 -> 1, scale 1.02 -> 1 -> 1.02, ease-in-out
+const OVERRIDE_SHADER := preload("res://game/ui/color_override.gdshader")
 
 
 class SlotView:
@@ -21,7 +23,7 @@ class SlotView:
 	var slot: Commander.DeckSlot
 	var root: Control
 	var glow: TextureRect
-	var darken: ColorRect
+	var darken: ShaderMaterial   # BackgroundColorOverride on the frame + icon (not a square)
 	var cooldown: TextureProgressBar
 	var cooldown_text: Label
 	var charge_text: Label
@@ -31,7 +33,8 @@ class Group:
 	var tier: int                 # 1..3 for instant groups, 0 for spawners
 	var root: Control
 	var slots: Array[SlotView] = []
-	var plate: Control            # tier-timer plate above locked groups
+	var plate: Control            # tier-timer plate above locked groups (behind the deco)
+	var plate_top: Control        # its countdown + lock icon, drawn over the deco and the sunken slots
 	var timer: Label
 	var width: float
 
@@ -84,6 +87,10 @@ func _build_group(commander: Commander, tier: int, indices: Array) -> Group:
 	g.root.mouse_filter = MOUSE_FILTER_IGNORE
 	g.width = SLOT_STEP * indices.size()
 	g.root.size = Vector2(g.width, HEIGHT)
+	if tier >= 2:
+		g.plate = _build_plate(indices.size())   # ZOffset -5: behind the deco (-4) and the slots
+		g.plate.position = Vector2(0, HEIGHT - 75)
+		g.root.add_child(g.plate)
 	var deco_h := HEIGHT * 0.8
 	var deco := "spawner" if tier == 0 else "main"
 	var left := HudStyle.tex("HUD/DeckPanel/deck_%s_left.png" % deco)
@@ -106,11 +113,11 @@ func _build_group(commander: Commander, tier: int, indices: Array) -> Group:
 		slots_root.add_child(view.root)
 		g.slots.append(view)
 		_views.append(view)
-	if tier >= 2:
-		g.plate = _build_plate(indices.size())
-		g.plate.position = Vector2(0, HEIGHT - 75)
-		g.timer = g.plate.get_node("Timer")
-		g.root.add_child(g.plate)
+	if g.plate != null:
+		g.plate_top = _build_plate_top(indices.size())
+		g.plate_top.position = g.plate.position
+		g.timer = g.plate_top.get_node("Timer")
+		g.root.add_child(g.plate_top)
 	return g
 
 
@@ -125,21 +132,30 @@ func _build_plate(count: int) -> Control:
 	else:
 		var end := HudStyle.tex("HUD/DeckPanel/tier_block_multi_end.png")
 		var mid := HudStyle.tex("HUD/DeckPanel/tier_block_multi_mid.png")
-		plate.add_child(HudStyle.picture(end, Rect2(0, 0, 41, 75)))
 		var x := 41.0
-		while x < w - 41:
-			var piece := HudStyle.picture(mid, Rect2(x, 0, minf(45, w - 41 - x), 75))
-			plate.add_child(piece)
+		while x < w - 41:   # whole tiles first, the ends drawn over them: no fractional seam
+			plate.add_child(HudStyle.picture(mid, Rect2(x, 0, 45, 75)))
 			x += 45
+		plate.add_child(HudStyle.picture(end, Rect2(0, 0, 41, 75)))
 		var right_end := HudStyle.picture(end, Rect2(w - 41, 0, 41, 75))
 		right_end.flip_h = true
 		plate.add_child(right_end)
+	return plate
+
+
+## The countdown (`.timer` 7 % from the top, 25 % high) and `.lock` (15 % high) of a tier plate.
+func _build_plate_top(count: int) -> Control:
+	var top := Control.new()
+	top.mouse_filter = MOUSE_FILTER_IGNORE
+	var w := SLOT_STEP * count
+	top.size = Vector2(w, 75)
 	var timer := HudStyle.label("00:00", int(75 * 0.25), HudStyle.WHITE, HudStyle.FONT_SEMIBOLD)
 	timer.name = "Timer"
 	HudStyle.place(timer, Rect2(0, 75 * 0.07, w - 24, 22))
-	plate.add_child(timer)
-	plate.add_child(HudStyle.picture(HudStyle.tex("HUD/DeckPanel/lock_icon.png"), Rect2(w / 2.0 + 24, 75 * 0.07 - 2, 19, 26)))
-	return plate
+	top.add_child(timer)
+	var lock_h := 75 * 0.15
+	top.add_child(HudStyle.picture(HudStyle.tex("HUD/DeckPanel/lock_icon.png"), Rect2(w / 2.0 + 24, 75 * 0.11, lock_h * 19.0 / 26.0, lock_h)))
+	return top
 
 
 func _build_slot(commander: Commander, index: int) -> SlotView:
@@ -162,15 +178,20 @@ func _build_slot(commander: Commander, index: int) -> SlotView:
 	var glow_h := glow_w * glow_tex.get_height() / glow_tex.get_width()
 	var glow_cy := SLOT_H / 2.0 - SLOT_H * (0.24 if card.is_spawner() else 0.135)
 	v.glow = HudStyle.picture(glow_tex, Rect2((SLOT_W - glow_w) / 2.0, glow_cy - glow_h / 2.0, glow_w, glow_h))
+	v.glow.pivot_offset = v.glow.size / 2.0
 	v.root.add_child(v.glow)
+	v.darken = ShaderMaterial.new()
+	v.darken.shader = OVERRIDE_SHADER
 	var frame := HudStyle.card_frame(card)   # icon-frame is the background, the round icon sits on it
 	if frame != null:
-		v.root.add_child(HudStyle.picture(frame, Rect2(0, 0, SLOT_W, SLOT_W)))
+		var f := HudStyle.picture(frame, Rect2(0, 0, SLOT_W, SLOT_W))
+		f.material = v.darken
+		v.root.add_child(f)
 	var icon := HudStyle.card_icon(card)
 	if icon != null:
-		v.root.add_child(HudStyle.picture(icon, Rect2(0, 0, SLOT_W, SLOT_W)))
-	v.darken = HudStyle.rect(HudStyle.DARKEN_SOFT, Rect2(2, 2, SLOT_W - 4, SLOT_W - 4))
-	v.root.add_child(v.darken)
+		var ic := HudStyle.picture(icon, Rect2(0, 0, SLOT_W, SLOT_W))
+		ic.material = v.darken
+		v.root.add_child(ic)
 	v.cooldown = TextureProgressBar.new()
 	var mask := "ProgressMaskSpawner" if card.is_spawner() else ("ProgressMaskSpell" if card.is_spell() else "ProgressMask")
 	v.cooldown.texture_progress = HudStyle.tex("HUD/DeckPanel/%s.tga" % mask)
@@ -202,19 +223,28 @@ func _build_slot(commander: Commander, index: int) -> SlotView:
 
 func refresh(sim: Simulation, commander: Commander) -> void:
 	var now := sim.time_ms
+	var phase := float(Time.get_ticks_msec() % int(GLOW_PERIOD_MS)) / GLOW_PERIOD_MS
+	var pulse := 0.5 - 0.5 * cos(TAU * phase)   # 0 at the keyframe ends, 1 in the middle
+	pulse = pulse * pulse * (3.0 - 2.0 * pulse)  # ease-in-out
+	var locked_views := {}
 	for g in _groups:
 		if g.plate == null:
 			continue
 		var locked := commander.tier < g.tier
 		g.plate.visible = locked
+		g.plate_top.visible = locked
 		g.root.get_node("Slots").position.y = SLOT_H * 0.55 if locked else 0.0
 		if locked:
 			g.timer.text = HudStyle.int_to_time(_time_to_tier(sim, g.tier))
+			for v in g.slots:
+				locked_views[v] = true
 	for v in _views:
 		var s := v.slot
-		var ready := s.is_ready(now, commander)
+		var ready := s.is_ready(now, commander) and not locked_views.has(v)   # .disabled: no highlight, darkened
 		v.glow.visible = ready
-		v.darken.visible = not ready
+		v.glow.modulate.a = lerpf(1.0, 0.6, pulse)
+		v.glow.scale = Vector2.ONE * lerpf(1.02, 1.0, pulse)
+		v.darken.set_shader_parameter("override_color", Color(0, 0, 0, 0) if ready else HudStyle.DARKEN_SOFT)
 		v.charge_text.text = str(s.charges)
 		var charging := s.recharge_at >= 0 and s.charges < s.charge_cap and not s.card.epic
 		if charging:

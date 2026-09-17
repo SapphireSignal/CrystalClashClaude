@@ -1,7 +1,7 @@
 extends SceneTree
 ## Runs game/main.tscn for a while and saves screenshots of the HUD for comparison with
 ## reference/media/ingame. Usage (windowed, not headless):
-##   godot --path <proj> -s tools/screenshot.gd --log-file <proj>/.tmp/godot.log -- <seconds> [<seconds> ...] [select] [hover=<slot>] [finish] [zoom=nexus|unit] [play=<slot>]
+##   godot --path <proj> -s tools/screenshot.gd --log-file <proj>/.tmp/godot.log -- <seconds> [<seconds> ...] [select] [hover=<slot>] [finish] [zoom=nexus|unit|node] [play=<slot>]
 ## Writes .tmp/shot_<seconds>.png for each requested time; "select" selects a unit (or the blue nexus), "hover=N" shows deck slot N's card hint.
 
 var _targets: Array = []
@@ -48,10 +48,10 @@ func _process(delta: float) -> bool:
 			var c: Commander = _main.sim.commanders[Simulation.TEAM_BLUE]
 			_main._hud.card_hint.show_slot(c.slots[_hover], c, _main.sim.time_ms)
 			_hover = -1
-		if _zoom != "":   # zoom=nexus | zoom=unit: close camera on the blue nexus or the first unit
+		if _zoom != "":   # zoom=nexus | unit | node: close camera on the blue nexus, the first unit or lane node
 			var target: SimEntity = _main.sim.entities[_main.sim.nexus_ids[Simulation.TEAM_BLUE]]
-			if _zoom == "unit":
-				var units: Array = _main.sim.alive_entities().filter(func(e): return e.has("upUnit"))
+			if _zoom == "unit" or _zoom == "node":
+				var units: Array = _main.sim.alive_entities(-1).filter(func(e): return e.is_lane_node() if _zoom == "node" else e.has("upUnit"))
 				if not units.is_empty():
 					target = units[0]
 			_main._zoom = 2.6

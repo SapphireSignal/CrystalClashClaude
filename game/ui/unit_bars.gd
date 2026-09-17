@@ -70,6 +70,8 @@ func _draw() -> void:
 		if _camera.is_position_behind(world):
 			continue
 		var screen := _camera.unproject_position(world)
+		if not Rect2(Vector2.ZERO, get_viewport_rect().size).grow(BAR_W).has_point(screen):
+			continue   # off-screen (grazing projections give huge coordinates that break polygon drawing)
 		var total := 0.0
 		for b in bars:
 			total += b[0]
@@ -109,10 +111,13 @@ func _frame(rect: Rect2) -> Rect2:
 
 
 func _fill(rect: Rect2, gradient: Array) -> void:
-	if rect.size.x < 1.0 or rect.size.y < 1.0:   # degenerate polygons fail to triangulate
-		return
+	if rect.size.x < 1.0 or rect.size.y < 1.0 or not rect.position.is_finite() or not rect.end.is_finite():
+		return   # degenerate polygons (and units projected from behind the camera) fail to triangulate
 	var top: Color = gradient[0]
 	var bottom: Color = gradient[1]
+	if rect.size.x < 2.0 or rect.size.y < 2.0:   # a thin sliver shows no gradient and fails ear clipping
+		draw_rect(rect, top)
+		return
 	draw_polygon(PackedVector2Array([rect.position, Vector2(rect.end.x, rect.position.y), rect.end, Vector2(rect.position.x, rect.end.y)]),
 		PackedColorArray([top, top, bottom, bottom]))
 

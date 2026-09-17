@@ -192,4 +192,5 @@ map with the real units, towers and nexus, the original camera (zoom 2.6-3.8 x 1
 lane-locked z = -23) and map lighting scaled by 0.7 to match the reference brightness. Particle effects: `docs/particles.md`
 (spec), `tools/convert_particles.py` -> `assets/effects/`, `game/effects/particle_effect.gd` (engine-faithful CPU path
 player), scripts' effect components in `units.json` `effects`, played by the sandbox on create / fire / die /
-projectile impact. See `CONTINUE.md`.
+projectile impact. HUD verified against the live-client screenshots (resource panel, deck panel with the
+engine's colour-override darken shader); lane node capture circle (`game/effects/range_circle.gd`) in, unverified. See `CONTINUE.md`.

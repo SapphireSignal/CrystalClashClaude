@@ -312,7 +312,7 @@ func _update_particles(state: EmitterState, camera: Camera3D) -> int:
 			t_up = up.normalized() * (scaling.x / 2.0)
 		var normal := t_front.cross(t_up).normalized()
 		var rotation: Vector3 = d["rotation"]
-		if rotation.z != 0.0:
+		if rotation.z != 0.0 and not normal.is_zero_approx():   # zero-sized or degenerate quads have no normal
 			t_front = t_front.rotated(normal, rotation.z)
 			t_up = t_up.rotated(normal, rotation.z)
 		if rotation.y != 0.0 and not t_up.is_zero_approx():

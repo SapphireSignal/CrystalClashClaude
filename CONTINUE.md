@@ -2,7 +2,7 @@
 
 Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
 
-## State (2026-09-17, checkpoint 35)
+## State (2026-09-17, checkpoint 36)
 - Phases 1-3 done, 799 tests pass. Sandbox `game/main.tscn`: blue deck on keys 1-9,0,-,= or by clicking a card
   (drops/spells then need a left click on the ground, spawners go to the next free field); red AI plays Black.
 - **Phase 4 (HUD): step 1 done.** `game/ui/` holds the code-built HUD from `docs/hud.md`: top bar (clock, nexus
@@ -75,26 +75,31 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
   BoneAttachment3D + BoneOffset, model scale countered) and `VisibleWithWelaReady` effects toggle with
   `sim._wela_ready` (the footmen's shield rings). `tools/screenshot.gd -- 15 17 zoom=nexus play=2` shows them.
 
+- **Checkpoint 36 (HUD fixes 1-2 of the owner's list, verified against `reference/media/ingame`):** resource
+  panel rows/roman/timer at the art's positions (the 21 px content offset had been applied twice; roman 28 px
+  bold, caption right pad 31, icon 110 % centred 10 px inside the row end); deck panel darken is the engine's
+  COLOR_REPLACEMENT lerp (`game/ui/color_override.gdshader` on frame + icon, not a square), tier plate behind the
+  deco with the countdown/lock drawn on top (`plate_top`), locked slots darkened without glow, ready glow pulses
+  per `$glow` (opacity 1->0.6, scale 1.02->1, 2 s). The "double ring" is the source art (white spell frame +
+  blue `highlight_drop.png` disc): kept. Side fixes: particle quads with a zero normal no longer error, unit bars
+  skip off-screen / non-finite projections (the polygon errors are gone). `tools/screenshot.gd` has `zoom=node`.
+
 ## FIX FIRST (owner's request, before anything else)
-The owner compared `tools/screenshot.gd -- 15 18 zoom=nexus play=2` with `reference/media/ingame/*.webp`
-(live client, small HUD layout). Fix these HUD overlaps / gaps, screenshot after each, then continue below:
-1. Resource panel: row captions are ~22 px and sit on the top edge of the dark rows; the reference has ~13 px
-   text inside the rows, rows start ~20 px lower, the tier roman is bold and centred on the book, the tech
-   timer is small. Re-measure the row rectangles against `ressource_panel.png` (see `docs/hud.md`) and the
-   reference crop, fix `resource_panel.gd`.
-2. Deck panel: the charge badge and the hotkey badge overlap the frame / icon bottom; the charge number must
-   hang below-left outside the icon, hotkeys are hidden in the reference (keep them, but place them under the
-   slot). The 85 px slots hide the dark backplate (`deck_main_*.png`) completely: the icons should only
-   slightly overlap it. Locked tier plates must let the sunken slots peek out below; the mirrored right end
-   of the multi plate shows a seam. Ready glow is too strong (double-ring look).
-3. World: the lane node capture circle is missing (`TTextureRangeIndicatorComponent` in
-   `Scripts/Units/Neutral/LaneNode.ets`: `RangeLine.tga`, `DrawCircle(0.5)`, slices, `ShowTeamColor`,
-   `ShowWeaponRange`) -> a ground quad/decal per lane node tinted with the capturing team colour.
-4. The footmen's shield-block ring shows as scattered dots: check the effect scale rule
-   (`ScaleWith(eiCollisionRadius)` x model size / 1.7) against the reference and the debug view
-   (`.tmp/effect_view.gd` is gone; recreate a small one if needed).
-5. Lane stones still brighter/flatter than the reference: revisit `MapView.LIGHT_SCALE` and the terrain
+Compare with `tools/screenshot.gd -- 15 18 zoom=node play=2` (camera on the first lane node) and the reference.
+1. **Lane node capture circle: code in, NOT verified.** `game/effects/range_circle.gd` ports
+   `TVertexWorldspaceCircle` (radius = eiWelaRange[1] 16.5, thickness 0.5, slices 0.57-0.93 and 0.07-0.43, 64
+   samples, U along the arc, V outer->inner, `RangeLine.tga` copied to `assets/effects/textures/`); `main.gd`
+   builds a holder per lane node (also plays its `create` effects, `LaneNode.pfx`) and tints the circle white /
+   capturing team colour (original: `GetTeamColor(Owner.TeamID)` = team 0 grey, but the live client shows a light
+   arc; decision: white until a team charges it). In the last screenshot the ring was not visible on the bright
+   floor: `RangeLine.tga` alpha peaks at 33/255. Check the ring is drawn at all (mesh, y 0.01, camera frustum),
+   compare with the faint arc in the reference bottom-left crop, and check `LaneNode.pfx` plays. `play=2` at the
+   node placed nothing visible (drop zone?) - use the nexus view for the footmen instead.
+2. The footmen's shield-block ring shows as scattered dots: check the effect scale rule
+   (`ScaleWith(eiCollisionRadius)` x model size / 1.7) against the reference and a debug view.
+3. Lane stones still brighter/flatter than the reference: revisit `MapView.LIGHT_SCALE` and the terrain
    material (roughness, Material.png) with a side-by-side crop.
+Then checkpoint (tests, Status, CONTINUE.md, commit + push, give the new-chat prompt and STOP).
 
 ## Next step (in order, one at a time, run the game after each)
 1. Particles polish: (a) `AtFireTarget` / `ClonesToTarget` effects; (c) light particles as

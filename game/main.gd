@@ -300,7 +300,14 @@ func _place_camera(look_at_2d: Vector2) -> void:
 func _on_spawned(e: SimEntity) -> void:
 	if e.think_once_waits:   # one-tick helper entities (soul gather spawner) have no body
 		return
-	if e.is_lane_node():   # the original shows only particle rings here
+	if e.is_lane_node():   # no mesh: the capture circle (TTextureRangeIndicatorComponent) and particle rings
+		var holder := Node3D.new()
+		holder.position = Vector3(e.position.x, 0.0, e.position.y)
+		var range := e.bb.get_float("eiWelaRange", 1, 16.5)
+		holder.add_child(RangeCircle.create(range, 0.5, [[0.57, 0.93], [0.07, 0.43]], "RangeLine.tga"))
+		_units_root.add_child(holder)
+		_views[e.id] = holder
+		_spawn_effects(e, "create", holder)
 		return
 	var model := UnitModel.create(e.unit_id, HudStyle.displayed_team(e.team, Simulation.TEAM_BLUE))
 	if model != null:
@@ -438,6 +445,12 @@ func _sync_views() -> void:
 			continue
 		var e: SimEntity = sim.entities.get(id)
 		if e == null:
+			continue
+		if e.is_lane_node():   # ShowTeamColor: the circle takes the colour of the team charging the node
+			var team := e.capturing_team if e.capturing_team >= 0 else 0
+			for child in view.get_children():
+				if child is RangeCircle:
+					child.set_color(HudStyle.team_color(team, Simulation.TEAM_BLUE) if team > 0 else Color.WHITE)
 			continue
 		if view is UnitModel:
 			view.position = Vector3(e.position.x, 0.0, e.position.y)

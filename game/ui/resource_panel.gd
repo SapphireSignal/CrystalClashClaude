@@ -7,8 +7,12 @@ const CONTENT := 281.0
 const CONTENT_Y := 21.0
 const ROW_X := 49.0
 const ROW_W := 214.0
-const ROW_H := 31.0
-const ROW_Y := [38.0, 83.0, 128.0]
+const ROW_H := 30.0
+const ROW_Y := [18.0, 63.0, 108.0]   # content coordinates: the art's dark rows sit at panel y 39 / 84 / 129
+const ROW_TEXT_PAD := 31.0           # caption right edge measured in the live client (Padding-Right 120ch)
+const ICON_H := ROW_H * 1.1          # icon "Size auto 110%", centred 10 px inside the row's right end
+const ICON_CX := ROW_X + ROW_W - 10.0
+const TIER_RECT := Rect2(88, 177, 56, 56)   # tech-wrapper 31.5% 63% of the 281 content
 
 var _gold: Label
 var _wood: Label
@@ -31,20 +35,24 @@ func _ready() -> void:
 	_gold = _row(content, 0, "HUD/RessourcePanel/mana.png")
 	_wood = _row(content, 1, "HUD/RessourcePanel/essence.png")
 	_income = _row(content, 2, "HUD/RessourcePanel/income_upgrade.png")
-	_tier = HudStyle.label("I", int(56 * 0.6), HudStyle.WHITE, HudStyle.FONT_EXTRABOLD)
-	HudStyle.place(_tier, Rect2(88, 198, 56, 56))
+	# Fontsize 60% of 56 in the original; the live client draws the roman 28 px (measured cap height 19.6).
+	_tier = HudStyle.label("I", 28, HudStyle.WHITE, HudStyle.FONT_EXTRABOLD)
+	HudStyle.place(_tier, TIER_RECT)
 	content.add_child(_tier)
-	_tech_timer = HudStyle.label("", 15, HudStyle.WHITE, HudStyle.FONT_SEMIBOLD, HORIZONTAL_ALIGNMENT_LEFT)
-	HudStyle.place(_tech_timer, Rect2(147, 217, 100, 18))
+	# tech-timer: Position 105% 2% from the wrapper centre, anchored left, 18 high, font 100 %.
+	_tech_timer = HudStyle.label("", 18, HudStyle.WHITE, HudStyle.FONT_SEMIBOLD, HORIZONTAL_ALIGNMENT_LEFT)
+	var wrapper_centre := TIER_RECT.position + TIER_RECT.size * 0.5
+	HudStyle.place(_tech_timer, Rect2(wrapper_centre.x + TIER_RECT.size.x * 1.05, wrapper_centre.y + TIER_RECT.size.y * 0.02 - 9, 100, 18))
 	content.add_child(_tech_timer)
 
 
 func _row(content: Control, index: int, icon: String) -> Label:
 	var y: float = ROW_Y[index]
 	var l := HudStyle.label("", int(ROW_H * 0.7), HudStyle.WHITE, HudStyle.FONT_SEMIBOLD, HORIZONTAL_ALIGNMENT_RIGHT)
-	HudStyle.place(l, Rect2(ROW_X, y, ROW_W - ROW_H - 6, ROW_H))   # caption left of the icon square
+	HudStyle.place(l, Rect2(ROW_X, y, ROW_W - ROW_TEXT_PAD, ROW_H))   # caption left of the icon square
 	content.add_child(l)
-	content.add_child(HudStyle.picture(HudStyle.tex(icon), Rect2(ROW_X + ROW_W - ROW_H, y, ROW_H, ROW_H)))
+	var icon_rect := Rect2(ICON_CX - ICON_H * 0.5, y + (ROW_H - ICON_H) * 0.5, ICON_H, ICON_H)
+	content.add_child(HudStyle.picture(HudStyle.tex(icon), icon_rect))
 	return l
 
 
