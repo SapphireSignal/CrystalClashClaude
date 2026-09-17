@@ -1,7 +1,7 @@
 extends SceneTree
 ## Runs game/main.tscn for a while and saves screenshots of the HUD for comparison with
 ## reference/rolmedia/ingame. Usage (windowed, not headless):
-##   godot --path <proj> -s tools/screenshot.gd --log-file <proj>/.tmp/godot.log -- <seconds> [<seconds> ...] [select] [hover=<slot>] [finish] [zoom=nexus|unit|node] [at=node] [screen=X,Y] [size=WxH, default 1920x1080] [play=<slot>]
+##   godot --path <proj> -s tools/screenshot.gd --log-file <proj>/.tmp/godot.log -- <seconds> [<seconds> ...] [select] [hover=<slot>] [finish] [zoom=nexus|unit|node] [at=node] [screen=X,Y] [size=WxH, default 1920x1080] [play=<slot>] [menu] [settings=<category>]
 ## Writes .tmp/shot_<seconds>.png for each requested time; "select" selects a unit (or the blue nexus), "hover=N" shows deck slot N's card hint.
 
 var _targets: Array = []
@@ -15,6 +15,8 @@ var _at := ""
 var _screen := Vector2(-1, -1)   # screen=X,Y: put the at= target on this pixel (matches a reference shot's framing)
 var size := "1920x1080"   # the reference/rolmedia screenshots' size (normal HUD layout); size=1680x1050 for the small one      # at=node: look at the first lane node at the default zoom
 var _play := -1
+var _menu := false        # menu: open the game menu (Escape) at the first shot
+var _settings := ""       # settings=<gameplay|sound|graphics|keybinding>: open the settings dialog on that category
 
 
 func _initialize() -> void:
@@ -31,6 +33,10 @@ func _initialize() -> void:
 			_zoom = arg.trim_prefix("zoom=")
 		elif arg.begins_with("play="):
 			_play = int(arg.trim_prefix("play="))
+		elif arg == "menu":
+			_menu = true
+		elif arg.begins_with("settings="):
+			_settings = arg.trim_prefix("settings=")
 		elif arg.begins_with("at="):
 			_at = arg.trim_prefix("at=")
 		elif arg.begins_with("screen="):
@@ -81,6 +87,15 @@ func _process(delta: float) -> bool:
 			_main.sim.commanders[_main.HUMAN_TEAM].free_cards = true
 			_main._play(_main.HUMAN_TEAM, _play, _main._look_at + Vector2(6, 0))
 			_play = -1
+		if _menu:   # the game menu, with the settings dialog on top when settings= is given
+			_main._toggle_menu()
+			_menu = false
+		if _settings != "":
+			_main._open_settings()
+			var cat: int = {"gameplay": SettingsMenu.Category.GAMEPLAY, "sound": SettingsMenu.Category.SOUND,
+				"graphics": SettingsMenu.Category.GRAPHICS, "keybinding": SettingsMenu.Category.KEYBINDING}.get(_settings, SettingsMenu.Category.GRAPHICS)
+			_main._settings.set_category(cat)
+			_settings = ""
 		if _finish:   # kill the red nexus at the first shot: later shots show the victory screen
 			_main.sim._kill(_main.sim.entities[_main.sim.nexus_ids[_main.AI_TEAM]])
 			_finish = false

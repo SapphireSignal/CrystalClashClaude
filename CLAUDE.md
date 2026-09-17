@@ -231,4 +231,8 @@ profile/server values are local stubs; `teambuilding.gd` = the Play screen with 
 team row with the deck banner and the Start button, which begins the sandbox match); `loading_screen.gd` = the
 in-match LoadingScreen (background, progress bar, state texts, match display with the VS icon for 10 s then the
 tutorial slides every 5 s, 10 s minimum loading time, first-time hint), shown by `app.gd`'s LoadGame state; the final
-screen's Continue returns to MainMenu (preload page, then the dashboard) like `TGameStateCoreGame.EnterMainMenu`. See `CONTINUE.md`.
+screen's Continue returns to MainMenu (preload page, then the dashboard) like `TGameStateCoreGame.EnterMainMenu`.
+Settings: `game/settings.gd` (`ClientSettings`: original option names/defaults, `user://Settings.ini` in the original
+layout, snapshot/Save/Cancel/Revert, graphics quality presets) + `game/ui/menu/settings_menu.gd` (SettingsMenu.dui,
+Gameplay/Sound/Graphics tabs) + `ingame_menu.gd` (HUD/Menu.dui via Escape / minimap button; Surrender ends the match).
+The HUD reads hotkey badges, health bar mode and the technical panel from it. See `CONTINUE.md`.

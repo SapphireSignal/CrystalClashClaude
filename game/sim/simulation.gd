@@ -1568,6 +1568,15 @@ func _on_healed(e: SimEntity, healed: float) -> void:
 					_fire_group(e, cg, target)
 
 
+## eiSurrender (BaseConflict.Constants.pas:402, honoured in bot games): the team gives up and loses at once.
+func surrender(team: int) -> void:
+	if finished:
+		return
+	finished = true
+	winner_team = TEAM_BLUE if team == TEAM_RED else TEAM_RED
+	team_lost.emit(team)
+
+
 func _kill(e: SimEntity, killer: SimEntity = null) -> void:
 	if not e.exiled and _try_prevent_death(e):
 		return

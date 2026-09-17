@@ -44,12 +44,16 @@ func refresh() -> void:
 func _draw() -> void:
 	if _sim == null or _camera == null:
 		return
-	var always := Input.is_key_pressed(KEY_ALT)
+	# coGameplayHealthbarMode: hmAlways shows every bar, hmDamaged only injured/overhealed units, hmNone hides
+	# them; Alt shows all bars in every mode.
+	var mode := ClientSettings.healthbar_mode()
+	var always := Input.is_key_pressed(KEY_ALT) or mode == ClientSettings.HealthbarMode.ALWAYS
+	var damaged_only := mode != ClientSettings.HealthbarMode.NONE
 	for e in _sim.alive_entities():
 		if e.is_spawner() or e.exiled or e.max_health <= 0.0 or e.is_lane_node():
 			continue
 		var bars := []   # [height, draw callable]
-		var health_visible := e.health > 0.0 and (always or e.health < e.max_health or e.overheal > 0.0)
+		var health_visible := e.health > 0.0 and (always or (damaged_only and (e.health < e.max_health or e.overheal > 0.0)))
 		if health_visible:
 			bars.append([HEALTH_H, _draw_health.bind(e)])
 		if UnitDb.has_unit(e.unit_id):

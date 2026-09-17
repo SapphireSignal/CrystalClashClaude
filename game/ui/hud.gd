@@ -15,6 +15,7 @@ var info_bar: GameInfoBar
 var resources: ResourcePanel
 var deck: DeckPanel
 var minimap: Minimap
+var _tech: Control          # TechnicalPanel (coGameplayShowTechnicalPanel)
 var info: InfoPanel
 var card_hint: CardHint
 var announcements: Announcements
@@ -57,6 +58,7 @@ func _ready() -> void:
 	add_child(final_screen)
 	# TechnicalPanel: fps, ping icon, latency
 	var tech := Control.new()
+	_tech = tech
 	tech.mouse_filter = MOUSE_FILTER_IGNORE
 	HudStyle.place(tech, Rect2(4, 2, TECH_W, TECH_H))
 	add_child(tech)
@@ -75,6 +77,8 @@ func setup(sim: Simulation, own_team: int, camera: Camera3D) -> void:
 	deck.set_small(_is_small())   # before build(): the deck's own small-layout sizes
 	deck.build(sim.commanders[own_team])
 	_layout()
+	apply_settings()
+	ClientSettings.listen(apply_settings)
 	minimap.setup(sim, own_team, camera)
 	unit_bars.setup(sim, own_team, camera)
 	info.setup(own_team)
@@ -121,6 +125,16 @@ func select(e: SimEntity) -> void:
 
 func selected() -> SimEntity:
 	return info.selected()
+
+
+## TGameStateCoreGame.Idle pushes the gameplay options into the HUD: hotkey badges, the technical panel.
+func apply_settings() -> void:
+	deck.set_show_hotkeys(ClientSettings.get_bool(ClientSettings.Category.GAMEPLAY, "ShowDeckHotkeys"))
+	_tech.visible = ClientSettings.get_bool(ClientSettings.Category.GAMEPLAY, "ShowTechnicalPanel")
+
+
+func _exit_tree() -> void:
+	ClientSettings.unlisten(apply_settings)
 
 
 func refresh() -> void:

@@ -24,6 +24,7 @@ var _scenario := "es1v1"        # the Play screen's choice, RGameFoundData.scena
 
 
 func _ready() -> void:
+	ClientSettings.apply_startup()   # vsync and the master mixer from user://Settings.ini
 	change_game_state(GAMESTATE_MAINMENU)
 
 

@@ -27,7 +27,11 @@ FOLDERS = [
 FILES = ["Shared/Spinner.png", "HUD/Selection.png", "HUD/SelectionBuilding.png", "Shared/button_xl.tga", "Shared/button_xl_hover.tga",
          "Shared/Lock.png", "Shared/Icons/UnknownPlayer.png", "MainMenu/Deckbuilding/new_flag.png",
          "Shared/Icons/UnknownDeck.png", "Shared/player_icon_frame.png", "Shared/exclamation_success.png",
-         "MainMenu/Deckbuilding/Deckslot.png", "MainMenu/Tutorial/tutorial_video_button.png"]
+         "MainMenu/Deckbuilding/Deckslot.png", "MainMenu/Tutorial/tutorial_video_button.png",
+         "Shared/dialog_header.tga", "Shared/dialog_header_small.png", "Shared/warning.png",
+         "Shared/Checkbox.tga", "Shared/CheckboxHover.tga", "Shared/CheckboxDown.tga", "Shared/CheckboxDownHover.tga",
+         "Shared/button_xl_success.tga", "Shared/button_xl_success_hover.tga",
+         "Shared/button_xl_danger.tga", "Shared/button_xl_danger_hover.tga"]
 FONT_FILES = ["ProzaLibre-Regular.ttf", "ProzaLibre-Medium.ttf", "ProzaLibre-SemiBold.ttf",
               "ProzaLibre-Bold.ttf", "ProzaLibre-ExtraBold.ttf"]
 

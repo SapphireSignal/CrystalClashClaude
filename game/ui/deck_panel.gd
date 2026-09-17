@@ -37,6 +37,7 @@ class SlotView:
 	var cooldown: TextureProgressBar
 	var cooldown_text: Label
 	var charge_text: Label
+	var hotkey: Array = []      # [background, label] of the hotkey badge
 
 
 class Group:
@@ -247,7 +248,16 @@ func _build_slot(commander: Commander, index: int) -> SlotView:
 	hot.visible = show_hotkeys
 	v.root.add_child(hot_bg)
 	v.root.add_child(hot)
+	v.hotkey = [hot_bg, hot]
 	return v
+
+
+## hud.ShowCardHotkeys from the settings (coGameplayShowDeckHotkeys).
+func set_show_hotkeys(show: bool) -> void:
+	show_hotkeys = show
+	for v in _views:
+		for n in v.hotkey:
+			n.visible = show
 
 
 func refresh(sim: Simulation, commander: Commander) -> void:

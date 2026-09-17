@@ -23,6 +23,8 @@ var _views: Dictionary = {}   # entity id -> Node3D (UnitModel or placeholder me
 var _last_fire: Dictionary = {}   # entity id -> fire_at last seen (attack animation trigger)
 var _ready_effects: Dictionary = {}   # entity id -> [[ParticleEffect, wela group]] shown while that wela is ready
 var _hud: Hud
+var _menu: IngameMenu = null          # hud.IsMenuOpen
+var _settings: SettingsMenu = null    # diSettings
 var _selection_decal: MeshInstance3D
 var _armed_slot: int = -1      # card clicked in the deck panel, played at the next left click on the ground
 var _jump_return: Variant = null   # camera look-at to return to after a spawner jump
@@ -77,9 +79,32 @@ func _ready() -> void:
 	_hud.slot_clicked.connect(_on_slot_clicked)
 	_hud.spawner_jump.connect(_spawner_jump)
 	_hud.match_left.connect(_on_match_left)
+	_hud.minimap.menu_pressed.connect(_toggle_menu)
 	_selection_decal = _make_decal()
 	_look_at = sim.map.base_layout(HUMAN_TEAM)["nexus"]
 	_place_camera(_look_at)
+
+
+## Escape / the minimap's menu button: hud.IsMenuOpen toggles the game menu (HUD/Menu.dui).
+func _toggle_menu() -> void:
+	if _menu != null:
+		_menu.close()
+		return
+	_menu = IngameMenu.new()
+	_menu.closed.connect(func(): _menu = null)
+	_menu.settings_requested.connect(_open_settings)
+	_menu.surrender_requested.connect(func(): sim.surrender(HUMAN_TEAM))
+	$HUD.add_child(_menu)
+
+
+## dialogs.OpenDialog(diSettings) over the game menu (the original nests it, $zoffset-nested-dialog).
+func _open_settings() -> void:
+	if _settings != null:
+		return
+	_settings = SettingsMenu.new()
+	_settings.in_game = true
+	_settings.closed.connect(func(): _settings = null)
+	$HUD.add_child(_settings)
 
 
 ## The final screen's Continue (or its timeout): TGameStateCoreGame.EnterMainMenu hands over to the client state
@@ -138,7 +163,12 @@ func _unhandled_key_input(event: InputEvent) -> void:
 	if not event.is_pressed() or event.is_echo():
 		return
 	if event.keycode == KEY_ESCAPE:
-		get_tree().quit()
+		if _settings != null:
+			_settings.discard()
+		else:
+			_toggle_menu()
+		return
+	if _menu != null or _settings != null:
 		return
 	var slot := SLOT_KEYS.find(event.keycode)
 	if slot >= 0 and slot < sim.commanders[HUMAN_TEAM].slots.size():

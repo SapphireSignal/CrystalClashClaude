@@ -339,9 +339,14 @@ For a playable single-player loop (load -> menu -> play sandbox/vs AI -> match -
 5. **Ingame** — already built (`docs/hud.md`).
 6. **Final screen** — already built (`docs/hud.md`, "victory/defeat banner"); wire its "Continue" to return to
    `GAMESTATE_MAINMENU`/dashboard (step 2), closing the loop.
-7. **SettingsMenu** (graphics/sound/gameplay/keybinding only — drop the two menu-only categories that need
-   `hud. = nil` gating logic if not useful yet) — needed early in practice for resolution/volume but not for
-   the core loop, so it can follow once steps 1-6 work.
+7. **SettingsMenu** — built (checkpoint 65): `game/settings.gd` (`ClientSettings`, the TOptionManager options with
+   the original defaults, `user://Settings.ini` in the original's section/key layout, snapshot on open, Save/Cancel,
+   RevertCategory, the TSettingsWrapper quality presets) and `game/ui/menu/settings_menu.gd` (SettingsMenu.dui +
+   settings.scss: 800x580 window, category column with the Menu categories disabled in a match, Gameplay/Sound/
+   Graphics rows, revert button, Save/Cancel). `game/ui/menu/ingame_menu.gd` is HUD/Menu.dui (Settings / Surrender
+   / Exit to desktop / Back to game), opened by Escape or the minimap's menu button. Not built: the Keybindings rows
+   and KeybindingDialog, the two Menu categories' content (menu resolution/scaling/language, menu mixer), the
+   SystemPanel button that opens the dialog from the main menu.
 
 Can wait (all need the closed-source master server or are non-essential polish): login/Steam auth,
 LoginQueue, Maintenance, ServerDown (no server to go down), real matchmaking/ranked/2v2v-queue, Shop,

@@ -2,8 +2,8 @@
 
 Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
 
-## State (2026-09-17, checkpoint 64)
-- Phases 1-3 done, 799 tests pass. Sandbox `game/main.tscn`: blue deck on keys 1-9,0,-,= or by clicking a card
+## State (2026-09-17, checkpoint 65)
+- Phases 1-3 done, 826 tests pass. Sandbox `game/main.tscn`: blue deck on keys 1-9,0,-,= or by clicking a card
   (drops/spells then need a left click on the ground, spawners go to the next free field); red AI plays Black.
 - **Phase 4 (HUD): step 1 done.** `game/ui/` holds the code-built HUD from `docs/hud.md`: top bar (clock, nexus
   bars), resource panel (rows, income fill, tier book + tech timer), deck panel (stage groups, locked tier plates
@@ -259,9 +259,34 @@ Then checkpoint (tests, Status, CONTINUE.md, commit + push, give the new-chat pr
    the preload page shows again briefly (the original re-runs `InitAssetLoader` with its cache) and lands on mtStart
    (`Idle` `:2971-3010`: without ServerGameData -> mtStart; the mtGameRewards statistics screen of server matches is
    not built). Verified with `.tmp/exit_flow.gd` (kills the human nexus at 14 s, shots at 17/30.5 s; not committed).
-   Next: (7) SettingsMenu tabs. New scene `game/ui/menu/` + a `game/app.tscn` state
-   machine (GAMESTATE_* from `Constants.Client.pas:51-58`); the sandbox `main.tscn` becomes the ingame state.
-   Note `docs/lobby.md` section 3: `ch` = % of container height (re-derive the `ch` uses in `docs/hud.md`).
+   **(7) done (checkpoint 65):** `game/settings.gd` = `ClientSettings` (TOptionManager + TSettingsWrapper: options
+   keyed `<Category>/<Name>` like the original ini (`[Gameplay] ClipCursor`), DefaultOption values verbatim, only
+   overrides written to `user://Settings.ini`, SaveSnapshot on open / LoadSnapshot on Cancel, RevertCategory,
+   ClickPrecision thresholds (`> 1.0` wide, `> 0.0` extended: the default 1.0 reads back as extended, original quirk),
+   shadow quality by resolution thresholds + the bias triples, graphics presets = exact option-set match, `apply()`
+   on Save sets display mode/vsync/master bus, `apply_startup()` in `app.gd` only vsync + audio so the project's window
+   settings stand). `game/ui/menu/settings_menu.gd` (SettingsMenu.dui + settings.scss + _common.scss `.window`
+   /`.backdrop`): backdrop blur with BlurColor white (greyscale) + `$background-backdrop` tint as its own node (children
+   draw above `_draw`), 800x580 window (bg 324b50, border 2 5c8989 inside, outline 3), dialog_header.tga caption 35 px
+   above the top, category column (30 %, padding 20; headline 70/bsMargin 5, category 50 + margin 0 5 5 5, divider 10,
+   selected = cyan 0.3 + 5 px left border, hover 30FFFFFF, Menu categories darkened in a match), `.column` 320 wide
+   with 22-high rows at 26 pitch (check = Checkbox[Down][Hover].tga square + text at 1.2 h, select = field frame 24/28
+   high with 70 % font and a dropdown list drawn last, progress = 80000000 bg + 239191 bar set by click/drag,
+   `.deactivated` opacity 0.55 for the nested sound rows / toon+SSAO without deferred, `.secret` check opacity 0.01),
+   Revert bottom-right of the content, Save/Cancel btn-xl 35 px below the window. `ingame_menu.gd` = HUD/Menu.dui
+   (270x330, small caption, buttons 90 % wide `auto` high with -10 margin, Back to game at the bottom); `main.gd`:
+   Escape toggles it (was quit), minimap `menu_pressed` too, Settings opens the dialog on Graphics (OnDialogOpen in a
+   match), Surrender = `Simulation.surrender(team)` (eiSurrender: the team loses at once), Exit quits. HUD:
+   `apply_settings()` (hotkey badges via `DeckPanel.set_show_hotkeys`, technical panel) through `ClientSettings.listen`,
+   `unit_bars.gd` health bar mode (hmNone/hmDamaged/hmAlways, Alt shows all). `tools/screenshot.gd` gained `menu` and
+   `settings=<gameplay|sound|graphics|keybinding>`. Tests: `tests/test_settings.gd` (defaults, precision thresholds,
+   presets, snapshot/revert, surrender); 826 pass. Not built: Keybindings rows + KeybindingDialog (EnumKeybinding
+   defaults from `Constants.Client.pas:63` + KeybindingManager), the Menu categories' content, SystemPanel (opens the
+   dialog from the main menu), the `$fade-in`/`$scale-in` dialog animations, GUI click sounds. Open check: whether the
+   HUD stays faintly visible under the blurred backdrop like the original (our shot showed only the scene).
+   Next: (8) SystemPanel (MainMenu/SystemPanel: minimise / options / close top-right) so the settings open from the
+   menu with `in_game = false` (Menu categories enabled, MenuSettings.dui/MenuSoundSettings.dui content), or the
+   Keybindings tab. Then the remaining polish lists below.
 1. Particles polish: (a) `AtFireTarget` / `ClonesToTarget` effects; (c) light particles as
    OmniLight3D (100 emitters), `ptTrace` ribbons, nested `ptEffect`; (d) deactivation (`DeactivateOn*`,
    `stop_on_free`) and interval emitters that should stop when the wela ends; (e) the rotation sign convention
@@ -291,6 +316,8 @@ Then checkpoint (tests, Status, CONTINUE.md, commit + push, give the new-chat pr
 3. Later: audit the Steam patch notes newer than 2022-01-19 (CLAUDE.md Decisions) and apply via the extractor.
 
 ## Rules that bit us
+- Inner class names must not shadow Godot classes (`class Slider` failed to compile: "hides a native class").
+- A tint drawn in a Control's `_draw` is covered by its child nodes (the blur ColorRect): make the tint a node too.
 - Run `--import` before `-s tests/run_tests.gd` when new class_name scripts or assets were added.
 - `TextureRect`: set `expand_mode = EXPAND_IGNORE_SIZE` **before** `texture`/`size`, else the texture's
   minimum size sticks and the node stays 256 px (use `HudStyle.picture`).

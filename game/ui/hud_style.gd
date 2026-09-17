@@ -198,12 +198,16 @@ static func picture(texture: Texture2D, rect: Rect2) -> TextureRect:
 
 ## `Blur : True` area: the scene behind it blurred and tinted (game/ui/blur_backdrop.gdshader), drawn behind
 ## the panel art (ZOffset -1), so translucent panel images show a soft teal version of the world.
-static func blur(r: Rect2) -> ColorRect:
+## `blur_color` overrides the panels' $blur-color: dialog backdrops use $FFFFFFFF (greyscale scene).
+static func blur(r: Rect2, blur_color: Color = Color(0, 0, 0, 0)) -> ColorRect:
 	if _blur_material == null:
 		_blur_material = ShaderMaterial.new()
 		_blur_material.shader = preload("res://game/ui/blur_backdrop.gdshader")
 	var c := ColorRect.new()
 	c.material = _blur_material
+	if blur_color.a > 0.0:
+		c.material = _blur_material.duplicate()
+		c.material.set_shader_parameter("blur_color", blur_color)
 	c.position = r.position
 	c.size = r.size
 	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
