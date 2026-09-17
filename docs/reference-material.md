@@ -11,6 +11,27 @@ camera/lighting; a Victory banner) and `lobby/` 10 files (leaderboards de/fr/ru,
 summaries 1v1 ru and 2v2 es, deck-unlocked pt, maintenance splash "Rise of Legions Crystal Dawn"). The HUD is the
 *normal* layout at 1920x1080 (window >= 1710 wide), unlike the owner's Crystal Clash shots (small layout).
 
+## Screen coverage (2026-09-17): what defines each screen, and which shots verify it
+The ground truth for **every** screen is the repo: 139 `.dui` layouts + 57 `.scss` in `Graphics/GUI` (loading
+screen, login queue, maintenance, server-down, main menu: dashboard, deckbuilding, collection, shop, loot, quests,
+leaderboards, friend list, statistics, player level, notifications, tutorial; settings menu with gameplay /
+graphics / keybinding / sound tabs; HUD: deck, resources, minimap, game info, info panel, announcements, final
+screen, scoreboard, in-game menu, reconnect, sandbox, commander switch, technical panel), plus all their images
+and the Lang tables. Screenshots only verify rendering.
+
+| Screen | Rise of Legions shots (`rolmedia`) | Crystal Clash shots (`ccmedia`, later client) |
+|---|---|---|
+| In-game HUD normal layout 1920 | 13 (fights, unit panel, spawner panel) | - |
+| In-game HUD small layout | - | 21 (1679x1079) |
+| Capture-mode (no HUD) | 4 | - |
+| Victory banner / summary | 3 | 1 |
+| Leaderboards | 4 languages | yes |
+| Collection / deck unlocked / queue | 1 each | deck builder, card vendor, shop, tabs |
+| Maintenance splash | 1 | - |
+| Loading screen, login queue, dashboard/home, deckbuilder, shop, quests, settings, loot, friends, scoreboard, in-game menu | **none found online** (Steam community shots are almost all victories/fights) | lobby set covers home, play tabs, deck builder, shop, vendor trees, tooltips, loading |
+For screens without a Rise of Legions shot: build from the `.dui`/`.scss`/images (exact), use the `ccmedia` lobby
+shots only as a structural sanity check (later client, may differ), never copy their look.
+
 ## `reference/ccmedia/` (Crystal Clash) and `reference/rolmedia/` (Rise of Legions), gitignored
 `reference/rolmedia/` is the reference for the current build (the 2022 Rise of Legions). `reference/ccmedia/` was
 `reference/media/` until 2026-09-17:
