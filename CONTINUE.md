@@ -43,7 +43,8 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
   `sim_map.gd`, `build_zone.gd`, `sim_entity.gd` (stat Read chain), `blackboard.gd`, `unit_db.gd`
   (symbolic group map), `sim_constants.gd`. Data: `game/data/units.json`, `cards.json`, `modifiers.json`,
   `maps/*.json` from `tools/extract_units.py` and `tools/extract_maps.py`.
-- Sandbox `game/main.tscn`: capsules, 12-slot white deck on keys 1-9,0,-,= , simple red AI. Renderer: Compatibility.
+- Sandbox `game/main.tscn`: capsules, 12-slot white deck on keys 1-9,0,-,= , red AI plays Black; right-drag pans,
+  arrows nudge, wheel zooms; label shows Mana / Essence / tier like the live client. Renderer: Compatibility.
 - `docs/factions/black.md`: complete Black faction spec (souls, 12 units, 7 spells, component semantics).
 - `reference/media/` (local, gitignored): folder for real-game screenshots/videos the owner drops in.
 - `docs/reference-material.md`: where the real-game screenshots, UI captures, trailer, menu audio and the
