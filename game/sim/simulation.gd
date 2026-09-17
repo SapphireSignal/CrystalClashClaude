@@ -1030,6 +1030,8 @@ func _fire_group(e: SimEntity, group: int, target: SimEntity) -> void:
 		target.health = minf(target.max_health, amount * (target.max_health if w.resource_percentage else 1.0))
 	elif w.resource == "reHealth" and not w.heals and w.kind != Wela.Kind.RESOURCE_REGEN and w.resource != "":
 		target.health = minf(target.max_health, target.health + amount)
+	elif w.resource == "reMana" and not w.changes_max and w.kind != Wela.Kind.RESOURCE_REGEN:
+		gain_mana(target, int(amount))   # induction energy, ammo transfers
 	elif w.resource == "reWelaChargeCapacity":
 		var who := e if w.warhead_to_self else target
 		who.charge_capacity = mini(who.charge_capacity_cap, who.charge_capacity + int(amount))
@@ -1103,7 +1105,7 @@ func _fire_group(e: SimEntity, group: int, target: SimEntity) -> void:
 			rw.cooldown_ready_at = time_ms
 			if rg == SimConstants.GROUP_MAINWEAPON:
 				e.cooldown_ready_at = time_ms
-	if w.suicide and e.alive and w.kind != Wela.Kind.FIGHT and not _in_think_once:   # TWelaEffectSuicideComponent
+	if w.suicide and e.alive and not _in_think_once:   # TWelaEffectSuicideComponent (DamperDrone's breaching charge)
 		if e.is_targetable():
 			_kill(e)   # a real unit dies (Sapling timed life)
 		else:

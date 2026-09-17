@@ -2,8 +2,19 @@
 
 Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
 
-## State (2026-09-16, checkpoint 17)
-- Phase 2 core sim works and is tested (509 tests). Black and Green factions complete.
+## State (2026-09-16, checkpoint 18)
+- Phase 2 core sim works and is tested (531 tests). Black and Green factions complete. Blue started.
+- Blue chunk A done: DamperDrone (energy-scaled breaching charge, splash-only damage reduction), GatlingDrone
+  and GatlingTurret (gatling beam links: `link_brain` groups fire per tick, `link_pay_cost` upkeep), gadget cap
+  (`_register_gadget`, `Commander.gadget_count`, 5), missiles (`Projectile.mult_vs_props`, `InheritsFromPreceding`
+  in the extractor), MissileTurret, AmmoFactory, induction (`Kind.ON_ABILITY_USED` fired from `_cast_spell`).
+  Lane nodes: team-resolved `LaneNode_Red/_Blue` variants block the loser's recapture 40 s.
+- Blue still to do (docs/factions/blue.md): ObserverDrone (range aura, self-invisibility link with
+  `TWelaReadyEntityNearbyComponent`), Atlas (level-conditional CreateData: armor by `reLevel` bands and
+  HP 155 + 70*(level-1); needs `reCardTimesPlayed` per deck slot -> `reLevel`, extractor support for the
+  `if CurrentLevel < N` chain; active armor on take damage; induction heal), PhaseDrone (teleport strike,
+  invincibility after damage), Inductioner, ShieldDrone (follow brain, projectile reflector links), Airdominator,
+  Bombardier (line splash `LineFromOwner`), Aegis (cone gatlings, exile rift, starfall); then the 7 spells.
 - Green added: approach/wait brains per group, link entities with chained groups (`_fire_link_group`), timer
   groups (`_think_timers`, `Wela.timer_period`, `nth`), companion/shared-cooldown groups, `no_pathfinding`,
   `charge_capacity`, bouncing/depleting projectiles, dodge, buff `removed_properties`/`on_expire_script`/
@@ -40,8 +51,9 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
   and for the patch-notes audit.
 
 ## Next step (in order, one at a time, test after each)
-1. Blue (`docs/factions/blue.md`), then Golems / Crystal Legion (`docs/factions/golems.md`): units then spells,
-   each with a test against the doc's numbers. Read `docs/reference-material.md` for live-client facts.
+1. Finish Blue (see State), then Golems / Crystal Legion (`docs/factions/golems.md`): units then spells, each
+   with a test against the doc's numbers. Read `docs/reference-material.md` for live-client facts and the
+   owner's screenshots (tooltips are two-stage, own outline blue / enemy red is an owner decision).
 2. Then the sandbox should show a full deck including spells (main.gd: `ctEntity` spells need a unit under
    the mouse), then phase 3 deck rules (12 slots, 2 colors, 1 epic) and phase 4 HUD.
 3. Late phase: audit Crystal Clash Steam patch notes newer than the repo snapshot (2022-01-19) and apply

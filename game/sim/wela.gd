@@ -306,12 +306,13 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 			"TWelaEfficiencyMissingHealthComponent":
 				get.call(g, Kind.SUB).efficiency_missing_health = true
 			"TWelaEfficiencyUnitPropertyComponent":
-				var w: Wela = get.call(g, Kind.SUB)
-				for c in calls:
-					if c[0] == "Prioritize":
-						w.prioritize_props.append_array(c[1][0])
-					elif c[0] == "Reverse":
-						w.prioritize_reversed = true
+				for gg in groups:
+					var w: Wela = get.call(gg, Kind.SUB)
+					for c in calls:
+						if c[0] == "Prioritize":
+							w.prioritize_props.append_array(c[1][0])
+						elif c[0] == "Reverse":
+							w.prioritize_reversed = true
 			"TWelaEffectFactoryComponent":
 				var w: Wela = get.call(g, Kind.SUB)
 				w.spawns = true
@@ -502,7 +503,7 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 					elif c[0] == "ScaleWithResource":
 						resource = c[1][0]
 					elif c[0] == "ResourceGroup":
-						res_group = UnitDb.group_id(c[1][0][0], map)
+						res_group = UnitDb.group_id(c[1][0][0], map) if not c[1][0].is_empty() else -1   # [] = entity-wide pool
 					elif c[0] == "SetValueGroup":
 						value_group = UnitDb.group_id(c[1][0][0], map)
 				if scales:

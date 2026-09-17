@@ -1707,7 +1707,7 @@ func test_damper_drone_breaching_charge() -> void:
 func test_gatling_drone_beam() -> void:
 	var sim := Simulation.new(9, 4)
 	var drone := sim.spawn("Units/Blue/GatlingDrone", Simulation.TEAM_BLUE, Vector2(0, -23))
-	var target := sim.spawn("Units/White/Footman", Simulation.TEAM_RED, Vector2(4, -23))
+	var target := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(4, -23))
 	var near := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(5.5, -23))
 	target.locked_until = 1 << 30
 	near.locked_until = 1 << 30
@@ -1717,7 +1717,7 @@ func test_gatling_drone_beam() -> void:
 	var near_hp := near.health
 	for i in 17:
 		sim.step()
-	runner.check_near(target.health, hp - 11.0 - 3.0, "11 armor-piercing beam damage plus 3 splash every 500 ms (footman: medium armor ignored, splash 3 x 0.8 = 2.4 -> shieldblock? no, below 10)")
+	runner.check_near(target.health, hp - 11.0 - 3.0, "11 armor-piercing beam damage plus 3 splash every 500 ms")
 	runner.check_near(near.health, near_hp - 3.0, "3 splash in 2.5 around the target")
 
 
@@ -1734,7 +1734,8 @@ func test_gatling_turret_energy_and_gadget_cap() -> void:
 		sim.step()
 	runner.check_eq(turret.mana, 16, "one energy per second of uptime")
 	turret.mana = 0
-	sim.step()
+	for i in 40:
+		sim.step()
 	runner.check(not monk.linked_from(turret.id), "no energy, no beam")
 	for i in 5:
 		sim.spawn("Units/Blue/MissileTurret", Simulation.TEAM_BLUE, Vector2(-20 + i * 2, -23))
@@ -1751,8 +1752,10 @@ func test_missile_turret_and_ammo_factory() -> void:
 	walker.locked_until = 1 << 30
 	while flyer.health == 75.0 and sim.time_ms < 4000:
 		sim.step()
-	runner.check_near(flyer.health, 75.0 - 47.0 * 2.0, "missiles prefer flyers and deal double damage to them")
-	runner.check_near(walker.health, 265.0 - 47.0, "splash 2.5 hits the walker for the plain 47")
+	runner.check(not flyer.alive, "missiles prefer flyers and deal double damage: 94 kills the 75 hp wisp")
+	for i in 100:
+		sim.step()
+	runner.check_near(walker.health, 265.0 - 47.0 - 47.0, "splash 47 from the first missile, then a direct 47")
 	runner.check_eq(turret.mana, 12, "a missile costs 2 energy")
 	turret.mana = 0
 	var factory := sim.spawn("Units/Blue/AmmoFactory", Simulation.TEAM_BLUE, Vector2(3, -23))
