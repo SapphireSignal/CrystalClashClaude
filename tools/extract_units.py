@@ -71,10 +71,50 @@ def parse_value(raw: str):
     return raw  # expression we do not evaluate; kept verbatim
 
 
+RE_INCLUDE = re.compile(r"\{\$INCLUDE\s+'(\w+Template)\.dws'\}")
+_template_cache: dict = {}
+
+
+def template_values(name: str) -> dict:
+    """SetValue lines of the Init<X>Data procedure in HelperScripts/<name>.dws (e.g. InitUnitData)."""
+    if name in _template_cache:
+        return _template_cache[name]
+    text = (SCRIPTS / "HelperScripts" / f"{name}.dws").read_text(encoding="utf-8", errors="replace")
+    values: dict = {}
+    m = re.search(r"procedure Init\w+Data\(.*?\);(.*?)^end;", text, re.S | re.M)
+    if m:
+        body = re.sub(r"\{\$IFDEF CLIENT\}.*?\{\$ENDIF\}", "", m.group(1), flags=re.S)
+        parse_set_lines(body, values)
+    _template_cache[name] = values
+    return values
+
+
+def parse_set_lines(body: str, values: dict) -> None:
+    for line in body.splitlines():
+        line = line.strip()
+        m = RE_SET.match(line)
+        if not m:
+            continue
+        indexed, event, groups, index, raw = m.groups()
+        groups = [int(g) for g in re.findall(r"\d+", groups)] or []
+        if "GROUP_" in m.group(3):
+            groups = [0]  # GROUP_DROP_SPAWNER / GROUP_SPELL_SPAWNER / GROUP_TEMPLATE_SPAWNER are all 0
+        value = parse_value(raw)
+        key = event if not indexed else f"{event}.{index}"
+        entry = values.setdefault(key, {})
+        for g in (groups or ["*"]):
+            entry[str(g)] = value
+
+
 def parse_script(path: Path) -> dict:
     text = path.read_text(encoding="utf-8", errors="replace")
     body = create_data_body(text)
     data: dict = {"script": str(path.relative_to(SCRIPTS)).replace("\\", "/"), "values": {}}
+    inc = RE_INCLUDE.search(text)
+    if inc:
+        data["template"] = inc.group(1)
+        for event, by_group in template_values(inc.group(1)).items():
+            data["values"][event] = dict(by_group)
     m = RE_INHERITS.search(text)
     if m:
         parent = parse_script(SCRIPTS / m.group(1).replace("\\", "/"))
@@ -92,20 +132,7 @@ def parse_script(path: Path) -> dict:
         data["card_kind"] = m.group(1)
         data["legendary"] = m.group(2) == "True"
         data["tier"] = int(m.group(3))
-    for line in body.splitlines():
-        line = line.strip()
-        m = RE_SET.match(line)
-        if not m:
-            continue
-        indexed, event, groups, index, raw = m.groups()
-        groups = [int(g) for g in re.findall(r"\d+", groups)] or []
-        if "GROUP_" in m.group(3):
-            groups = [0]  # GROUP_DROP_SPAWNER / GROUP_SPELL_SPAWNER / GROUP_TEMPLATE_SPAWNER are all 0
-        value = parse_value(raw)
-        key = event if not indexed else f"{event}.{index}"
-        entry = data["values"].setdefault(key, {})
-        for g in (groups or ["*"]):
-            entry[str(g)] = value
+    parse_set_lines(body, data["values"])
     return data
 
 

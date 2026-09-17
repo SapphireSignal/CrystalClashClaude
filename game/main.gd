@@ -42,7 +42,20 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		KEY_2: sim.drop_squad("Units/White/Archer", Simulation.TEAM_BLUE, Vector2(-60, -23), 2)
 		KEY_3: sim.drop_squad("Units/White/Footman", Simulation.TEAM_RED, Vector2(60, -23), 4)
 		KEY_4: sim.drop_squad("Units/White/Archer", Simulation.TEAM_RED, Vector2(60, -23), 2)
+		KEY_5: _place_next_spawner("Units/White/FootmanSpawner", Simulation.TEAM_BLUE)
+		KEY_6: _place_next_spawner("Units/White/ArcherSpawner", Simulation.TEAM_RED)
 		KEY_ESCAPE: get_tree().quit()
+
+
+## Sandbox helper: put a spawner on the first free field of the team's build zone.
+func _place_next_spawner(unit_id: String, team: int) -> void:
+	for zone: BuildZone in sim.build_zones.values():
+		if zone.team != team:
+			continue
+		for field in zone.spawn_slots():
+			if zone.is_free(field):
+				sim.place_spawner(unit_id, team, zone.id, field)
+				return
 
 
 func _place_camera(look_at_2d: Vector2) -> void:

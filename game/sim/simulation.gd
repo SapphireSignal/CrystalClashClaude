@@ -27,6 +27,8 @@ var _next_id: int = 1
 var commanders: Dictionary = {}      # team -> Commander
 var nexus_ids: Dictionary = {}       # team -> entity id
 var fired_events: Dictionary = {}
+var build_zones: Dictionary = {}     # zone id -> BuildZone
+var _spawn_rotations: Dictionary = {} # zone id -> Array[Vector2i] of fields not yet spawned this cycle
 
 
 class Commander:
@@ -62,6 +64,9 @@ func _init(seed: int = 1, p_league: int = 4, map_name: String = SimMap.SINGLE) -
 		var c := Commander.new()
 		c.team = team
 		commanders[team] = c
+	for zone in map.build_zones():
+		build_zones[zone.id] = zone
+		_spawn_rotations[zone.id] = []
 
 
 ## Spawns nexus and lanetowers for both teams (PvPRed.dws / PvPBlue.dws).
@@ -87,24 +92,78 @@ func spawn(unit_id: String, team: int, pos: Vector2, front: Vector2 = Vector2.ZE
 		nexus_ids[team] = e.id
 	if e.is_building():
 		map.pathfinding.block_permanent_area(pos, e.collision_radius)
-	else:
+	elif not e.is_spawner():
 		_enter_tile(e)
 		_stand(e)
 	entity_spawned.emit(e)
 	return e
 
 
-## Drop a squad the way TWelaEffectFactoryComponent.SpreadSpawns does: scattered inside the drop radius.
-func drop_squad(unit_id: String, team: int, pos: Vector2, count: int, radius: float = 3.0) -> Array[SimEntity]:
+## ComputeSpawningPattern (BaseConflict.Types.Target.pas:177): squad formation around a point.
+static func spawning_pattern(pos: Vector2, front: Vector2, is_spawner: bool, index: int, count: int) -> Vector2:
+	if count <= 1:
+		return pos
+	const SPAWN_DISTANCE := 1.5 / 0.45
+	var size := 0.2 if is_spawner else 0.45
+	var side := front * SPAWN_DISTANCE * size
+	match count:
+		2: side = side.rotated(PI / 2) * 0.5
+		3: side = side.rotated(PI / 3)
+		4: side = side.rotated(PI / 4)
+	side = side.rotated((float(index) / count) * TAU)
+	return pos + side
+
+
+## TWelaEffectFactoryComponent.SpreadSpawns without an area of effect: units spawn in formation.
+func spawn_squad(unit_id: String, team: int, pos: Vector2, count: int, is_spawner: bool) -> Array[SimEntity]:
 	var result: Array[SimEntity] = []
+	var front := Vector2(-1.0 if team == TEAM_RED else 1.0, 0.0)
 	for i in count:
-		var offset := Vector2.ZERO
-		if count > 1:
-			offset = Vector2.RIGHT.rotated(rng.randf() * TAU) * (rng.randf() * radius)
-		var e := spawn(unit_id, team, pos + offset)
+		var e := spawn(unit_id, team, spawning_pattern(pos, front, is_spawner, i, count), front)
 		e.summoning_sick_until = time_ms + SimConstants.SUMMONING_SICKNESS_MS
 		result.append(e)
 	return result
+
+
+## Drop card: squad appears in formation at the drop point.
+func drop_squad(unit_id: String, team: int, pos: Vector2, count: int) -> Array[SimEntity]:
+	return spawn_squad(unit_id, team, pos, count, false)
+
+
+## Place a spawner card on a build-grid field. Returns null when the field is not free or not the team's.
+func place_spawner(unit_id: String, team: int, zone_id: int, field: Vector2i) -> SimEntity:
+	var zone: BuildZone = build_zones.get(zone_id)
+	if zone == null or zone.team != team or not zone.is_free(field):
+		return null
+	var e := spawn(unit_id, team, zone.center_of_field(field), zone.front)
+	e.build_zone_id = zone_id
+	e.build_field = field
+	zone.occupy(field, e.id)
+	if game_started:
+		_spawner_fire(e)   # TBrainSpawnerComponent.OnDeploy
+	return e
+
+
+## TWelaEffectWaveSpawnComponent.Fire: one random not-yet-used field per zone; spawners there fire.
+func _wave_spawn() -> void:
+	for zone_id in build_zones:
+		var rotation: Array = _spawn_rotations[zone_id]
+		if rotation.is_empty():
+			rotation.assign(build_zones[zone_id].spawn_slots())
+		var field: Vector2i = rotation[rng.randi_range(0, rotation.size() - 1)]
+		rotation.erase(field)
+		var owner_id: int = build_zones[zone_id].entity_at(field)
+		var spawner: SimEntity = entities.get(owner_id) if owner_id >= 0 else null
+		if spawner != null and spawner.alive:
+			_spawner_fire(spawner)
+
+
+func _spawner_fire(spawner: SimEntity) -> void:
+	var zone: BuildZone = build_zones[spawner.build_zone_id]
+	var pos := zone.spawn_position_for_field(spawner.build_field)
+	var pattern: String = spawner.bb.get_value("eiWelaUnitPattern", 0, "").replace("\\", "/")
+	var count: int = spawner.bb.get_int("eiWelaCount", 0, 1)
+	spawn_squad(pattern, spawner.team, pos, count, true)
 
 
 func enemy_nexus(team: int) -> SimEntity:
@@ -119,7 +178,7 @@ func step() -> void:
 	time_ms += SimConstants.TICK_MS
 	_update_game_tick()
 	for e: SimEntity in entities.values():
-		if not e.alive:
+		if not e.alive or e.is_spawner():
 			continue
 		_resolve_pending_fire(e)
 		if not e.can_think(time_ms):
@@ -136,9 +195,14 @@ func _update_game_tick() -> void:
 	if not game_started:
 		game_started = true
 		game_event.emit("game_start")
+		for e: SimEntity in entities.values():   # TBrainSpawnerComponent.OnGameStart
+			if e.alive and e.is_spawner():
+				_spawner_fire(e)
 	tick_counter += 1
 	for c: Commander in commanders.values():
 		c.pay_income()
+	if tick_counter % SimConstants.WAVE_EVERY_N_TICKS == 0:   # TWelaReadyNthComponent.Nth(2)
+		_wave_spawn()
 	_fire_scheduled_events()
 	game_tick.emit(tick_counter)
 
@@ -233,6 +297,8 @@ func _kill(e: SimEntity) -> void:
 	e.died_at = time_ms
 	_leave_tile(e)
 	map.pathfinding.cancel_path(e.id)
+	if e.is_spawner() and build_zones.has(e.build_zone_id):
+		build_zones[e.build_zone_id].release(e.build_field)
 	entity_died.emit(e)
 	if e.has("upNexus") and not finished:
 		finished = true
@@ -246,7 +312,7 @@ func _pick_target(e: SimEntity, range: float) -> SimEntity:
 	var best: SimEntity = null
 	var best_key := INF
 	for other: SimEntity in entities.values():
-		if not other.alive or other.team == e.team or other.has("upUntargetable"):
+		if not other.alive or other.team == e.team or not other.is_targetable():
 			continue
 		if other.has("upFlying") and not other.has("upGround") and not e.may_target_flying():
 			continue

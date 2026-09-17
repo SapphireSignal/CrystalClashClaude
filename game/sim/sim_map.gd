@@ -52,3 +52,17 @@ func base_layout(team: int) -> Dictionary:
 
 func lane_node_positions() -> Array:
 	return [Vector2(0, -23)] if is_single() else [Vector2(0, -23), Vector2(0, 23)]
+
+
+## Build zones exactly as PvPRed.dws / PvPBlue.dws define them (id, team, center, front, spawn target, normal).
+func build_zones() -> Array[BuildZone]:
+	var out: Array[BuildZone] = []
+	if is_single():
+		out.append(BuildZone.new(0, 1, Vector2(-106.7, -23), Vector2(1, 0), Vector2(-90, -23), Vector2(-1, 0)))
+		out.append(BuildZone.new(1, 2, Vector2(106.7, -23), Vector2(-1, 0), Vector2(90, -23), Vector2(1, 0)))
+	else:
+		out.append(BuildZone.new(0, 1, Vector2(-102, -17), Vector2(1, 0), Vector2(-86, -6), Vector2(-1, 1)))
+		out.append(BuildZone.new(1, 1, Vector2(-102, 17), Vector2(1, 0), Vector2(-86, 6), Vector2(-1, -1)))
+		out.append(BuildZone.new(2, 2, Vector2(102, -17), Vector2(-1, 0), Vector2(86, -6), Vector2(1, 1)))
+		out.append(BuildZone.new(3, 2, Vector2(102, 17), Vector2(-1, 0), Vector2(86, 6), Vector2(1, -1)))
+	return out

@@ -104,5 +104,8 @@ Phase 1 done (docs written). Phase 2 in progress: `game/sim/` has fixed-tick Sim
 `units.json` (233 unit scripts, league arrays, inheritance), armor formula, attack timing, nearest-target
 picking, economy tick with gold-cap overflow to wood, tech events, nexus death = loss, map zones from
 `game/data/maps/*.json`, original lane waypoints, A* tile pathfinding with space-time reservations and
-path following (TMovementComponent port), base spawning (nexus + lanetowers). 61 tests pass.
-`game/main.tscn` is a sandbox with capsule units (keys 1-4 drop squads). See `CONTINUE.md` for the next step.
+path following (TMovementComponent port), base spawning (nexus + lanetowers), build zones (8x3 grids from
+the scenario scripts), spawner cards with wave rotation (one random field per zone every 2 ticks, spawn at
+game start and on placement), squad formations (ComputeSpawningPattern). 82 tests pass.
+`game/main.tscn` is a sandbox with capsule units (keys 1-4 drop squads, 5-6 place spawners).
+See `CONTINUE.md` for the next step.

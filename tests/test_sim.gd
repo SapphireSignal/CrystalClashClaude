@@ -154,6 +154,62 @@ func test_lane_waypoints() -> void:
 	runner.check_eq(wp, Vector2(60, -23), "walking -x sees the +60 gate first")
 
 
+func test_build_zone_geometry() -> void:
+	var m := SimMap.load_map(SimMap.SINGLE)
+	var zones := m.build_zones()
+	runner.check_eq(zones.size(), 2, "single map has two build zones")
+	var blue: BuildZone = zones[0]
+	runner.check_eq(blue.team, 1, "zone 0 is blue")
+	runner.check_eq(blue.left(), Vector2(0, 1), "left is orthogonal of front (1,0)")
+	runner.check_eq(blue.center_of_field(Vector2i(0, 0)), Vector2(-108.7, -30), "field (0,0) center")
+	runner.check_eq(blue.position_to_coord(Vector2(-108.7, -30)), Vector2i(0, 0), "coord round trip")
+	runner.check_eq(blue.spawn_slots().size(), 20, "20 usable slots")
+	runner.check(blue.is_banned(Vector2i(7, 2)), "corner banned")
+	runner.check(blue.is_free(Vector2i(3, 1)), "middle field free")
+	runner.check_eq(blue.spawn_position_for_field(Vector2i(3, 1)), Vector2(-90, -24), "spawn offset follows grid offset")
+	runner.check_eq(blue.spawn_position_for_field(Vector2i(4, 1)), Vector2(-90, -22), "mirrored field mirrored offset")
+
+
+func test_spawner_waves() -> void:
+	var sim := Simulation.new(11, 4)
+	sim.spawn_bases()
+	runner.check_eq(sim.place_spawner("Units/White/FootmanSpawner", Simulation.TEAM_BLUE, 0, Vector2i(0, 0)), null, "corner rejected")
+	runner.check_eq(sim.place_spawner("Units/White/FootmanSpawner", Simulation.TEAM_RED, 0, Vector2i(3, 1)), null, "wrong team rejected")
+	var spawner := sim.place_spawner("Units/White/FootmanSpawner", Simulation.TEAM_BLUE, 0, Vector2i(3, 1))
+	runner.check(spawner != null, "spawner placed")
+	runner.check_eq(sim.place_spawner("Units/White/FootmanSpawner", Simulation.TEAM_BLUE, 0, Vector2i(3, 1)), null, "occupied rejected")
+	runner.check_eq(sim.alive_entities(Simulation.TEAM_BLUE).size(), 3, "no units before game start (nexus, tower, spawner)")
+	var spawned: Array = []
+	var on_spawn := func(e): if e.has("upMelee"): spawned.append(sim.time_ms)
+	sim.entity_spawned.connect(on_spawn)
+	while sim.tick_counter < 1:
+		sim.step()
+	runner.check_eq(spawned.size(), 4, "squad of 4 footmen at game start")
+	if spawned.size() == 4:
+		var first := sim.entities.values().filter(func(e): return e.has("upMelee"))
+		var center := Vector2.ZERO
+		for f in first:
+			center += f.position
+		center /= 4.0
+		runner.check(center.distance_to(Vector2(-90, -24)) < 0.5, "squad centered on the spawn target (%s)" % center)
+	# one field per zone per wave, 20 fields per cycle: the spawner fires again within 20 waves (40 ticks)
+	while sim.tick_counter < 41:
+		sim.step()
+	runner.check_eq(spawned.size(), 8, "spawner fired exactly once more within a full rotation")
+	while sim.tick_counter < 81:
+		sim.step()
+	runner.check_eq(spawned.size(), 12, "and once per following rotation")
+	sim.entity_spawned.disconnect(on_spawn)
+
+
+func test_drop_formation() -> void:
+	var sim := Simulation.new(1, 4)
+	var squad := sim.drop_squad("Units/White/Footman", Simulation.TEAM_BLUE, Vector2(0, -23), 4)
+	var expected := Simulation.spawning_pattern(Vector2(0, -23), Vector2(1, 0), false, 2, 4)
+	runner.check(squad[2].position.distance_to(expected) < 0.001, "formation from ComputeSpawningPattern")
+	runner.check_near(squad[0].position.distance_to(Vector2(0, -23)), 1.5, "drop ring radius 1.5")
+
+
 func test_unit_walks_lane_to_enemy_nexus() -> void:
 	var sim := Simulation.new(5, 4)
 	sim.spawn_bases()

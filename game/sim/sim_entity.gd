@@ -27,6 +27,10 @@ var summoning_sick_until: int = 0
 var created_at: int = 0
 var died_at: int = -1
 
+# Spawner card state (TBrainSpawnerComponent)
+var build_zone_id: int = -1
+var build_field: Vector2i = Vector2i(-1, -1)
+
 # Movement state (TMovementComponent / TPathfindingComponent)
 var moving: bool = false
 var move_target_id: int = 0          # entity we walk to, 0 = position target
@@ -64,6 +68,15 @@ func has(prop: String) -> bool:
 
 func is_building() -> bool:
 	return has("upBuilding")
+
+
+func is_spawner() -> bool:
+	return has("upSpawner")
+
+
+## True for real battlefield entities (units/buildings); false for card entities like spawners.
+func is_targetable() -> bool:
+	return not is_spawner() and not has("upUntargetable")
 
 
 func can_attack() -> bool:
