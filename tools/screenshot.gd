@@ -1,7 +1,7 @@
 extends SceneTree
 ## Runs game/main.tscn for a while and saves screenshots of the HUD for comparison with
 ## reference/media/ingame. Usage (windowed, not headless):
-##   godot --path <proj> -s tools/screenshot.gd --log-file <proj>/.tmp/godot.log -- <seconds> [<seconds> ...] [select] [hover=<slot>] [finish] [zoom=nexus|unit|node] [at=node] [play=<slot>]
+##   godot --path <proj> -s tools/screenshot.gd --log-file <proj>/.tmp/godot.log -- <seconds> [<seconds> ...] [select] [hover=<slot>] [finish] [zoom=nexus|unit|node] [at=node] [size=WxH, default 1679x1079] [play=<slot>]
 ## Writes .tmp/shot_<seconds>.png for each requested time; "select" selects a unit (or the blue nexus), "hover=N" shows deck slot N's card hint.
 
 var _targets: Array = []
@@ -11,7 +11,8 @@ var _select := false
 var _hover := -1
 var _finish := false
 var _zoom := ""
-var _at := ""      # at=node: look at the first lane node at the default zoom
+var _at := ""
+var size := "1679x1079"   # the owner's live-client window (small HUD layout); comparisons must use it      # at=node: look at the first lane node at the default zoom
 var _play := -1
 
 
@@ -31,9 +32,12 @@ func _initialize() -> void:
 			_play = int(arg.trim_prefix("play="))
 		elif arg.begins_with("at="):
 			_at = arg.trim_prefix("at=")
-		elif arg.begins_with("size="):   # size=1679x1079: render at the reference screenshot's window size
-			var parts := arg.trim_prefix("size=").split("x")
-			DisplayServer.window_set_size(Vector2i(int(parts[0]), int(parts[1])))
+		elif arg.begins_with("size="):   # size=WxH overrides the default reference window size
+			size = arg.trim_prefix("size=")
+	var parts := size.split("x")
+	DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_BORDERLESS, true)   # else the taskbar clamps the height
+	DisplayServer.window_set_position(Vector2i.ZERO)
+	DisplayServer.window_set_size(Vector2i(int(parts[0]), int(parts[1])))
 	if _targets.is_empty():
 		_targets = [3.0]
 	_targets.sort()
