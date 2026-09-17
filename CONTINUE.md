@@ -2,6 +2,12 @@
 
 Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
 
+**Model routing (owner):** every step below is tagged `[Opus]` (spec-following: screens from .dui/.scss, wiring,
+tests, docs, known formats, polish) or `[Fable]` (reverse-engineering, disagreeing screenshot comparisons,
+determinism/multiplayer, the Crystal Clash hand-over diff, bugs that survived two Opus attempts). Name the tag in the
+first line of the step; if it differs from the session's model, checkpoint and stop with the prompt above so the
+owner can switch.
+
 ## State (2026-09-17, checkpoint 65)
 - Phases 1-3 done, 826 tests pass. Sandbox `game/main.tscn`: blue deck on keys 1-9,0,-,= or by clicking a card
   (drops/spells then need a left click on the ground, spawners go to the next free field); red AI plays Black.
@@ -189,9 +195,9 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
    `docs/reference-material.md`. Still open here: `LaneNode.pfx` (the disc particles) did not show in the shot,
    check `_spawn_effects(e, "create", holder)` for lane nodes; the blue progress ring (`TResourceDisplayComponent`
    team power) and `Capture%d.pfx` on fire are not built yet.
-2. The footmen's shield-block ring shows as scattered dots: check the effect scale rule
+2. **[Fable]** The footmen's shield-block ring shows as scattered dots: check the effect scale rule
    (`ScaleWith(eiCollisionRadius)` x model size / 1.7) against the reference and a debug view.
-3. Lane stones still brighter/flatter than the reference: revisit `MapView.LIGHT_SCALE` and the terrain
+3. **[Fable]** Lane stones still brighter/flatter than the reference: revisit `MapView.LIGHT_SCALE` and the terrain
    material (roughness, Material.png) with a side-by-side crop.
 Then checkpoint (tests, Status, CONTINUE.md, commit + push, give the new-chat prompt and STOP).
 
@@ -284,19 +290,19 @@ Then checkpoint (tests, Status, CONTINUE.md, commit + push, give the new-chat pr
    defaults from `Constants.Client.pas:63` + KeybindingManager), the Menu categories' content, SystemPanel (opens the
    dialog from the main menu), the `$fade-in`/`$scale-in` dialog animations, GUI click sounds. Open check: whether the
    HUD stays faintly visible under the blurred backdrop like the original (our shot showed only the scene).
-   Next: (8) SystemPanel (MainMenu/SystemPanel: minimise / options / close top-right) so the settings open from the
+   Next: **[Opus]** (8) SystemPanel (MainMenu/SystemPanel: minimise / options / close top-right) so the settings open from the
    menu with `in_game = false` (Menu categories enabled, MenuSettings.dui/MenuSoundSettings.dui content), or the
    Keybindings tab. Then the remaining polish lists below.
-1. Particles polish: (a) `AtFireTarget` / `ClonesToTarget` effects; (c) light particles as
+1. **[Opus]** Particles polish; **[Fable]** for (e) the rotation sign convention if an effect looks mirrored: (a) `AtFireTarget` / `ClonesToTarget` effects; (c) light particles as
    OmniLight3D (100 emitters), `ptTrace` ribbons, nested `ptEffect`; (d) deactivation (`DeactivateOn*`,
    `stop_on_free`) and interval emitters that should stop when the wela ends; (e) the rotation sign convention
    (`Basis.from_euler(-rot)`) is a guess: compare an effect with a mean rotation against the original if one
    looks mirrored; (f) the light_pulse_cast flash appears off-centre in the debug view: check emitter FPosition.
-2. Map polish: (b) shadows look weak: check the DirectionalLight shadow settings and
+2. **[Fable]** Map polish (lighting/material comparisons kept disagreeing before): (b) shadows look weak: check the DirectionalLight shadow settings and
    the original's shadow strength; (c) terrain `Material.png` (specular) later; (d) verify the Delphi `Random`
    replica against the original (palm variants/rotations) if a screenshot shows a mismatch; (e) grass wind
    animation (`Custom` vertex data = time offset) as a shader.
-2. Models polish (glow textures done: `copy_unit_assets.py` bakes `*Glow*` maps as premultiplied png used as
+2. **[Opus]** Models polish; **[Fable]** for (d) the zero-scale import errors if a model looks wrong (glow textures done: `copy_unit_assets.py` bakes `*Glow*` maps as premultiplied png used as
    emission with `emission = BLACK` + ADD): (a) done (checkpoint 59): walk clip length per `Visuals.pas:3343-3361`
    incl. the IgnoreScalingForAnimations variant, SpeedFactor as a length multiplier, random 0-70 % walk offset; (b) glow textures (`GlowTexture`, team glow) as emission; (c) `Effects/Meshes` spell props and
    the Environment/Gameplay `.msh` (13 + 2) once the map needs them; (d) the 18 "Basis must be normalized" import
