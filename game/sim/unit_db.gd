@@ -34,17 +34,49 @@ static func resolve(value: Variant, league: int) -> Variant:
 	return value
 
 
+const FIXED_GROUPS := {"GROUP_APPROACH_MAINWEAPON": 0, "GROUP_MAINWEAPON": 1, "GROUP_TEMPLATE_SPAWNER": 0,
+	"GROUP_DROP_SPAWNER": 0, "GROUP_SPELL_SPAWNER": 0, "GROUP_BUILDING_LIFETIME": 10, "GROUP_SOUL": 11}
+
+
+## Symbolic group names used by spell scripts (SpellGroup, SpellModeHeal...) get stable ids above 20,
+## in sorted order so every load maps them the same way.
+static func group_map(data: Dictionary) -> Dictionary:
+	var names := {}
+	for event in data["values"]:
+		for g in data["values"][event]:
+			if g != "*" and not str(g).is_valid_int() and not FIXED_GROUPS.has(g):
+				names[g] = true
+	for comp in data.get("components", []):
+		for g in comp["groups"]:
+			if not str(g).is_valid_int() and not FIXED_GROUPS.has(g):
+				names[g] = true
+	var sorted := names.keys()
+	sorted.sort()
+	var out := FIXED_GROUPS.duplicate()
+	for i in sorted.size():
+		out[sorted[i]] = 20 + i
+	return out
+
+
+static func group_id(g: Variant, map: Dictionary) -> int:
+	var s := str(g)
+	if s.is_valid_int():
+		return int(s)
+	return map.get(s, -1)
+
+
 ## Fill a blackboard with the CreateData values of a unit script.
 static func fill_blackboard(bb: Blackboard, unit_id: String, league: int) -> void:
 	var data := raw(unit_id)
 	var values: Dictionary = data["values"]
+	var map := group_map(data)
 	for event in values:
 		var by_group: Dictionary = values[event]
 		for g in by_group:
-			var group := Blackboard.ANY_GROUP if g == "*" else int(g)
+			var group := Blackboard.ANY_GROUP if g == "*" else group_id(g, map)
 			bb.set_value(event, group, resolve(by_group[g], league))
 	bb.set_value("collision_radius", Blackboard.ANY_GROUP, data.get("collision_radius", 0.5))
 	if data.has("tier"):
 		bb.set_value("card_tier", Blackboard.ANY_GROUP, data["tier"])
-		bb.set_value("card_kind", Blackboard.ANY_GROUP, data["card_kind"])
+		bb.set_value("card_kind", Blackboard.ANY_GROUP, data.get("card_kind", "Spell"))
 		bb.set_value("card_legendary", Blackboard.ANY_GROUP, data.get("legendary", false))

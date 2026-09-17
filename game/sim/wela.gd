@@ -72,8 +72,27 @@ var next_at: int = -1
 var active_since: int = -1
 
 
+# charges (reWelaCharge kept per group, e.g. Surge of Light's damage mode)
+var charge_cost: int = 0
+var charge_consumes_all: bool = false
+var charge_gain_group: int = -1      # TWarheadSpottyResourceComponent(reWelaCharge).TargetGroup on fire
+var damage_scales_with_charges_of: int = -1   # TModifierWelaDamageComponent.Multiply.ScaleWithResource(reWelaCharge)
+var suicide_when_empty: bool = false # TWelaReadyResourceCompareComponent(reWelaCharge).CheckEmpty + suicide
+# spell effect entities
+var commander_cast: bool = false     # TBrainWelaCommanderComponent: cast by the player, not auto
+var suicide: bool = false            # TWelaEffectSuicideComponent
+
+
+## 'Modifiers\Stun.dws' -> "Stun", 'Links\Homeland.dws' -> "Links/Homeland", 'Spells\White\SolarFlare.dws'
+## -> "Spells/White/SolarFlare" (the keys of modifiers.json).
+static func script_key(path: String) -> String:
+	var key := path.replace("\\", "/").trim_suffix(".dws")
+	return key.trim_prefix("Modifiers/")
+
+
 ## Parse all welas of a unit from its component list. Returns them in think-chain order.
-static func parse(components: Array, bb: Blackboard) -> Array[Wela]:
+## `map` resolves symbolic group names (spell scripts) to ids, see UnitDb.group_map.
+static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Array[Wela]:
 	var by_group: Dictionary = {}
 	var order := 0
 	var get := func(g: int, kind: Kind) -> Wela:
@@ -87,11 +106,22 @@ static func parse(components: Array, bb: Blackboard) -> Array[Wela]:
 	var later: Array = []   # [groups, callable] applied after all groups exist
 	for comp in components:
 		order += 1
-		var groups: Array = comp["groups"].map(func(s): return int(s) if str(s).is_valid_int() else -1)
+		var groups: Array = comp["groups"].map(func(s): return UnitDb.group_id(s, map))
 		var calls: Array = comp.get("calls", [])
 		var args: Array = comp.get("args", [])
 		var g: int = groups[0] if not groups.is_empty() else -1
 		match comp["class"]:
+			"TBrainWelaCommanderComponent":
+				for gg in groups:
+					get.call(gg, Kind.SUB).commander_cast = true
+			"TWelaEffectSuicideComponent":
+				get.call(g, Kind.SUB).suicide = true
+			"TWelaTargetConstraintAlliesComponent":
+				for gg in groups:
+					get.call(gg, Kind.SUB).target_allies = true
+			"TWelaTargetConstraintEnemiesComponent":
+				for gg in groups:
+					get.call(gg, Kind.SUB).target_allies = false
 			"TBrainWelaFightComponent":
 				var w: Wela = get.call(g, Kind.FIGHT)
 				w.kind = Kind.FIGHT if w.kind == Kind.SUB else w.kind
@@ -152,25 +182,53 @@ static func parse(components: Array, bb: Blackboard) -> Array[Wela]:
 				var w: Wela = get.call(g, Kind.SUB)
 				for c in calls:
 					if c[0] == "TargetGroup":
-						w.instant_target_groups = c[1][0].map(func(s): return int(s))
+						w.instant_target_groups = c[1][0].map(func(s): return UnitDb.group_id(s, map))
 			"TWelaEffectFireComponent":
 				var w: Wela = get.call(g, Kind.SUB)
 				for c in calls:
 					if c[0] == "MultiTargetGroup" or c[0] == "TargetGroup":
-						w.chain_groups.append(int(c[1][0][0]))
+						w.chain_groups.append(UnitDb.group_id(c[1][0][0], map))
 					elif c[0] == "RedirectToSelf":
 						w.chain_to_self = true
 			"TWelaEffectResetCooldownComponent":
 				var w: Wela = get.call(g, Kind.SUB)
 				for c in calls:
 					if c[0] == "TargetGroup":
-						w.reset_cooldown_groups = c[1][0].map(func(s): return int(s))
+						w.reset_cooldown_groups = c[1][0].map(func(s): return UnitDb.group_id(s, map))
 			"TWarheadApplyScriptComponent":
 				if not args.is_empty():
-					get.call(g, Kind.SUB).apply_script = str(args[0]).get_file().get_basename()
+					get.call(g, Kind.SUB).apply_script = script_key(str(args[0]))
 			"TWelaReadyCostComponent":
 				for gg in groups:
-					get.call(gg, Kind.SUB).mana_cost = bb.get_int("eiResourceCost.reMana", gg, 0)
+					var w: Wela = get.call(gg, Kind.SUB)
+					w.mana_cost = bb.get_int("eiResourceCost.reMana", gg, 0)
+					w.charge_cost = bb.get_int("eiResourceCost.reWelaCharge", gg, 0) if bb.has_value("eiResourceCost.reWelaCharge", gg) and gg != SimConstants.GROUP_MAINWEAPON else 0
+			"TWelaEffectPayCostComponent":
+				for c in calls:
+					if c[0] == "ConsumesAll":
+						get.call(g, Kind.SUB).charge_consumes_all = true
+			"TWelaReadyResourceCompareComponent":
+				var w: Wela = get.call(g, Kind.SUB)
+				for c in calls:
+					match c[0]:
+						"ComparedResource":
+							if w.ready_resource == "":
+								w.ready_resource = c[1][0]
+						"SetComparator": w.ready_op = c[1][0]
+						"ReferenceValue": w.ready_reference = float(c[1][0])
+						"ReferenceIsAbsolute": w.ready_absolute = true
+						"CheckEmpty": w.suicide_when_empty = true
+			"TModifierWelaDamageComponent":
+				var w: Wela = get.call(g, Kind.SUB)
+				var scales := false
+				var res_group := g
+				for c in calls:
+					if c[0] == "ScaleWithResource" and c[1][0] == "reWelaCharge":
+						scales = true
+					elif c[0] == "ResourceGroup":
+						res_group = UnitDb.group_id(c[1][0][0], map)
+				if scales:
+					w.damage_scales_with_charges_of = res_group
 			"TWelaReadyCooldownComponent":
 				for gg in groups:
 					if by_group.has(gg) and not args.is_empty():
@@ -182,16 +240,6 @@ static func parse(components: Array, bb: Blackboard) -> Array[Wela]:
 						w.ready_props.append_array(c[1][0])
 					elif c[0] == "MustNotHave":
 						w.ready_not_props.append_array(c[1][0])
-			"TWelaReadyResourceCompareComponent":
-				var w: Wela = get.call(g, Kind.SUB)
-				for c in calls:
-					match c[0]:
-						"ComparedResource":
-							if w.ready_resource == "":
-								w.ready_resource = c[1][0]
-						"SetComparator": w.ready_op = c[1][0]
-						"ReferenceValue": w.ready_reference = float(c[1][0])
-						"ReferenceIsAbsolute": w.ready_absolute = true
 			"TWelaTargetConstraintResourceCompareComponent":
 				var w: Wela = get.call(g, Kind.SUB)
 				for c in calls:
@@ -216,8 +264,8 @@ static func parse(components: Array, bb: Blackboard) -> Array[Wela]:
 				w.range_modifier_group = g
 				for c in calls:
 					match c[0]:
-						"SetValueGroup": w.range_modifier_group = int(c[1][0][0])
-						"ReadyGroup": w.range_ready_group = int(c[1][0][0])
+						"SetValueGroup": w.range_modifier_group = UnitDb.group_id(c[1][0][0], map)
+						"ReadyGroup": w.range_ready_group = UnitDb.group_id(c[1][0][0], map)
 						"ScaleWithTime": w.range_scales_with_time = true
 			"TAutoBrainOnTakeDamageComponent":
 				get.call(g, Kind.ON_TAKE_DAMAGE).kind = Kind.ON_TAKE_DAMAGE
@@ -231,7 +279,7 @@ static func parse(components: Array, bb: Blackboard) -> Array[Wela]:
 				var must_not: int = 0
 				for c in calls:
 					if c[0] == "SetValueGroup":
-						value_group = int(c[1][0][0])
+						value_group = UnitDb.group_id(c[1][0][0], map)
 					elif c[0] == "MustNotHave":
 						must_not = SimConstants.damage_mask(c[1][0])
 				var w: Wela = get.call(value_group, Kind.DEALT_DAMAGE_MULT)
@@ -240,13 +288,19 @@ static func parse(components: Array, bb: Blackboard) -> Array[Wela]:
 				w.must_not_have_damage_types = must_not
 			"TWarheadSpottyResourceComponent":
 				var res := ""
+				var target_group := -1
 				for c in calls:
 					if c[0] == "SetResourceType":
 						res = c[1][0]
-				var w: Wela = get.call(g, Kind.RESOURCE_REGEN)
-				w.resource = res
-				if w.kind == Kind.SUB:
-					w.kind = Kind.RESOURCE_REGEN
+					elif c[0] == "TargetGroup" and not c[1][0].is_empty():
+						target_group = UnitDb.group_id(c[1][0][0], map)
+				if res == "reWelaCharge" and target_group >= 0:
+					get.call(g, Kind.SUB).charge_gain_group = target_group
+				else:
+					var w: Wela = get.call(g, Kind.RESOURCE_REGEN)
+					w.resource = res
+					if w.kind == Kind.SUB:
+						w.kind = Kind.RESOURCE_REGEN
 			"TAutoBrainOnHealedComponent":
 				var w: Wela = get.call(g, Kind.ON_HEALED)
 				w.kind = Kind.ON_HEALED
@@ -257,7 +311,7 @@ static func parse(components: Array, bb: Blackboard) -> Array[Wela]:
 				var w: Wela = get.call(g, Kind.ON_HEALED)
 				for c in calls:
 					if c[0] == "TargetGroup":
-						w.chain_groups.append(int(c[1][0][0]))
+						w.chain_groups.append(UnitDb.group_id(c[1][0][0], map))
 			"TAutoBrainOnBeforeDeath", "TAutoBrainOnDeathComponent":
 				get.call(g, Kind.ON_DEATH).kind = Kind.ON_DEATH
 			"TAutoBrainOnUnitPropertyComponent":

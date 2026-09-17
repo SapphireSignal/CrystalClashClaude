@@ -24,6 +24,7 @@ class DeckSlot:
 	var cost: float
 	var gold_cost: float             # 0 for spawners
 	var wood_cost: float             # 0 for non-spawners
+	var spell_entity: SimEntity      # spells: the card's own entity (keeps charges between casts)
 
 	func is_ready(now: int, commander: Commander) -> bool:
 		if commander.free_cards:
@@ -47,7 +48,7 @@ func set_deck(unit_ids: Array) -> void:
 		var card := Cards.by_script(unit_id)
 		var s := DeckSlot.new()
 		s.card = card
-		s.cost = Cards.base_cost(card.tier, card.legendary, card.is_spell(), card.is_spawner())
+		s.cost = Cards.base_cost(card.tier, card.legendary, card.is_spell(), card.is_spawner()) + card.cost_adjust
 		s.gold_cost = 0.0 if card.is_spawner() else s.cost
 		s.wood_cost = s.cost if card.is_spawner() else 0.0
 		s.charge_cap = Cards.charge_count(card.tier, league, card.legendary)

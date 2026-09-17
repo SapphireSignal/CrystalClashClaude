@@ -242,6 +242,8 @@ func play_card(team: int, slot_index: int, target: Variant) -> PlayResult:
 		c.pay(slot, time_ms)
 		place_spawner(card.unit_id, team, target[0], target[1])
 		return PlayResult.OK
+	if card.is_spell():
+		return _cast_spell(team, c, slot, target)
 	if not (target is Vector2) or not _in_drop_zone(team, target):
 		return PlayResult.BAD_TARGET
 	c.pay(slot, time_ms)
@@ -251,6 +253,103 @@ func play_card(team: int, slot_index: int, target: Variant) -> PlayResult:
 		var count: int = int(unit_data["values"].get("eiWelaCount", {}).get("0", 1))
 		drop_squad(pattern, team, target, count)
 	return PlayResult.OK
+
+
+## Spells (SpellTemplate.dws): ctCoordinate spells spawn their effect entity (eiWelaUnitPattern) inside
+## the Walkzone; ctEntity spells fire the card entity's own group at the target unit. Multi-mode spells
+## (Surge of Light) pick the mode whose constraints accept the target.
+func _cast_spell(team: int, c: Commander, slot: Commander.DeckSlot, target: Variant) -> PlayResult:
+	var card := slot.card
+	if slot.spell_entity == null:
+		var e := SimEntity.new()
+		e.id = _next_id
+		_next_id += 1
+		e.team = team
+		e.setup(card.unit_id, league)
+		slot.spell_entity = e
+	var caster := slot.spell_entity
+	var map_ids := UnitDb.group_map(UnitDb.raw(card.unit_id))
+	var spell_group: int = map_ids.get("SpellGroup", -1)
+	if card.target_type == "ctEntity":
+		if not (target is int) or not entities.has(target):
+			return PlayResult.BAD_TARGET
+		var unit: SimEntity = entities[target]
+		if not unit.alive or not unit.is_targetable():
+			return PlayResult.BAD_TARGET
+		var chosen: Wela = null
+		for w in caster.welas:
+			if not w.commander_cast or not (w.heals or w.damages or w.projectile != "" or w.apply_script != ""):
+				continue
+			if w.target_allies != (unit.team == team) or not w.target_allowed(unit, caster):
+				continue
+			if w.charge_cost > 0 and caster.charges_of(w.group) < w.charge_cost:
+				continue
+			chosen = w
+			break
+		if chosen == null:
+			return PlayResult.BAD_TARGET
+		c.pay(slot, time_ms)
+		caster.position = unit.position
+		_fire_group(caster, chosen.group, unit)
+		return PlayResult.OK
+	if not (target is Vector2) or not map.in_zone("Walkzone", target):
+		return PlayResult.BAD_TARGET
+	var pattern: String = caster.bb.get_value("eiWelaUnitPattern", spell_group, "").replace("\\", "/")
+	if pattern == "":
+		return PlayResult.BAD_TARGET
+	c.pay(slot, time_ms)
+	var effect := spawn(pattern, team, target)
+	_gain_field_charges(effect)
+	_think_once(effect)
+	return PlayResult.OK
+
+
+## TThinkImpulseOnceComponent: every fight group fires at up to eiWelaTargetCount targets in range right
+## away; a group with TWelaEffectSuicideComponent then removes the effect entity.
+func _think_once(e: SimEntity) -> void:
+	if not e.thinks_once or e.thought_once:
+		return
+	e.thought_once = true
+	for w in e.welas:
+		if w.kind != Wela.Kind.FIGHT:
+			continue
+		var count := e.bb.get_int("eiWelaTargetCount", w.group, 1)
+		for target in _pick_targets(e, w, e.range_of(w.group), count):
+			_fire_group(e, w.group, target)
+	for w in e.welas:
+		if w.suicide and w.kind != Wela.Kind.SELF_GROUND and not w.suicide_when_empty:
+			_remove_silently(e)
+			return
+
+
+## Hail of Arrows: +1 charge for every allied unit passing group 3's constraints within its range.
+func _gain_field_charges(e: SimEntity) -> void:
+	for w in e.welas:
+		if w.charge_gain_group < 0 or w.kind != Wela.Kind.FIGHT:
+			continue
+		for target in _pick_targets(e, w, e.range_of(w.group), 1000):
+			e.ammo = mini(e.ammo_cap, e.ammo + 1)
+
+
+## All valid targets of a wela within range, best first (same ordering as _pick_target).
+func _pick_targets(e: SimEntity, w: Wela, range: float, count: int) -> Array[SimEntity]:
+	var scored: Array = []
+	for other: SimEntity in entities.values():
+		if not other.alive or other == e or not other.is_targetable() or other.team == 0:
+			continue
+		if w.target_allies != (other.team == e.team):
+			continue
+		if not w.target_allowed(other, e):
+			continue
+		var dist := e.position.distance_to(other.position) - other.collision_radius
+		if dist > range:
+			continue
+		scored.append([dist + (100000.0 if other.has("upLowPrio") else 0.0), other])
+	scored.sort_custom(func(a, b): return a[0] < b[0])
+	var out: Array[SimEntity] = []
+	for i in mini(count, scored.size()):
+		out.append(scored[i][1])
+	return out
 
 
 ## ZONE_DROP: the map's Drop polygon. The dynamic nexus/lane-push zones are not implemented yet.
@@ -332,6 +431,10 @@ func step() -> void:
 			continue
 		_think(e)
 		_move(e)
+		for w in e.welas:   # fields die when their charges are spent (Hail of Arrows group 2)
+			if w.suicide_when_empty and e.ammo <= 0 and e.fire_at < 0:
+				_remove_silently(e)
+				break
 	_move_projectiles()
 	_cleanup_dead()
 
@@ -514,6 +617,10 @@ func _fire_group(e: SimEntity, group: int, target: SimEntity) -> void:
 		e.ammo -= e.ammo_cost   # TWelaEffectPayCostComponent for reWelaCharge
 	e.mana -= w.mana_cost
 	var amount := e.damage(group)
+	if w.damage_scales_with_charges_of >= 0:   # Surge of Light: damage x stored charges
+		amount *= e.charges_of(w.damage_scales_with_charges_of)
+	if w.charge_cost > 0:
+		e.charges[group] = 0 if w.charge_consumes_all else e.charges_of(group) - w.charge_cost
 	var dtype := e.damage_type(group)
 	if group == e.fire_group or w.kind == Wela.Kind.FIGHT:
 		attack_fired.emit(e, target, amount)
@@ -523,12 +630,16 @@ func _fire_group(e: SimEntity, group: int, target: SimEntity) -> void:
 		if target.alive and target != e:
 			target.exiled = w.exiles
 			_kill(target, e)
+	elif w.splash:
+		_fire_splash(e, group, target.position)
 	elif w.heals:
 		heal(target, amount, dtype, e)
 	elif w.damages:
 		deal_damage(target, amount, dtype, e)
-	if w.apply_script != "" and target.alive:
+	if w.apply_script != "" and target.alive and Buff.exists(w.apply_script):
 		apply_buff(target, w.apply_script, {}, e)
+	if w.charge_gain_group >= 0 and w.kind != Wela.Kind.FIGHT or (w.charge_gain_group >= 0 and w.commander_cast):
+		e.charges[w.charge_gain_group] = e.charges_of(w.charge_gain_group) + 1
 	for sg in w.instant_target_groups:   # splash warheads around the target position
 		_fire_splash(e, sg, target.position)
 	for cg in w.chain_groups:
@@ -622,6 +733,11 @@ func _will_deal_damage(source: SimEntity, amount: float, damage_type: int, targe
 ## TAutoBrainOnTakeDamageComponent.ModifiesAmount + TWelaTriggerCheckTakeDamageThresholdComponent (Shieldblock):
 ## when ready and the hit passes the threshold, the amount is multiplied by eiWelaModifier (0 = blocked).
 func _on_take_damage(target: SimEntity, amount: float, _damage_type: int) -> float:
+	for b in target.buffs.duplicate():   # Shieldblock granted by a buff (Shields Up): one block, then spent
+		if b.block_threshold >= 0.0 and amount >= b.block_threshold:
+			amount *= b.block_factor
+			if b.block_once:
+				target.remove_buff(b)
 	for w in target.welas:
 		if w.kind != Wela.Kind.ON_TAKE_DAMAGE or time_ms < w.cooldown_ready_at:
 			continue

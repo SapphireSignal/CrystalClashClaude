@@ -121,7 +121,10 @@ multipliers, deathrattle projectiles, chained fire groups like Monk Dragon Punch
 auras/links with activation delay, resource-compare constraints, range modifiers, splash warheads,
 on-healed triggers, cooldown resets, on-property triggers) and `buff.gd` turns `Scripts/Modifiers/*.dws`
 and `Scripts/Links/*.dws` aura payloads into buffs (stun/root/blessings, stat modifiers, DoT/HoT/mana
-ticks, taken-damage multipliers, prevent-death rescues like Homeland and Guarded). All 12 White units
-parse. 209 tests pass. `game/main.tscn` is a sandbox with capsule
+ticks, taken-damage multipliers, prevent-death rescues like Homeland and Guarded). Spells: `.sps` cards
+are extracted with symbolic groups; coordinate spells spawn their effect entity (LightPulse, ShieldsUp,
+HailOfArrows field), entity spells fire the card's group at the unit (SolarFlare, SurgeOfLight multi-mode
+with stored charges). All 12 White units and 5 of 6 White spells work (PromiseOfLife charm pending).
+235 tests pass. `game/main.tscn` is a sandbox with capsule
 units on the Compatibility renderer: keys 1-9,0,-,= play the 12 deck slots, a simple red AI plays back.
 See `CONTINUE.md`.

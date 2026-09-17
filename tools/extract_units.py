@@ -205,6 +205,10 @@ def extract_modifiers() -> dict:
         data = parse_modifier(path)
         if data:
             out["Links/" + path.stem] = data
+    for path in sorted(SCRIPTS.glob("Spells/**/*.dws")):
+        data = parse_modifier(path)
+        if data:
+            out[str(path.relative_to(SCRIPTS).with_suffix("")).replace("\\", "/")] = data
     return out
 
 
@@ -240,10 +244,47 @@ def parse_script(path: Path) -> dict:
     return data
 
 
+RE_SPELL_INIT = re.compile(r"PrepareSpellData\(Entity,\s*SpellGroup,\s*ChargeGroup,\s*(True|False)\s*,\s*(?:\{@\w+\})?(\d)")
+
+
+def parse_spell(path: Path) -> dict:
+    """Spells/*/*.sps: CreateData(Entity, SpellGroup, ChargeGroup) + AddSpell body, groups stay symbolic."""
+    text = path.read_text(encoding="utf-8", errors="replace")
+    data: dict = {"script": str(path.relative_to(SCRIPTS)).replace("\\", "/"), "spell": True, "values": {}, "components": []}
+    m = RE_SPELL_INIT.search(text)
+    if m:
+        data["legendary"] = m.group(1) == "True"
+        data["tier"] = int(m.group(2))
+    bodies = []
+    for name in ("CreateData", "AddSpell"):
+        mm = re.search(r"procedure %s\(.*?\);(.*?)^end;" % name, text, re.S | re.M)
+        if mm:
+            bodies.append(strip_comments(re.sub(r"\{\$IFDEF CLIENT\}.*?\{\$ENDIF\}", "", mm.group(1), flags=re.S)))
+    for body in bodies:
+        for line in body.splitlines():
+            line = line.strip()
+            mm = re.match(r"Entity\.Blackboard\.Set(Indexed)?Value\(\s*(\w+)\s*,\s*\[([^\]]*)\]\s*,\s*(?:(\w+)\s*,\s*)?(.+?)\);", line)
+            if not mm:
+                continue
+            indexed, event, groups, index, raw = mm.groups()
+            raw = strip_annotations(raw).strip()
+            cost = re.match(r"GetCardBaseCost\(.*?\)\s*([+-]\s*\d+)?$", raw)
+            value = ("base_cost" + cost.group(1).replace(" ", "")) if cost else parse_value(raw)
+            key = event if not indexed else f"{event}.{index}"
+            entry = data["values"].setdefault(key, {})
+            for g in [x.strip() for x in groups.split(",") if x.strip()]:
+                entry[g] = value
+        data["components"] += parse_components(body)
+    return data
+
+
 def extract_units() -> dict:
     units = {}
-    for path in sorted(list(SCRIPTS.glob("Units/**/*.ets")) + list(SCRIPTS.glob("Projectiles/**/*.ets"))):
+    paths = list(SCRIPTS.glob("Units/**/*.ets")) + list(SCRIPTS.glob("Projectiles/**/*.ets")) + list(SCRIPTS.glob("Spells/**/*.ets"))
+    for path in sorted(paths):
         units[str(path.relative_to(SCRIPTS).with_suffix("")).replace("\\", "/")] = parse_script(path)
+    for path in sorted(SCRIPTS.glob("Spells/**/*.sps")):
+        units[str(path.relative_to(SCRIPTS)).replace("\\", "/")] = parse_spell(path)   # key keeps .sps
     return units
 
 

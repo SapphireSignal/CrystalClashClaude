@@ -29,6 +29,11 @@ var health_bonus: float = 0.0
 var stops_movement: bool = false
 var taken_damage_mult: float = 1.0
 var taken_damage_types: int = 0     # TBuffTakenDamageMultiplierComponent.DamageTypeMustHaveAny
+# TAutoBrainOnTakeDamageComponent.ModifiesAmount + threshold (Shieldblock buff): hits at or above the
+# threshold are multiplied by the factor; with RemoveAfterUse the buff is spent by the first block
+var block_threshold: float = -1.0
+var block_factor: float = 1.0
+var block_once: bool = false
 # periodic self effects (group with a cooldown + instant warhead on self)
 var dot_damage: float = 0.0
 var dot_type: int = 0
@@ -147,6 +152,9 @@ static func create(script_name: String, now: int, params: Dictionary = {}) -> Bu
 				for call in calls:
 					if call[0] == "DamageTypeMustHaveAny":
 						b.taken_damage_types = SimConstants.damage_mask(call[1][0])
+			"TAutoBrainOnTakeDamageComponent":
+				b.block_threshold = b._value("eiWelaDamage", g, 0.0)
+				b.block_factor = b._value("eiWelaModifier", g, 1.0)
 			"TAutoBrainPreventDeathComponent":
 				b.prevents_death = true
 				b.rescue_health = b._value("eiWelaDamage", g, 1.0)
@@ -159,7 +167,7 @@ static func create(script_name: String, now: int, params: Dictionary = {}) -> Bu
 					elif call[0] == "MustHaveAny":
 						b.rescue_removes_any = call[1][0]
 			"TWarheadApplyScriptComponent":
-				var script: String = str(comp.get("args", [""])[0]).get_file().get_basename()
+				var script: String = Wela.script_key(str(comp.get("args", [""])[0]))
 				b.rescue_scripts.append(script)
 			"TWarheadSpottyTeleportComponent":
 				for call in calls:
@@ -187,6 +195,7 @@ static func create(script_name: String, now: int, params: Dictionary = {}) -> Bu
 						b.tick_times = int(call[1][0])
 	if duration_group >= 0 and has_remove and not b.prevents_death:
 		b.expires_at = now + int(b._value("eiCooldown", duration_group, 0))
+	b.block_once = has_remove and b.block_threshold >= 0.0
 	if tick_group >= 0 and (b.dot_damage > 0.0 or b.hot_heal > 0.0 or b.mana_per_tick > 0):
 		b.tick_interval = int(b._value("eiCooldown", tick_group, 1000))
 		b.next_tick_at = now + b.tick_interval

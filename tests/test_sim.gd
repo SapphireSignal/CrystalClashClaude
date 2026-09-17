@@ -580,6 +580,93 @@ func test_heavy_gunner_gains_mana_when_blessed() -> void:
 	runner.check_eq(gunner.mana, gunner.mana_cap, "a blessing fills the mana (group 5 gives 100, capped at 4)")
 
 
+func _spell_sim() -> Simulation:
+	var sim := Simulation.new(12, 4)
+	sim.spawn_bases()
+	var c: Commander = sim.commanders[Simulation.TEAM_BLUE]
+	c.set_deck(["Spells/White/LightPulse.sps", "Spells/White/ShieldsUp.sps", "Spells/White/SolarFlare.sps",
+		"Spells/White/SurgeOfLight.sps", "Spells/White/HailOfArrows.sps"])
+	c.gold = 1000.0
+	c.raise_tier(3)
+	while not sim.game_started:
+		sim.step()
+	return sim
+
+
+func test_spell_costs_and_targets() -> void:
+	var sim := _spell_sim()
+	var c: Commander = sim.commanders[Simulation.TEAM_BLUE]
+	runner.check_near(c.slots[0].cost, 70.0, "Light Pulse costs 80 - 10")
+	runner.check_near(c.slots[1].cost, 80.0, "Shields Up costs 80")
+	runner.check_near(c.slots[2].cost, 180.0, "Solar Flare tier 3 spell 200 - 20")
+	runner.check_eq(c.slots[2].card.target_type, "ctEntity", "Solar Flare targets a unit")
+	runner.check_eq(c.slots[0].card.target_type, "ctCoordinate", "Light Pulse targets a point")
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 0, Vector2(0, 40)), Simulation.PlayResult.BAD_TARGET, "outside walkzone")
+
+
+func test_light_pulse_stuns_and_blinds() -> void:
+	var sim := _spell_sim()
+	var enemies: Array = []
+	for i in 10:
+		var m := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(0 + i * 0.2, -23 + (i % 2) * 0.5))
+		m.base_speed = 0.0
+		enemies.append(m)
+	var far := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(4.5, -23))   # inside 5, outside 2
+	far.base_speed = 0.0
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 0, Vector2(0, -23)), Simulation.PlayResult.OK, "cast light pulse")
+	var stunned := enemies.filter(func(m): return m.has("upStunned")).size()
+	runner.check_eq(stunned, 8, "8 units stunned in radius 2")
+	runner.check(far.has("upBlinded") and not far.has("upStunned"), "unit at 4.5 only blinded")
+	runner.check_eq(sim.alive_entities(Simulation.TEAM_BLUE).filter(func(e): return e.is_spell_effect()).size(), 0, "effect entity removed itself")
+
+
+func test_shields_up_gives_shieldblock() -> void:
+	var sim := _spell_sim()
+	var monk := sim.spawn("Units/White/Monk", Simulation.TEAM_BLUE, Vector2(2, -23))
+	monk.base_speed = 0.0
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 1, Vector2(0, -23)), Simulation.PlayResult.OK, "cast shields up")
+	runner.check(monk.has("upHasShieldBlock"), "ally gained Shieldblock")
+	sim.deal_damage(monk, 50.0, SimConstants.DamageType.MELEE, monk)
+	runner.check_near(monk.health, 265.0, "first big hit blocked")
+
+
+func test_solar_flare_and_surge_of_light() -> void:
+	var sim := _spell_sim()
+	var monk := sim.spawn("Units/White/Monk", Simulation.TEAM_BLUE, Vector2(2, -23))
+	var enemy := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(10, -23))
+	monk.base_speed = 0.0
+	enemy.base_speed = 0.0
+	monk.health = 10.0
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 2, monk.id), Simulation.PlayResult.OK, "cast solar flare on ally")
+	runner.check_near(monk.health, 265.0, "healed by 400 up to max")
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 2, enemy.id), Simulation.PlayResult.BAD_TARGET, "solar flare refuses enemies")
+	var c: Commander = sim.commanders[Simulation.TEAM_BLUE]
+	c.slots[3].charges = 5
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 3, enemy.id), Simulation.PlayResult.BAD_TARGET, "surge damage mode needs a stored charge")
+	monk.health = 10.0
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 3, monk.id), Simulation.PlayResult.OK, "surge heal mode on ally")
+	runner.check_near(monk.health, 210.0, "healed 200")
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 3, monk.id), Simulation.PlayResult.OK, "second heal")
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 3, enemy.id), Simulation.PlayResult.OK, "damage mode with 2 charges")
+	runner.check_near(enemy.health, 265.0 - 120.0, "60 x 2 charges = 120 spell damage")
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 3, enemy.id), Simulation.PlayResult.BAD_TARGET, "charges consumed")
+
+
+func test_hail_of_arrows_field() -> void:
+	var sim := _spell_sim()
+	var enemy := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(1, -23))
+	enemy.base_speed = 0.0
+	sim.apply_buff(enemy, "Stun")
+	enemy.buffs[0].expires_at = 1 << 40
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 4, Vector2(0, -23)), Simulation.PlayResult.OK, "cast hail of arrows")
+	var t0 := sim.time_ms
+	while sim.time_ms < t0 + 3000:
+		sim.step()
+	# 4 charges = 4 ticks of 16 spell damage every 0.5 s, then the field is gone
+	runner.check_near(enemy.health, 265.0 - 4 * 16.0, "four ticks of 16")
+	runner.check_eq(sim.alive_entities(Simulation.TEAM_BLUE).filter(func(e): return e.is_spell_effect()).size(), 0, "field expired")
+
+
 func test_drop_formation() -> void:
 	var sim := Simulation.new(1, 4)
 	var squad := sim.drop_squad("Units/White/Footman", Simulation.TEAM_BLUE, Vector2(0, -23), 4)

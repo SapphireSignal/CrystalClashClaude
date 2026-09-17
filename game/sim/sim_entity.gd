@@ -21,6 +21,9 @@ var base_armor: SimConstants.ArmorType = SimConstants.ArmorType.UNARMORED
 var base_speed: float = SimConstants.DEFAULT_SPEED   # units per ms
 var mana: int = 0
 var mana_cap: int = 0
+var charges: Dictionary = {}         # group -> reWelaCharge balance kept per group (spell modes, fields)
+var thinks_once: bool = false        # TThinkImpulseOnceComponent: spell effect acts once on creation
+var thought_once: bool = false
 
 # Main weapon state (group 1)
 var target_id: int = 0
@@ -81,7 +84,23 @@ func setup(p_unit_id: String, p_league: int) -> void:
 		ammo_cost = bb.get_int("eiResourceCost.reWelaCharge", SimConstants.GROUP_MAINWEAPON, 0)
 		var ammo_group := 5 if has("upLanetower") else 6
 		ammo_recharge_ms = bb.get_int("eiCooldown", ammo_group, 0)
-	welas = Wela.parse(UnitDb.raw(unit_id).get("components", []), bb)
+	var data := UnitDb.raw(unit_id)
+	var map := UnitDb.group_map(data)
+	welas = Wela.parse(data.get("components", []), bb, map)
+	for g in bb.groups_of("eiResourceBalance.reWelaCharge"):
+		if g != Blackboard.ANY_GROUP:
+			charges[g] = bb.get_int("eiResourceBalance.reWelaCharge", g)
+	for comp in data.get("components", []):
+		if comp["class"] == "TThinkImpulseOnceComponent":
+			thinks_once = true
+
+
+func charges_of(group: int) -> int:
+	return int(charges.get(group, ammo))
+
+
+func is_spell_effect() -> bool:
+	return unit_id.begins_with("Spells/")
 
 
 func move_goal(sim) -> Vector2:

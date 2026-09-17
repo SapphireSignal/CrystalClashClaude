@@ -16,6 +16,8 @@ class CardDef:
 	var tier: int
 	var name: String
 	var legendary: bool = false
+	var target_type: String = "ctCoordinate"   # spells: ctCoordinate or ctEntity (eiAbilityTargetType)
+	var cost_adjust: float = 0.0               # spells: e.g. LightPulse "base_cost-10"
 
 	func is_spawner() -> bool:
 		return type == "ctSpawner"
@@ -40,11 +42,18 @@ static func load_cards() -> void:
 		c.uid = raw["uid"]
 		c.type = raw["type"]
 		c.colors = raw["colors"]
-		c.unit_id = raw["script"]
+		c.unit_id = raw["script"]   # spells keep their .sps suffix in the registry
 		c.tier = int(raw["tier"])
 		c.name = raw["name"]
-		if not c.is_spell() and UnitDb.has_unit(c.unit_id):
-			c.legendary = UnitDb.raw(c.unit_id).get("legendary", false)
+		if UnitDb.has_unit(c.unit_id):
+			var data := UnitDb.raw(c.unit_id)
+			c.legendary = data.get("legendary", false)
+			if c.is_spell():
+				var values: Dictionary = data["values"]
+				c.target_type = values.get("eiAbilityTargetType", {}).get("SpellGroup", "ctCoordinate")
+				var cost: Variant = values.get("eiResourceCost.reGold", {}).get("SpellGroup", "")
+				if cost is String and cost.begins_with("base_cost"):
+					c.cost_adjust = float(cost.trim_prefix("base_cost"))
 		_by_uid[c.uid] = c
 		_by_script[c.unit_id] = c
 

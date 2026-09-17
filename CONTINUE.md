@@ -2,31 +2,39 @@
 
 Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
 
-## State (2026-09-16, checkpoint 9)
-- Phase 2 core sim works and is tested (209 tests). `game/sim/`: `simulation.gd` (loop, think chain over
-  welas, chained fire groups, auras, splash, combat hooks, projectiles, buffs, economy, movement, spawners,
-  card play, ammo, tech-ups, lane nodes), `wela.gd` (weapon/ability groups parsed from unit components:
-  see its header for the covered component classes), `buff.gd` (modifier scripts),
+## State (2026-09-16, checkpoint 10)
+- Phase 2 core sim works and is tested (235 tests). `game/sim/`: `simulation.gd` (loop, think chain over
+  welas, chained fire groups, auras, splash, spells, combat hooks, projectiles, buffs, economy, movement,
+  spawners, card play, ammo, tech-ups, lane nodes), `wela.gd` (weapon/ability groups parsed from unit and
+  spell components; header lists covered classes), `buff.gd` (modifier + link payload scripts),
   `commander.gd`, `cards.gd`, `projectile.gd`, `pathfinding.gd`, `lanes.gd`, `sim_map.gd`, `build_zone.gd`,
-  `sim_entity.gd` (stat Read chain: `damage()`, `speed()`, `armor()`, `cooldown()`, `has()`), `blackboard.gd`,
-  `unit_db.gd`, `sim_constants.gd`. Data: `game/data/units.json` (values + server components, compact JSON),
-  `cards.json`, `modifiers.json`, `maps/*.json`, all from `tools/extract_units.py` / `tools/extract_maps.py`.
+  `sim_entity.gd` (stat Read chain), `blackboard.gd`, `unit_db.gd` (symbolic group map), `sim_constants.gd`.
+  Data: `game/data/units.json` (units, projectiles, spell effects, `.sps` cards), `cards.json`,
+  `modifiers.json` (Modifiers, Links, Spells payloads), `maps/*.json`; all from `tools/extract_units.py`
+  and `tools/extract_maps.py`.
 - Sandbox `game/main.tscn`: capsules, 12-slot white deck on keys 1-9,0,-,=, simple red AI. Renderer: Compatibility.
 
 ## Next step (in order, one at a time, test after each)
-1. **Spells** (`Scripts/Spells/White/*.sps` + `.ets`): extend the extractor for `.sps` (`PrepareSpellData`,
-   `eiAbilityTargetType`, cost -20), then spell effect entities (LightPulse: stun 8 in radius 2, blind 14 in 5).
-3. Splash damage (`eiWelaAreaOfEffect`, `eiWelaSplashfactor`) for lanetower/nexus projectiles; overheal.
-4. Dynamic drop zone (`dzNexus`/`dzDrop`, radius 31.5 around own nexus and lanetowers) replacing the static
-   `Drop` polygon check.
-5. Then Black, Green, Blue, Golems factions the same way, then phase 3 deck rules and phase 4 HUD.
+1. **PromiseOfLife charm** (`Spells/White/PromiseOfLifeSpell.ets`): a placed field entity with 10 charges,
+   Guarded aura (5 range) costing a charge per guard, ImmuneToStateEffects aura, commander charm count cap 3
+   (`reCharmCount`), dies when charges are gone. Needs `TAutoBrainOnCreateComponent.FireAtCommander` and
+   charm-count bookkeeping on `Commander`.
+2. **Overheal** (`reOverheal`, `OVERHEAL_LIMIT_FACTOR 2.0`, `dtOverheal` heals above max, decays?) in `heal()`.
+3. **Splash on projectiles** (`eiWelaAreaOfEffect` on HeavyGunner infused shot, PatronSaint, lanetower
+   projectiles): pass the projectile script's AoE + `eiWelaSplashfactor` into `Projectile` and splash on impact.
+4. **Dynamic drop zone** (`dzNexus`/`dzDrop`, radius 31.5 around own nexus and own lanetowers) replacing the
+   static `Drop` polygon check in `play_card`.
+5. Then Black, Green, Blue, Golems: run the component coverage audit (see git history for the Python
+   snippet), implement missing component classes faction by faction, with tests per unit.
+6. Then the sandbox should show the whole White deck including spells (main.gd: `ctEntity` spells need a
+   unit under the mouse).
 
 ## Rules that bit us
 - Run `--import` before `-s tests/run_tests.gd` when new class_name scripts were added.
-- Lambdas connected to sim signals must be disconnected in tests; lambdas capture ints by value (use Arrays
-  or Dictionaries for counters, also inside `buff.gd`-style closures).
+- Lambdas connected to sim signals must be disconnected in tests; lambdas capture ints by value (use Arrays).
 - `alive_entities(-1)` = all teams; team 0 is the neutral team (lane nodes).
-- Footman Shieldblock absorbs any hit of 10+ damage every 5 s: tests that want to kill a footman use
+- Spell cards are keyed with their `.sps` suffix (`Spells/White/LightPulse.sps`), effects without it.
+- Footman Shieldblock absorbs any hit of 10+ damage every 5 s; tests that want to kill a footman use
   `sim._kill()` or a unit without it (Monk).
 - Original quirks kept: lanetowers one-shot tier-1 units; legendary cards have 1 charge at league 4;
   a primed lane node keeps charging for the last single team seen until contested.
