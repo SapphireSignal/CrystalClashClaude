@@ -39,6 +39,21 @@ var target_health_full: bool = false   # TWelaTargetConstraintResourceComponent.
 var target_mana_not_full: bool = false # TWelaTargetConstraintResourceComponent.CheckResource(reMana).CheckNotFull
 var target_any_team: bool = false      # SetTargetTeamConstraint(tcAll)
 var prefer_allies: bool = false        # SetTargetTeamConstraintPriority(tcAllies): allies first when any qualifies
+var prefer_enemies: bool = false       # SetTargetTeamConstraintPriority(tcEnemies)
+var team_constraint_set: bool = false
+var validate_group: int = -1           # TWelaTargetingRadialComponent.SetValidateGroup: constraints that keep a link alive
+var projectile_reverse: bool = false   # TWelaEffectProjectileComponent.Reverse: flies from the target to the owner
+var activates_groups: Array = []       # TWelaEffectActivationAbilityComponent.SetsActive.SetActivationGroup
+var active: bool = true                # eiWelaActive (Vecra's aura starts inactive)
+var removes_groups: Array = []         # TWelaEffectRemoveAfterUseComponent.TargetGroup: other groups removed on use
+var taken_mult: float = 1.0            # TBuffTakenDamageMultiplierComponent on a unit group (Vecra's prison: 0.2)
+var taken_mult_not_types: int = 0      # DamageTypeMustNotHave
+var cap_op: String = ""                # TWelaTargetConstraintResourceComponent.CompareCapToReference (VoidAltar: max hp <= 60)
+var cap_ref: float = 0.0
+var modifies_amount: bool = false      # TAutoBrainOnTakeDamageComponent.ModifiesAmount
+var mirror_pairs: Array = []           # TAutoBrainOnTakeDamageComponent.CheckSelfForTargetsInGroup + FireTargetsInGroup: [[self, enemy]]
+var on_deal_groups: Array = []         # TAutoBrainOnDealDamageComponent.FireInGroup on a unit weapon (VoidSlime mirror)
+var apply_script_values: Array = []    # TWarheadApplyScriptComponent.PassIntValue for apply_script
 # effects
 var heals: bool = false
 var damages: bool = false
@@ -175,10 +190,16 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 						if c[0] == "SetTargetTeamConstraint":
 							w.target_allies = c[1][0] == "tcAllies"
 							w.target_any_team = c[1][0] == "tcAll"
+							w.team_constraint_set = true
 						elif c[0] == "SetTargetTeamConstraintPriority":
 							w.prefer_allies = c[1][0] == "tcAllies"
+							w.prefer_enemies = c[1][0] == "tcEnemies"
+							if not w.team_constraint_set:
+								w.target_any_team = true   # a priority alone leaves the default tcAll constraint
 						elif c[0] == "PicksRandomTargets":
 							w.picks_random_targets = true
+						elif c[0] == "SetValidateGroup":
+							w.validate_group = UnitDb.group_id(c[1][0][0], map)
 						elif c[0] == "PicksRandomTargetsWithRepetition":
 							w.picks_random_targets = true
 							w.picks_with_repetition = true
@@ -231,6 +252,27 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 			"TWelaEffectProjectileComponent":
 				var w: Wela = get.call(g, Kind.SUB)
 				w.projectile = bb.get_value("eiWelaUnitPattern", g, "").replace("\\", "/")
+				warhead_seen[g] = true
+				for c in calls:
+					if c[0] == "Reverse":
+						w.projectile_reverse = true
+			"TWelaEffectActivationAbilityComponent":
+				var w: Wela = get.call(g, Kind.SUB)
+				var sets_active := false
+				var groups_to: Array = []
+				for c in calls:
+					if c[0] == "SetsActive":
+						sets_active = true
+					elif c[0] == "SetActivationGroup":
+						groups_to = c[1][0].map(func(s): return UnitDb.group_id(s, map))
+				if sets_active:
+					w.activates_groups = groups_to
+			"TBuffTakenDamageMultiplierComponent":
+				var w: Wela = get.call(g, Kind.SUB)
+				w.taken_mult = bb.get_float("eiWelaModifier", g, 1.0)
+				for c in calls:
+					if c[0] == "DamageTypeMustNotHave":
+						w.taken_mult_not_types = SimConstants.damage_mask(c[1][0])
 			"TWelaEffectInstantComponent":
 				var w: Wela = get.call(g, Kind.SUB)
 				warhead_seen[g] = true
@@ -267,15 +309,21 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 						w.produced_scripts.append([script_key(str(args[0])), passed])
 					else:
 						w.apply_script = script_key(str(args[0]))
+						w.apply_script_values = passed
 			"TBrainWelaSelftargetComponent":
 				var w: Wela = get.call(g, Kind.SELF_PASSIVE)
 				if w.kind == Kind.SUB:
 					w.kind = Kind.SELF_PASSIVE
 			"TWelaEffectRemoveAfterUseComponent":
 				var w: Wela = get.call(g, Kind.SUB)
+				w.remove_after_use = true
 				for c in calls:
-					if c[0] == "TargetGroup" and c[1][0].map(func(s): return UnitDb.group_id(s, map)).has(g):
-						w.remove_after_use = true
+					if c[0] == "TargetGroup":
+						var targets: Array = c[1][0].map(func(s): return UnitDb.group_id(s, map))
+						w.remove_after_use = targets.has(g)
+						for tg in targets:
+							if tg != g:
+								w.removes_groups.append(tg)
 			"TAutoBrainPreventDeathComponent":
 				get.call(g, Kind.PREVENT_DEATH).kind = Kind.PREVENT_DEATH
 			"TAutoBrainOnResourceComponent":
@@ -341,6 +389,8 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 			"TWelaTargetConstraintResourceComponent":
 				var w: Wela = get.call(g, Kind.SUB)
 				var resource := "reHealth"
+				var op := ""
+				var reference := 0.0
 				for c in calls:
 					if c[0] == "CheckResource":
 						resource = c[1][0]
@@ -348,6 +398,13 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 						w.target_health_full = true
 					elif c[0] == "CheckNotFull" and resource == "reMana":
 						w.target_mana_not_full = true
+					elif c[0] == "Comparator":
+						op = c[1][0]
+					elif c[0] == "Reference":
+						reference = float(c[1][0])
+					elif c[0] == "CompareCapToReference" and resource == "reHealth":
+						w.cap_op = op
+						w.cap_ref = reference
 			"TWelaTargetConstraintNotSelfComponent":
 				for gg in groups:
 					get.call(gg, Kind.SUB).not_self = true
@@ -362,7 +419,24 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 						"ReadyGroup": w.range_ready_group = UnitDb.group_id(c[1][0][0], map)
 						"ScaleWithTime": w.range_scales_with_time = true
 			"TAutoBrainOnTakeDamageComponent":
-				get.call(g, Kind.ON_TAKE_DAMAGE).kind = Kind.ON_TAKE_DAMAGE
+				var w: Wela = get.call(g, Kind.ON_TAKE_DAMAGE)
+				w.kind = Kind.ON_TAKE_DAMAGE
+				var self_group := -1
+				var enemy_group := -1
+				for c in calls:
+					if c[0] == "ModifiesAmount":
+						w.modifies_amount = true
+					elif c[0] == "CheckSelfForTargetsInGroup":
+						self_group = UnitDb.group_id(c[1][0][0], map)
+					elif c[0] == "FireTargetsInGroup":
+						enemy_group = UnitDb.group_id(c[1][0][0], map)
+				if self_group >= 0 and enemy_group >= 0:
+					w.mirror_pairs.append([self_group, enemy_group])
+			"TAutoBrainOnDealDamageComponent":
+				var w: Wela = get.call(g, Kind.SUB)
+				for c in calls:
+					if c[0] == "FireInGroup":
+						w.on_deal_groups.append(UnitDb.group_id(c[1][0][0], map))
 			"TWelaTriggerCheckTakeDamageThresholdComponent":
 				var w: Wela = get.call(g, Kind.ON_TAKE_DAMAGE)
 				for c in calls:
@@ -420,9 +494,9 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 						w.trigger_props.append_array(c[1][0])
 	for item in later:
 		for gg in item[0]:
-			if not by_group.has(gg):
+			if gg < 0:
 				continue
-			var w: Wela = by_group[gg]
+			var w: Wela = get.call(gg, Kind.SUB)   # constraint-only groups still need a wela (VoidSlime self checks)
 			for c in item[1]:
 				match c[0]:
 					"MustHave": w.must_have.append_array(c[1][0])
@@ -462,6 +536,8 @@ func target_allowed(target: SimEntity, owner: SimEntity = null) -> bool:
 	if target_health_full and target.health < target.max_health:
 		return false
 	if target_mana_not_full and target.mana >= target.mana_cap:
+		return false
+	if cap_op != "" and not _compare(target.max_health, cap_op, cap_ref):
 		return false
 	if owner != null and compare_resource == "reHealth":
 		if not _compare(owner.health, compare_op, target.health * compare_target_factor):

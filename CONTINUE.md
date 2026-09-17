@@ -2,8 +2,8 @@
 
 Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
 
-## State (2026-09-16, checkpoint 14)
-- Phase 2 core sim works and is tested (302 tests). All 12 White units and 6 White spells work, plus
+## State (2026-09-16, checkpoint 15)
+- Phase 2 core sim works and is tested (370 tests). All 12 White units and 6 White spells work, plus
   overheal, projectile splash and the dynamic drop zone.
 - Black steps 1a+1b done: souls (`_release_soul`, `gain_mana`, `Wela.Kind.ON_RESOURCE`), VoidSkeleton
   Undying (`Wela.Kind.PREVENT_DEATH`, buff `instant_heal`/`kills_on_expiry`), VoidBane cone cleave
@@ -11,6 +11,11 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
   (`_on_before_death` with counts/allies/repetition), VoidBowman Grievous Wounds (buff `on_hit_*`,
   Bleeding `charges`, `taken_heal_mult`, percent DoT). Extractor now maps template `GROUP_*` symbols
   (GROUP_SOUL=11) and parses `function ApplyEffect` modifier bodies.
+- Black step 1c done (all 12 units): buff `late_properties` (immunity groups), projectile `on_hit_script`,
+  `Wela.chain_first`, `Kind.SELF_PASSIVE` + `_think_passives` (passive brains think while frozen),
+  `produced_scripts`, `lifetime_ms`, `projectile_reverse`, `activates_groups`/`active`, `removes_groups`,
+  entity `group_properties`, link entities (`Links/*.ets` in units.json, `Buff.link_damage`), `mirror_pairs`,
+  `on_deal_groups`, extractor `inline_local_procedures` (VoidSlime) and `fix_pattern_case`.
 - `game/sim/`: `simulation.gd` (loop, think chain over welas, chained fire groups, auras, splash, spells,
   combat hooks, projectiles, buffs, economy, movement, spawners, card play, ammo, tech-ups, lane nodes,
   charms), `wela.gd` (weapon/ability groups parsed from unit and spell components), `buff.gd` (modifier,
@@ -23,13 +28,7 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
 - `reference/media/` (local, gitignored): folder for real-game screenshots/videos the owner drops in.
 
 ## Next step (in order, one at a time, test after each)
-1. **Black faction** using `docs/factions/black.md`. Continue in this order, each with a test against the
-   numbers in the doc (a. souls and b. VoidSkeleton/VoidBane/VoidBowman are done):
-   c. Frozen/Banished/Bleeding modifiers (already in modifiers.json; check `buff.gd` handles their
-      beacon/immunity groups), VoidWorm frostshot projectile (`TAutoBrainOnDealDamageComponent`), Frostgoyle
-      fury, VoidCauldron blast, VoidSlime status mirror (skip the 25 generated groups if too big: note it),
-      FrostgoyleFountain (spawn every 4 souls, TimedLife 17 s, building lifetime 90 s), Tyrus, Vecra prison
-      and aura, VoidWraith frost nova, VoidAltar.
+1. **Black faction** using `docs/factions/black.md` (units a-c are done):
    d. Spells: Frenzy, Frostspear, Freeze, OnTheEdge, PermaFrost (`TWelaEffectRemoveBeaconComponent`),
       RipOutSoul (percent max HP), ShatterIce.
 2. Green, Blue, Golems the same way (spawn a research agent per faction to write `docs/factions/<x>.md`
@@ -47,3 +46,6 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
 - Buff lambdas: counters inside closures must live in a Dictionary/Array (see `buff.gd` group ids).
 - Original quirks kept: lanetowers one-shot tier-1 units; legendary cards have 1 charge at league 4;
   a primed lane node keeps charging for the last single team seen until contested.
+- The Bash tool mangles backslashes inside heredocs: write patch scripts with the Write tool, then run them.
+- Legendary units are invincible + untargetable during their LegendarySpawn lockout (Tyrus 3300 ms).
+- Passive brains (`_think_passives`) run while frozen/stunned, like the original's FPassiveThinking.

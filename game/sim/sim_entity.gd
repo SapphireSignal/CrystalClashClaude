@@ -27,6 +27,8 @@ var thinks_once: bool = false        # TThinkImpulseOnceComponent: spell effect 
 var thought_once: bool = false
 var think_once_waits: bool = false   # TThinkImpulseOnceComponent.WaitOneFrame: acts on the next tick instead
 var lifetime_ms: int = 0             # BuildingTemplate GROUP_BUILDING_LIFETIME: the building dies after this
+var group_properties: Dictionary = {}   # TUnitPropertyComponent on a wela group: group -> props, gone when the group is removed
+var removed_groups: Dictionary = {}     # TWelaEffectRemoveAfterUseComponent.TargetGroup
 
 # Main weapon state (group 1)
 var target_id: int = 0
@@ -106,7 +108,12 @@ func setup(p_unit_id: String, p_league: int) -> void:
 			charges[g] = bb.get_int("eiResourceBalance.reWelaCharge", g)
 	if is_building():
 		lifetime_ms = bb.get_int("eiCooldown", 10, 0)
+	for w in welas:
+		w.active = bb.get_value("eiWelaActive", w.group, true)
 	for comp in data.get("components", []):
+		if comp["class"] == "TUnitPropertyComponent" and not comp["groups"].is_empty():
+			var g: int = UnitDb.group_id(comp["groups"][0], map)
+			group_properties[g] = comp.get("args", [[]])[0]
 		if comp["class"] == "TThinkImpulseOnceComponent":
 			thinks_once = true
 			for c in comp.get("calls", []):
@@ -138,6 +145,9 @@ func has(prop: String) -> bool:
 		return true
 	if prop == "upInjured":
 		return max_health > 0.0 and health < max_health
+	for g in group_properties:
+		if not removed_groups.has(g) and group_properties[g].has(prop):
+			return true
 	for b in buffs:
 		if b.properties.has(prop) or b.late_properties.has(prop):
 			return true
@@ -146,6 +156,10 @@ func has(prop: String) -> bool:
 
 func all_properties() -> Dictionary:
 	var out := properties.duplicate()
+	for g in group_properties:
+		if not removed_groups.has(g):
+			for p in group_properties[g]:
+				out[p] = true
 	for b in buffs:
 		for p in b.properties:
 			out[p] = true

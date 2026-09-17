@@ -985,3 +985,149 @@ func test_frostgoyle_fountain() -> void:
 	while fountain.alive and sim.time_ms < 95000:
 		sim.step()
 	runner.check(sim.time_ms >= 90000 and sim.time_ms < 90100, "fountain dies after 90 s (got %d)" % sim.time_ms)
+
+
+func test_tyrus_soul_armor_undertow_and_debut() -> void:
+	var sim := Simulation.new(3, 4)
+	var victims: Array = []
+	for i in 3:
+		var m := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(3 + i, -23))
+		m.locked_until = 1 << 30
+		victims.append(m)
+	var far := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(15, -23))
+	var tyrus := sim.spawn("Units/Black/Tyrus", Simulation.TEAM_BLUE, Vector2(0, -23))
+	runner.check(tyrus.has("upSummoningSickness"), "legendary spawn lockout")
+	runner.check_eq(tyrus.mana_cap, 20, "tyrus stores 20 souls")
+	var souls: Array = []
+	var on_proj := func(p): if p.gives_mana: souls.append(p)
+	sim.projectile_spawned.connect(on_proj)
+	var banishes: Array = []
+	var on_buff := func(e, b): if b.name == "Banished": banishes.append([sim.time_ms, e.id])
+	sim.buff_applied.connect(on_buff)
+	sim.step()
+	runner.check_eq(souls.size(), 3, "lord of souls: one soul drained from every enemy within 9")
+	var fresh := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(2, -23))   # arrives after the debut
+	fresh.locked_until = 1 << 30
+	for m in victims:
+		runner.check(m.has("upBanished"), "debut banishes")
+	runner.check(not far.has("upBanished"), "outside 9 untouched")
+	for i in 125:   # outlasts the 3300 ms spawn invincibility and the first undertow (one more soul)
+		sim.step()
+	runner.check_eq(tyrus.mana, 4, "drained souls arrive")
+	sim.deal_damage(tyrus, 4.0, SimConstants.DamageType.MELEE, null)
+	runner.check_eq(tyrus.mana, 4, "hits below 5 are not blocked")
+	var before := tyrus.health
+	sim.deal_damage(tyrus, 50.0, SimConstants.DamageType.MELEE, null)
+	runner.check_near(tyrus.health, before, "soul armor nullifies a hit of 5 or more")
+	runner.check_eq(tyrus.mana, 3, "and pays one soul")
+	tyrus.mana = 0
+	sim.deal_damage(tyrus, 50.0, SimConstants.DamageType.MELEE, null)
+	runner.check(tyrus.health < before, "no souls, no armor")
+	sim.projectile_spawned.disconnect(on_proj)
+	sim.buff_applied.disconnect(on_buff)
+	# undertow: the 3 s cooldown starts at spawn, the 3.3 s spawn lockout delays the first cast a little
+	var undertow: Array = []
+	for ev in banishes:
+		if ev[1] == fresh.id:
+			undertow.append(ev[0])
+	runner.check_eq(undertow.size(), 1, "soul undertow banished the fresh enemy once")
+	if not undertow.is_empty():
+		runner.check(undertow[0] >= 3300 and undertow[0] < 3500, "first undertow right after the lockout (got %d)" % undertow[0])
+
+
+func test_vecra_icy_prison() -> void:
+	var sim := Simulation.new(3, 4)
+	var vecra := sim.spawn("Units/Black/Vecra", Simulation.TEAM_BLUE, Vector2(0, -23))
+	runner.check(vecra.has("upFrozen") and vecra.has("upGround") and vecra.has("upImmuneToFrozen"), "imprisoned: frozen, grounded, frost-immune")
+	runner.check(not vecra.wela(4).active, "monarch of frost aura starts inactive")
+	var start_hp := vecra.health
+	while sim.time_ms < 4100:   # invincible for the first 2500 ms: the 2000 ms tick is blocked, the 4000 ms one lands
+		sim.step()
+	runner.check_near(vecra.health, start_hp - 10.0, "melts 10 every 2 s (ignores armor)")
+	var before := vecra.health
+	sim.deal_damage(vecra, 100.0, SimConstants.DamageType.SPELL, null)
+	runner.check_near(vecra.health, before - (100.0 * 0.2 * 0.7 - 5.0), "incoming damage x0.2 in the prison (then heavy armor)")
+	var monk := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(3, -23))
+	monk.locked_until = 1 << 30
+	vecra.health = 0.5 * vecra.max_health
+	sim.step()
+	runner.check(not vecra.has("upFrozen"), "unleashed at 50%: prison gone")
+	runner.check(vecra.wela(4).active, "aura active")
+	runner.check(monk.has("upFrozen"), "freeze burst froze the enemy")
+	runner.check(vecra.has("upSummoningSickness"), "1666 ms lockout after breaking out")
+	var monk_hp := monk.health
+	vecra.health = 100.0
+	var t := sim.time_ms
+	while sim.time_ms < t + 1100:
+		sim.step()
+	runner.check(monk.health < monk_hp, "aura link hurts frozen enemies")
+	runner.check(vecra.health > 100.0, "and leeches life back")
+
+
+func test_void_wraith_frost_nova() -> void:
+	var sim := Simulation.new(3, 4)
+	var wraith := sim.spawn("Units/Black/VoidWraith", Simulation.TEAM_BLUE, Vector2(0, -23))
+	runner.check_eq(wraith.mana, 6, "starts with 6 souls")
+	var a := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(5, -23))
+	var b := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(7, -23))
+	a.locked_until = 1 << 30
+	b.locked_until = 1 << 30
+	while not a.has("upFrozen") and sim.time_ms < 6000:
+		sim.step()
+	runner.check(a.has("upFrozen"), "nova freezes the target")
+	runner.check_near(a.health, 265.0 - 200.0 - 60.0, "200 direct plus 60 splash")
+	runner.check_near(b.health, 265.0 - 60.0, "splash 60 within 4")
+	runner.check_eq(wraith.mana, 0, "nova costs 6 souls")
+	while wraith.mana < 1 and sim.time_ms < 4000:
+		sim.step()
+	runner.check(sim.time_ms >= 3000 and sim.time_ms <= 3100, "+1 soul on the 3 s regeneration timer (got %d)" % sim.time_ms)
+
+
+func test_void_altar() -> void:
+	var sim := Simulation.new(3, 4)
+	var altar := sim.spawn("Units/Black/VoidAltar", Simulation.TEAM_BLUE, Vector2(-60, -23))
+	var footman := sim.spawn("Units/White/Footman", Simulation.TEAM_RED, Vector2(-30, -23))
+	var monk := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(-31, -23))
+	footman.locked_until = 1 << 30
+	monk.locked_until = 1 << 30
+	sim.step()
+	sim.step()   # prefire, then the shot resolves next tick
+	runner.check(not footman.alive and footman.exiled, "soul vortex exiles a unit with max hp <= 60 within 40")
+	runner.check(monk.alive, "265 hp monk is safe")
+	for i in 110:   # 30 units at 10 u/s
+		sim.step()
+	runner.check_eq(altar.mana, 1, "exile harvests the soul")
+	var bane := sim.spawn("Units/Black/VoidBane", Simulation.TEAM_BLUE, Vector2(-55, -23))
+	for i in 60:
+		sim.step()
+	runner.check_eq(bane.mana, 1, "altar donates its souls to gatherers within 12")
+	runner.check_eq(altar.mana, 0, "donation costs the soul")
+
+
+func test_void_slime_status_mirror() -> void:
+	var sim := Simulation.new(3, 4)
+	var slime := sim.spawn("Units/Black/VoidSlime", Simulation.TEAM_BLUE, Vector2(0, -23))
+	runner.check_near(slime.max_health, 495.0, "slime hp")
+	sim.apply_buff(slime, "Stun")
+	runner.check_near(slime.max_health, 745.0, "absorb: first stun +250 max hp")
+	sim.apply_buff(slime, "Stun")
+	runner.check_near(slime.max_health, 745.0, "only once per status")
+	sim.apply_buff(slime, "Bleeding")
+	runner.check_near(slime.max_health, 995.0, "each status counts once")
+	# mirror to enemy: an attacker hitting the stunned slime gets stunned
+	var monk := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(1.5, -23))
+	monk.locked_until = 1 << 30
+	sim.deal_damage(slime, 10.0, SimConstants.DamageType.MELEE, monk)
+	runner.check(monk.has("upStunned"), "mirror: the attacker is stunned")
+	runner.check(not monk.has("upBleeding"), "one mirrored status per 200 ms")
+	for i in 7:
+		sim.step()
+	sim.deal_damage(slime, 10.0, SimConstants.DamageType.MELEE, monk)
+	runner.check(monk.has("upBleeding"), "mirror: the next hit passes on the bleeding")
+	# mirror to self: hitting a frozen enemy freezes the slime
+	for b in slime.buffs.duplicate():
+		slime.remove_buff(b)
+	sim.apply_buff(monk, "Frozen")
+	slime.fire_group = 1
+	sim.deal_damage(monk, 10.0, SimConstants.DamageType.MELEE, slime)
+	runner.check(slime.has("upFrozen"), "mirror to self: copies the victim's frozen status")

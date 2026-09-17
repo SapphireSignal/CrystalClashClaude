@@ -100,8 +100,8 @@ def parse_set_lines(body: str, values: dict) -> None:
         if "GROUP_" in m.group(3):
             # BaseConflict.Constants.pas: spawner groups are 0, GROUP_BUILDING_LIFETIME 10, GROUP_SOUL 11
             groups = [FIXED_GROUPS.get(g, 0) for g in re.findall(r"GROUP_\w+", groups)]
-        else:
-            groups = [int(g) for g in re.findall(r"\d+", groups)] or []
+        else:  # numeric groups, or symbolic ones reserved by inlined procedures
+            groups = [int(g) if g.isdigit() else g for g in (x.strip() for x in groups.split(",")) if g]
         value = parse_value(raw)
         key = event if not indexed else f"{event}.{index}"
         entry = values.setdefault(key, {})
@@ -163,6 +163,50 @@ def parse_components(body: str) -> list:
             comp["calls"] = calls
         out.append(comp)
     return out
+
+
+RE_LOCAL_PROC = re.compile(
+    r"^procedure (\w+)\(Entity : TEntity(?:;([^)]*))?\);\s*(?:var ([^;]*);)?\s*begin(.*?)^end;", re.S | re.M)
+
+
+def _names(decl: str) -> list:
+    """'a, b : integer; c : string' -> ['a', 'b', 'c']"""
+    out = []
+    for part in decl.split(";"):
+        if ":" in part:
+            out += [n.strip() for n in part.split(":")[0].split(",") if n.strip()]
+    return out
+
+
+def inline_local_procedures(text: str) -> str:
+    """VoidSlime.ets builds its abilities with local procedures (ApplyAbsorbToSelf(Entity, upStunned) ...) that
+    reserve fresh groups. Expand every call in place: parameters become the arguments, reserved groups become
+    unique symbolic names, so the components look like ordinary declarations."""
+    procs = {}
+    for m in RE_LOCAL_PROC.finditer(text):
+        name, params, local_vars, body = m.groups()
+        if name in ("CreateData", "CreateMeta", "CreateEntity") or not name.startswith("Apply"):
+            continue
+        procs[name] = (_names(params or ""), _names(local_vars or ""), body)
+    if not procs:
+        return text
+    counter = {}
+
+    def expand(m: re.Match) -> str:
+        name = m.group(1)
+        if name not in procs:
+            return m.group(0)
+        params, local_vars, body = procs[name]
+        args = [a.strip() for a in m.group(2).split(",")]
+        counter[name] = counter.get(name, 0) + 1
+        body = re.sub(r"^\s*\w+\s*:=\s*Entity\.ReserveFreeGroup\(\);\s*$", "", body, flags=re.M)
+        for var in local_vars:
+            body = re.sub(rf"\b{var}\b", f"{name}{counter[name]}{var}", body)
+        for pname, arg in zip(params, args):
+            body = re.sub(rf"\b{pname}\b", lambda _m, a=arg: a, body)  # args may hold backslashes ('Modifiers\Stun.dws')
+        return body
+
+    return re.sub(r"^\s*(\w+)\(Entity\s*,\s*([^;]*?)\);\s*$", expand, text, flags=re.M)
 
 
 def create_entity_body(text: str) -> str:
@@ -232,7 +276,7 @@ def extract_modifiers() -> dict:
 
 
 def parse_script(path: Path) -> dict:
-    text = path.read_text(encoding="utf-8", errors="replace")
+    text = inline_local_procedures(path.read_text(encoding="utf-8", errors="replace"))
     body = create_data_body(text)
     data: dict = {"script": str(path.relative_to(SCRIPTS)).replace("\\", "/"), "values": {}}
     inc = RE_INCLUDE.search(text)
@@ -262,7 +306,9 @@ def parse_script(path: Path) -> dict:
         data["legendary"] = m.group(2) == "True"
         data["tier"] = int(m.group(3))
     parse_set_lines(body, data["values"])
-    data["components"] = data.get("components", []) + parse_components(create_entity_body(text))
+    entity_body = create_entity_body(text)
+    parse_set_lines(re.sub(r"\{\$IFDEF CLIENT\}.*?\{\$ENDIF\}", "", entity_body, flags=re.S), data["values"])
+    data["components"] = data.get("components", []) + parse_components(entity_body)
     return data
 
 
@@ -302,7 +348,8 @@ def parse_spell(path: Path) -> dict:
 
 def extract_units() -> dict:
     units = {}
-    paths = list(SCRIPTS.glob("Units/**/*.ets")) + list(SCRIPTS.glob("Projectiles/**/*.ets")) + list(SCRIPTS.glob("Spells/**/*.ets"))
+    paths = list(SCRIPTS.glob("Units/**/*.ets")) + list(SCRIPTS.glob("Projectiles/**/*.ets")) + list(SCRIPTS.glob("Spells/**/*.ets")) \
+        + list(SCRIPTS.glob("Links/*.ets"))
     for path in sorted(paths):
         units[str(path.relative_to(SCRIPTS).with_suffix("")).replace("\\", "/")] = parse_script(path)
     for path in sorted(SCRIPTS.glob("Spells/**/*.sps")):

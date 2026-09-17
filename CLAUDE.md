@@ -133,6 +133,11 @@ UnitTemplate group 11, one soul projectile to a random non-full gatherer within 
 Undying buff full-heals and kills after 15 s), VoidBane cone cleave, Reaper (+15 max HP per soul) and
 soul-donor deathrattle (target count scaled by mana, random with repetition), VoidBowman Grievous Wounds
 (self-applied blessing, on-hit Bleeding with stacks, 0.5 % max HP per stack per second, 60 % healing).
-302 tests pass. `game/main.tscn` is a sandbox with capsule
+All 12 Black units work: Frozen/Banished with their longer immunity groups, VoidWorm frost shot, Frostgoyle
+fury (chains before the warhead), VoidCauldron blast, Frostgoyle Fountain (passive self-target groups,
+produced-unit scripts, building lifetime), Tyrus (soul armor, undertow with reverse projectiles, debut),
+Vecra (group-bound properties, group removal, activation, link entity aura), VoidWraith nova, VoidAltar
+(exile by max HP), VoidSlime (extractor inlines its generator procedures; status absorb and mirrors).
+370 tests pass. Black spells are next. `game/main.tscn` is a sandbox with capsule
 units on the Compatibility renderer: keys 1-9,0,-,= play the 12 deck slots, a simple red AI plays back.
 See `CONTINUE.md`.

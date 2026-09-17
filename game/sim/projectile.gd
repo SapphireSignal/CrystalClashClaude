@@ -11,6 +11,7 @@ var target_id: int
 var position: Vector2
 var last_target_position: Vector2
 var speed: float           # world units per ms
+var speed_random: float = 0.0   # eiSpeed given as '(a + random * b) / 1000': speed holds a, this b, resolved by the sim
 var damage: float
 var damage_type: int
 var created_at: int
@@ -26,7 +27,14 @@ func _init(p_unit_id: String, league: int) -> void:
 	unit_id = p_unit_id
 	var bb := Blackboard.new()
 	UnitDb.fill_blackboard(bb, unit_id, league)
-	speed = bb.get_float("eiSpeed", Blackboard.ANY_GROUP, 20.0 / 1000.0)
+	var raw_speed: Variant = bb.get_value("eiSpeed", Blackboard.ANY_GROUP, 20.0 / 1000.0)
+	if raw_speed is String:
+		var m := RegEx.create_from_string("\\(\\s*([0-9.]+)\\s*\\+\\s*random\\s*\\*\\s*([0-9.]+)\\s*\\)\\s*/\\s*1000").search(raw_speed)
+		assert(m != null, "unsupported eiSpeed expression %s in %s" % [raw_speed, unit_id])
+		speed = float(m.get_string(1))
+		speed_random = float(m.get_string(2))
+	else:
+		speed = bb.get_float("eiSpeed", Blackboard.ANY_GROUP, 20.0 / 1000.0)
 	for g in bb.groups_of("eiWelaAreaOfEffect"):   # projectile scripts with their own splash group
 		aoe = maxf(aoe, bb.get_float("eiWelaAreaOfEffect", g, 0.0))
 	for g in bb.groups_of("eiWelaSplashfactor"):
@@ -41,6 +49,10 @@ func _init(p_unit_id: String, league: int) -> void:
 						gives_mana = true
 			"TAutoBrainOnDealDamageComponent":
 				hit_group = comp["groups"][0]
+			"TWelaEffectFireComponent":
+				for c in calls:
+					if c[0] == "TargetGroup":
+						hit_group = c[1][0][0]
 			"TWelaTargetConstraintUnitPropertyComponent":
 				if hit_group != "" and comp["groups"].has(hit_group):
 					for c in calls:

@@ -76,11 +76,22 @@ func spawn(unit_id: String, team: int, pos: Vector2, front: Vector2 = Vector2.ZE
 		_stand(e)
 	if e.has("upCharm") and commanders.has(team):
 		_register_charm(e)
-	for w in e.welas:   # TWarheadApplyScriptComponent.ApplyToSelfAtCreate (VoidBowman's Grievous Wounds)
-		if w.apply_script_to_self_at_create and Buff.exists(w.apply_script):
-			apply_buff(e, w.apply_script, {}, e)
+	for w in e.welas:
+		if not w.ready_at_start:   # TWelaReadyCooldownComponent(false): the first use waits a full cooldown
+			w.cooldown_ready_at = time_ms + e.cooldown(w.group)
+		if w.apply_script_to_self_at_create and Buff.exists(w.apply_script):   # ApplyToSelfAtCreate
+			apply_buff(e, w.apply_script, _script_params(w.apply_script, w.apply_script_values), e)
 	entity_spawned.emit(e)
 	return e
+
+
+## PassIntValue(...) arguments matched to the script's parameter names (LegendarySpawn: Duration).
+func _script_params(script: String, values: Array) -> Dictionary:
+	var params := {}
+	var names := Buff.params_of(script)
+	for i in mini(names.size(), values.size()):
+		params[names[i]] = values[i]
+	return params
 
 
 ## PromiseOfLifeSpell.ets groups 5-7: a new charm takes a commander charm slot; when the cap (3) is
@@ -172,12 +183,14 @@ func apply_buff(e: SimEntity, script_name: String, params: Dictionary = {}, sour
 	if b.stops_movement and e.moving:
 		_stand(e)
 	for w in e.welas:   # TAutoBrainOnUnitPropertyComponent.TriggerOn (HeavyGunner gains mana when blessed)
-		if w.kind != Wela.Kind.ON_PROPERTY:
+		if w.kind != Wela.Kind.ON_PROPERTY or w.used:
 			continue
 		for p in w.trigger_props:
 			if b.properties.has(p):
-				if w.resource == "reMana":
+				if w.resource == "reMana" and not w.changes_max:
 					e.mana = mini(e.mana_cap, e.mana + int(e.bb.get_float("eiWelaDamage", w.group, 1.0)))
+				else:
+					_fire_group(e, w.group, e)   # VoidSlime: +250 max health, once per status
 				break
 	buff_applied.emit(e, b)
 	return b
@@ -395,6 +408,8 @@ func _think_once(e: SimEntity) -> void:
 		return
 	e.thought_once = true
 	for w in e.welas:
+		if w.kind == Wela.Kind.SELF_GROUND:
+			_fire_group(e, w.group, e)
 		if w.kind != Wela.Kind.FIGHT:
 			continue
 		var count := e.bb.get_int("eiWelaTargetCount", w.group, 1)
@@ -430,7 +445,7 @@ func _pick_targets(e: SimEntity, w: Wela, range: float, count: int) -> Array[Sim
 			continue
 		var key := rng.randf() * range if w.picks_random_targets else dist
 		key += (100000.0 if other.has("upLowPrio") else 0.0) - _property_efficiency(w, other) * 1000000.0
-		if w.prefer_allies and other.team != e.team:
+		if (w.prefer_allies and other.team != e.team) or (w.prefer_enemies and other.team == e.team):
 			key += 10000000.0
 		scored.append([key, other])
 	scored.sort_custom(func(a, b): return a[0] < b[0])
@@ -530,6 +545,7 @@ func step() -> void:
 		_recharge_ammo(e)
 		_regenerate(e)
 		_resolve_pending_fire(e)
+		_think_passives(e)
 		if not e.can_think(time_ms):
 			continue
 		_think(e)
@@ -586,18 +602,28 @@ func _fire_scheduled_events() -> void:
 
 ## Think chain in component order: each FIGHT wela (heal, main attack...) may claim the unit; the first
 ## that has a target in range fires. Otherwise approach the nearest enemy in attention range or follow the lane.
-func _think(e: SimEntity) -> void:
+## Passive brains (auras, ThinksPassively fight groups, self-target groups) run every tick, even while the
+## unit is frozen or stunned: Vecra melts her own prison while carrying upFrozen.
+func _think_passives(e: SimEntity) -> void:
 	for w in e.welas:
+		if not w.active and w.link_delay > 0 and time_ms >= e.created_at + w.link_delay:
+			w.active = true   # TWelaHelperActivateTimerComponent
+		if not w.active or w.used:
+			continue
 		if w.kind == Wela.Kind.LINK:
 			_think_link(e, w)
 		elif w.kind == Wela.Kind.FIGHT and w.passive:
 			_think_passive(e, w)
 		elif w.kind == Wela.Kind.SELF_PASSIVE:
 			_think_self_passive(e, w)
+
+
+func _think(e: SimEntity) -> void:
 	if time_ms < e.locked_until:
 		return
+	var waiting := false   # a fight group has a target but is on cooldown: hold position, let other groups act
 	for w in e.welas:
-		if w.passive or not _wela_ready(e, w):
+		if w.passive or not w.active or w.used or not _wela_ready(e, w):
 			continue
 		if w.kind == Wela.Kind.SELF_GROUND:
 			if time_ms >= w.cooldown_ready_at and e.fire_at < 0:
@@ -614,6 +640,9 @@ func _think(e: SimEntity) -> void:
 			_stand(e)
 		if time_ms >= w.cooldown_ready_at and e.fire_at < 0:
 			_prefire(e, w, target)
+			return
+		waiting = true
+	if waiting:
 		return
 	if e.can_move():
 		var main := e.wela(SimConstants.GROUP_MAINWEAPON)
@@ -640,11 +669,14 @@ func _wela_ready(e: SimEntity, w: Wela) -> bool:
 func _think_passive(e: SimEntity, w: Wela) -> void:
 	if time_ms < w.cooldown_ready_at or not _wela_ready(e, w):
 		return
-	var target := _pick_target(e, w, e.range_of(w.group, time_ms))
-	if target == null:
+	var targets := _pick_targets(e, w, e.range_of(w.group, time_ms), e.target_count(w.group))
+	if targets.is_empty():
 		return
 	w.cooldown_ready_at = time_ms + e.cooldown(w.group)
-	_fire_group(e, w.group, target)
+	for target in targets:
+		_fire_group(e, w.group, target)
+	if w.remove_after_use:   # Tyrus' Lord of Souls fires once
+		w.used = true
 
 
 ## TBrainWelaSelftargetComponent.ThinksPassively: fires on the owner whenever ready (Frostgoyle Fountain
@@ -670,9 +702,11 @@ func _think_link(e: SimEntity, w: Wela) -> void:
 	var key := SimEntity.link_key(e.id, w.group)
 	for other: SimEntity in entities.values():
 		var linked: bool = other.link_buffs.has(key)
-		var in_range := other.alive and other.team == e.team and other != e \
+		var allies := w.target_allies or not w.team_constraint_set   # auras link allies unless told otherwise
+		var in_range := other.alive and (other.team == e.team) == allies and other.team != 0 and other != e \
 			and other.position.distance_to(e.position) - other.collision_radius <= range
-		if linked and not in_range:
+		var validator: Wela = e.wela(w.validate_group) if w.validate_group >= 0 else null
+		if linked and (not in_range or (validator != null and not validator.target_allowed(other, e))):
 			_break_link_key(other, key)
 		elif not linked and in_range and other.is_targetable() and w.target_allowed(other, e):
 			var payload := "Links/" + w.link_pattern.get_file().replace("Aura", "")
@@ -685,7 +719,22 @@ func _think_link(e: SimEntity, w: Wela) -> void:
 				other.add_buff(b)
 			if w.link_property != "":
 				b.properties.append(w.link_property)
+			if UnitDb.has_unit(w.link_pattern):   # a link entity with its own brain (Links/VecraAura.ets)
+				var lb := Blackboard.new()
+				UnitDb.fill_blackboard(lb, w.link_pattern, league)
+				b.link_damage = lb.get_float("eiWelaDamage", 0, 0.0)
+				b.link_damage_type = SimConstants.damage_mask(lb.get_value("eiDamageType", 0, []))
+				b.link_leech = lb.get_float("eiWelaModifier", 1, 0.0)
+				b.tick_interval = lb.get_int("eiCooldown", 0, 1000)
+				b.next_tick_at = time_ms + b.tick_interval
 			other.link_buffs[key] = b
+		elif linked:
+			var b: Buff = other.link_buffs[key]
+			if b.link_damage > 0.0 and time_ms >= b.next_tick_at:   # TLinkBrainComponent: hurt the target, leech to the owner
+				b.next_tick_at += b.tick_interval
+				var dealt := deal_damage(other, b.link_damage, b.link_damage_type, e)
+				if dealt > 0.0 and b.link_leech > 0.0:
+					heal(e, dealt * b.link_leech, SimConstants.DamageType.HOT, e)
 
 
 ## Break every aura link `source` provides to `target`.
@@ -759,7 +808,9 @@ func _fire_group(e: SimEntity, group: int, target: SimEntity) -> void:
 		attack_fired.emit(e, target, amount)
 	if w.chain_first:
 		_fire_chains(e, w, target)
-	if w.projectile != "":
+	if w.projectile_reverse and target != e:   # the projectile starts at the target and flies to the owner
+		_launch_projectile(w.projectile, target, e, amount, dtype, group)
+	if w.projectile != "" and not w.projectile_reverse:
 		_launch_projectile(w.projectile, e, target, amount, dtype, group)
 	elif w.changes_max and w.resource == "reHealth":   # eiResourceCapTransaction: raise the cap and fill it
 		target.max_health += amount
@@ -775,7 +826,19 @@ func _fire_group(e: SimEntity, group: int, target: SimEntity) -> void:
 	elif w.damages:
 		deal_damage(target, amount, dtype, e)
 	if w.apply_script != "" and target.alive and Buff.exists(w.apply_script):
-		apply_buff(target, w.apply_script, {}, e)
+		apply_buff(target, w.apply_script, _script_params(w.apply_script, w.apply_script_values), e)
+	for ag in w.activates_groups:   # TWelaEffectActivationAbilityComponent.SetsActive
+		var aw := e.wela(ag)
+		if aw != null:
+			aw.active = true
+	for rg in w.removes_groups:   # TWelaEffectRemoveAfterUseComponent.TargetGroup: those groups are gone for good
+		e.removed_groups[rg] = true
+		var rw := e.wela(rg)
+		if rw != null:
+			rw.used = true
+	if w.remove_after_use and w.kind != Wela.Kind.FIGHT:
+		w.used = true
+		e.removed_groups[group] = true
 	if w.spawns:   # TWelaEffectFactoryComponent: units appear at the target position
 		var pattern: String = e.bb.get_value("eiWelaUnitPattern", group, "").replace("\\", "/")
 		var count := e.bb.get_int("eiWelaCount", group, 1)
@@ -789,12 +852,10 @@ func _fire_group(e: SimEntity, group: int, target: SimEntity) -> void:
 					produced.append(spawn(pattern, team, target.position))
 			for unit in produced:
 				for item in w.produced_scripts:   # ApplyToProducedUnits (LegendarySpawn 660 ms, TimedLife 17 s)
-					var params := {}
-					var names := Buff.params_of(item[0])
-					for i in mini(names.size(), item[1].size()):
-						params[names[i]] = item[1][i]
 					if Buff.exists(item[0]):
-						apply_buff(unit, item[0], params, e)
+						apply_buff(unit, item[0], _script_params(item[0], item[1]), e)
+				if unit.thinks_once and not unit.think_once_waits:   # effect entities act at once (VecraFreeze)
+					_think_once(unit)
 	if w.charge_gain_group >= 0 and w.kind != Wela.Kind.FIGHT or (w.charge_gain_group >= 0 and w.commander_cast):
 		e.charges[w.charge_gain_group] = e.charges_of(w.charge_gain_group) + 1
 	for sg in w.instant_target_groups:   # splash warheads around the target position
@@ -816,7 +877,7 @@ func _fire_chains(e: SimEntity, w: Wela, target: SimEntity) -> void:
 		if cw == null or time_ms < cw.cooldown_ready_at or not _wela_ready(e, cw):
 			continue
 		var chain_target := e if w.chain_to_self else target
-		if chain_target.alive and (w.chain_to_self or cw.target_allowed(chain_target, e)):
+		if chain_target.alive and cw.target_allowed(chain_target, e):
 			_fire_group(e, cg, chain_target)
 
 
@@ -878,7 +939,7 @@ func deal_damage(target: SimEntity, amount: float, damage_type: int, source: Sim
 		return 0.0
 	if source != null and source.alive:
 		amount = _will_deal_damage(source, amount, damage_type, target)
-	amount = _on_take_damage(target, amount, damage_type)
+	amount = _on_take_damage(target, amount, damage_type, source)
 	for b in target.buffs:   # TBuffTakenDamageMultiplierComponent (Spellshield aura)
 		if b.taken_damage_mult != 1.0 and (b.taken_damage_types == 0 or damage_type & b.taken_damage_types):
 			amount *= b.taken_damage_mult
@@ -896,6 +957,13 @@ func deal_damage(target: SimEntity, amount: float, damage_type: int, source: Sim
 ## TAutoBrainOnDealDamageComponent inside a buff (Grievous Wounds): when ready and the victim passes the
 ## constraints, apply the script, or refresh its duration and add a stack when it is already there.
 func _on_dealt_damage(source: SimEntity, target: SimEntity) -> void:
+	for w in source.welas:
+		if w.group != source.fire_group or w.on_deal_groups.is_empty():
+			continue
+		for cg in w.on_deal_groups:
+			var cw := source.wela(cg)
+			if cw != null and target.alive and cw.target_allowed(target, source):
+				_fire_group(source, cg, target)
 	for b in source.buffs:
 		if b.on_hit_script == "" or time_ms < b.on_hit_ready_at or target == source or not target.alive:
 			continue
@@ -934,20 +1002,38 @@ func _will_deal_damage(source: SimEntity, amount: float, damage_type: int, targe
 
 ## TAutoBrainOnTakeDamageComponent.ModifiesAmount + TWelaTriggerCheckTakeDamageThresholdComponent (Shieldblock):
 ## when ready and the hit passes the threshold, the amount is multiplied by eiWelaModifier (0 = blocked).
-func _on_take_damage(target: SimEntity, amount: float, _damage_type: int) -> float:
+func _on_take_damage(target: SimEntity, amount: float, _damage_type: int, source: SimEntity = null) -> float:
+	for w in target.welas:   # CheckSelfForTargetsInGroup + FireTargetsInGroup (VoidSlime passes its status to the attacker)
+		if w.kind != Wela.Kind.ON_TAKE_DAMAGE or w.mirror_pairs.is_empty() or time_ms < w.cooldown_ready_at:
+			continue
+		if source == null or source == target or not source.alive:
+			continue
+		for pair in w.mirror_pairs:
+			var sw := target.wela(pair[0])
+			var ew := target.wela(pair[1])
+			if sw != null and ew != null and sw.target_allowed(target, target) and ew.target_allowed(source, target):
+				w.cooldown_ready_at = time_ms + target.cooldown(w.group)
+				_fire_group(target, pair[1], source)
+				break
 	for b in target.buffs.duplicate():   # Shieldblock granted by a buff (Shields Up): one block, then spent
 		if b.block_threshold >= 0.0 and amount >= b.block_threshold:
 			amount *= b.block_factor
 			if b.block_once:
 				target.remove_buff(b)
 	for w in target.welas:
-		if w.kind != Wela.Kind.ON_TAKE_DAMAGE or time_ms < w.cooldown_ready_at:
+		if w.kind != Wela.Kind.ON_TAKE_DAMAGE or not w.modifies_amount or w.used or time_ms < w.cooldown_ready_at:
+			continue
+		if not _wela_ready(target, w):
 			continue
 		var threshold := target.bb.get_float("eiWelaDamage", w.group, 0.0)
 		var passes := amount <= threshold if w.threshold_lesser_equal else amount >= threshold
 		if passes:
 			amount *= target.bb.get_float("eiWelaModifier", w.group, 1.0)
+			target.mana -= w.mana_cost   # Tyrus' Soul Armor pays a soul per blocked hit
 			w.cooldown_ready_at = time_ms + target.cooldown(w.group)
+	for w in target.welas:   # TBuffTakenDamageMultiplierComponent on a unit group (Vecra's prison)
+		if w.taken_mult != 1.0 and not w.used and not (_damage_type & w.taken_mult_not_types):
+			amount *= w.taken_mult
 	return amount
 
 
@@ -1083,7 +1169,7 @@ func _pick_target(e: SimEntity, w: Wela, range: float) -> SimEntity:
 	for other: SimEntity in entities.values():
 		if not other.alive or other == e or not other.is_targetable():
 			continue
-		if w.target_allies != (other.team == e.team) or other.team == 0:
+		if (not w.target_any_team and w.target_allies != (other.team == e.team)) or other.team == 0:
 			continue
 		if other.has("upFlying") and not other.has("upGround") and not e.may_target_flying():
 			continue
@@ -1092,7 +1178,9 @@ func _pick_target(e: SimEntity, w: Wela, range: float) -> SimEntity:
 		var dist := e.position.distance_to(other.position) - other.collision_radius - e.collision_radius
 		if dist > range:
 			continue
-		var key := dist + (100000.0 if other.has("upLowPrio") else 0.0)
+		var key := (rng.randf() * range if w.picks_random_targets else dist) + (100000.0 if other.has("upLowPrio") else 0.0)
+		if (w.prefer_allies and other.team != e.team) or (w.prefer_enemies and other.team == e.team):
+			key += 10000000.0
 		if w.efficiency_missing_health:
 			key -= (other.max_health - other.health) * 1000.0
 		if w.efficiency_max_health != 0:
@@ -1127,6 +1215,8 @@ func _face(e: SimEntity, at: Vector2) -> void:
 ## TWelaEffectProjectileComponent.Fire: the projectile carries the shooter's weapon values.
 func _launch_projectile(pattern: String, shooter: SimEntity, target: SimEntity, dmg: float, damage_type: int, group: int = -1) -> Projectile:
 	var p := Projectile.new(pattern, league)
+	if p.speed_random > 0.0:   # eiSpeed '(3 + random * 3) / 1000' (VoidGatherProjectileTyrus)
+		p.speed = (p.speed + rng.randf() * p.speed_random) / 1000.0
 	p.id = _next_id
 	_next_id += 1
 	p.team = shooter.team
