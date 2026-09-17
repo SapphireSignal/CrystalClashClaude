@@ -13,7 +13,7 @@ Compiled artifacts `.msh` (mesh) and `.tex` (texture) are never parsed; their FB
 | Terrain | `<Map>.ter` 513x513 float32 heightmap (base64+zlib) | 2 | `ArrayMesh` + `HeightMapShape3D` | Python numpy | todo |
 | Map zones | `<Map>.bcm` polygons | 2 | JSON resource | Python | todo |
 | Decorations / vegetation / water / lights | `.bcc .veg .wat .lig` | 2 each | `.tscn` | Python | todo |
-| GUI | `.dui` + `.scss` + GUI textures | 139 / 53 | Control scenes built in code, textures copied 1:1 to `assets/ui/` | `tools/copy_ui_assets.py` (254 HUD images, card icons are 512x256 mip atlases: left 256 square is the icon), layout spec in `docs/hud.md` | HUD in progress |
+| GUI | `.dui` + `.scss` + GUI textures | 139 / 53 | Control scenes built in code, textures copied 1:1 to `assets/ui/` | `tools/copy_ui_assets.py` (262 HUD images incl. InfoPanel attack/armor icons, card icons are 512x256 mip atlases: left 256 square is the icon), layout spec in `docs/hud.md` | HUD in progress |
 | Fonts | `.ttf` ProzaLibre + fontawesome | 6 | `assets/fonts/` | `tools/copy_ui_assets.py` | done (fontawesome not needed yet) |
 | Sound | FMOD `.bank` + `GUIDs.txt` | 10 | `.ogg` | python-fsb5 or FMOD GDExtension | todo |
 | Lang | `Lang/*.csv` (`;`) | 23 | `game/data/lang/<locale>.json` (keys lowercased, `§` refs resolved, HTML stripped) | `tools/extract_lang.py` | en done, other locales on demand |

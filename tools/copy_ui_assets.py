@@ -18,7 +18,7 @@ OUT_FONTS = ROOT / "assets" / "fonts"
 # folders copied whole (png + tga), relative to Graphics/GUI
 FOLDERS = [
     "HUD/DeckPanel", "HUD/GameStatePanel", "HUD/InfoPanel", "HUD/MinimapPanel", "HUD/RessourcePanel",
-    "HUD/TechnicalPanel", "HUD/Announcements", "HUD/FinalScreen", "Shared/CardIcons", "Shared/LeagueIcons",
+    "HUD/InfoPanel/Attack", "HUD/InfoPanel/Armor", "HUD/TechnicalPanel", "HUD/Announcements", "HUD/FinalScreen", "Shared/CardIcons", "Shared/LeagueIcons",
     "Shared/FactionIcons",
 ]
 FILES = ["HUD/Selection.png", "HUD/SelectionBuilding.png"]

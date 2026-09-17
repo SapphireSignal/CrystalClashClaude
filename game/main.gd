@@ -18,7 +18,10 @@ const SLOT_KEYS := [KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7, KEY_8, KEY_
 var sim: Simulation
 var _accumulator_ms: float = 0.0
 var _views: Dictionary = {}   # entity id -> MeshInstance3D
-var _label: Label
+var _hud: Hud
+var _selection_decal: MeshInstance3D
+var _armed_slot: int = -1      # card clicked in the deck panel, played at the next left click on the ground
+var _jump_return: Variant = null   # camera look-at to return to after a spawner jump
 var _red_next_play_at: int = 15000
 var _red_cursor: int = 0
 
@@ -40,7 +43,12 @@ func _ready() -> void:
 	# Decks go through the Deck rules (validates them) and its slot sort, like the real card bar.
 	sim.commanders[Simulation.TEAM_BLUE].set_deck_from(Deck.from_scripts(BLUE_DECK))
 	sim.commanders[Simulation.TEAM_RED].set_deck_from(Deck.from_scripts(RED_DECK))   # red plays Black so both factions show
-	_label = $HUD/Label
+	_hud = Hud.new()
+	$HUD.add_child(_hud)
+	_hud.setup(sim, Simulation.TEAM_BLUE, _camera)
+	_hud.slot_clicked.connect(_on_slot_clicked)
+	_hud.spawner_jump.connect(_spawner_jump)
+	_selection_decal = _make_decal()
 	_place_camera(Vector2(-40, -23))
 
 
@@ -51,20 +59,22 @@ func _process(delta: float) -> void:
 		sim.step()
 		_red_ai()
 	_sync_views()
-	var c: Commander = sim.commanders[Simulation.TEAM_BLUE]
-	var charges := ""
-	for i in c.slots.size():
-		charges += "%d:%d " % [i + 1, c.slots[i].charges]
-	var tier_names := ["", "Stone", "Bronze", "Silver"]
-	_label.text = "%02d:%02d   Mana %d / %d (+%d)   Essence %d   Tier %s   units %d\n%s" % [
-		sim.time_ms / 60000, (sim.time_ms / 1000) % 60, c.gold, c.gold_cap(), c.income(), c.wood, tier_names[c.tier],
-		sim.alive_entities().size(), charges]
+	_hud.refresh()
+	_sync_selection()
 
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_RIGHT:
 			_drag_anchor = _mouse_world_2d() if event.pressed else null
+			if event.pressed:
+				_armed_slot = -1
+		elif event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+			if _armed_slot >= 0:
+				_play(Simulation.TEAM_BLUE, _armed_slot, _mouse_world_2d())
+				_armed_slot = -1
+			else:
+				_hud.select(_unit_at(_mouse_world_2d(), true))
 		elif event.pressed and event.button_index == MOUSE_BUTTON_WHEEL_UP:
 			_camera_distance = maxf(25.0, _camera_distance - 5.0)
 			_place_camera(_look_at)
@@ -140,11 +150,66 @@ func _spell_props(card: Cards.CardDef) -> Array:
 	return UnitDb.raw(card.unit_id)["values"].get("eiUnitProperties", {}).get("SpellGroup", [])
 
 
-func _unit_at(where: Vector2) -> SimEntity:
+## Card clicked in the deck panel: spawners go to the next free field at once, everything else waits
+## for a left click on the ground.
+func _on_slot_clicked(slot: int) -> void:
+	var card: Cards.CardDef = sim.commanders[Simulation.TEAM_BLUE].slots[slot].card
+	if card.is_spawner():
+		_play(Simulation.TEAM_BLUE, slot, Vector2.ZERO)
+	else:
+		_armed_slot = slot
+
+
+## TIngameHUD.SpawnerJump: camera to the own base (nexus + 10.5 towards the lane) and back.
+func _spawner_jump() -> void:
+	var nexus: SimEntity = sim.entities.get(sim.nexus_ids[Simulation.TEAM_BLUE])
+	if nexus == null:
+		return
+	var base := nexus.position + Vector2(signf(nexus.position.x) * 10.5, 0)
+	if base.distance_to(_look_at) > 20.0:
+		_jump_return = _look_at
+		_place_camera(base)
+	elif _jump_return != null:
+		_place_camera(_jump_return)
+		_jump_return = null
+
+
+func _make_decal() -> MeshInstance3D:
+	var decal := MeshInstance3D.new()
+	var quad := QuadMesh.new()
+	quad.size = Vector2(1, 1)
+	quad.orientation = PlaneMesh.FACE_Y
+	decal.mesh = quad
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.albedo_texture = HudStyle.tex("HUD/Selection.png")
+	decal.material_override = mat
+	decal.visible = false
+	add_child(decal)
+	return decal
+
+
+func _sync_selection() -> void:
+	var e := _hud.selected()
+	_selection_decal.visible = e != null
+	if e == null:
+		return
+	var mat: StandardMaterial3D = _selection_decal.material_override
+	mat.albedo_texture = HudStyle.tex("HUD/SelectionBuilding.png" if e.is_building() else "HUD/Selection.png")
+	var s := e.collision_radius * 3.0
+	_selection_decal.scale = Vector3(s, 1, s)
+	_selection_decal.position = Vector3(e.position.x, 0.05, e.position.y)
+
+
+func _unit_at(where: Vector2, include_spawners: bool = false) -> SimEntity:
 	var best: SimEntity = null
 	var best_dist := INF
 	for e in sim.alive_entities():
-		if not e.is_targetable() or e.is_spawner():
+		if e.is_spawner():
+			if not include_spawners:
+				continue
+		elif not e.is_targetable():
 			continue
 		var d := e.position.distance_to(where) - e.collision_radius
 		if d <= 0.5 and d < best_dist:

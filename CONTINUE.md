@@ -2,39 +2,38 @@
 
 Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
 
-## State (2026-09-17, checkpoint 25)
-- Phases 1-3 done, 799 tests pass. All five factions, deck rules and per-card league/level are complete
-  (see CLAUDE.md Status). Sandbox `game/main.tscn` plays capsules; blue deck on keys 1-9,0,-,= ; red AI plays Black.
-- **Phase 4 (HUD) started: research done, no HUD code yet.** `docs/hud.md` is the complete pixel spec read from the
-  original `.dui` / `.scss` / view-model (top bar, resource panel, deck panel with tier-locked groups, minimap
-  projection, unit info panel, tech panel, announcements). Read it instead of the original again.
-- Done this checkpoint:
-  - `tools/copy_ui_assets.py`: copies the original HUD images 1:1 into `assets/ui/<path under Graphics/GUI>` (254 files:
-    HUD panels, card icons, league/faction icons, selection decals) and Proza Libre fonts into `assets/fonts/`.
-    Card icon `.tga`s are 512x256 mip atlases: use an `AtlasTexture` region (0,0,256,256).
-  - `tools/extract_lang.py`: `Lang/*.csv` -> `game/data/lang/en.json` (keys lowercased, `§key` refs resolved, HTML
-    stripped). Keys: `card_name_<ident>[_drop|_spawner]`, `unitability_name_<ability>`, `armortype_<atx>_caption`,
-    `core_*` HUD strings, `card_description_<spell>`.
-  - `tools/extract_units.py` now records `abilities` per script (names of `TTooltipUnitAbilityComponent`s, inherited),
-    e.g. Footman `["ShieldBlock"]`, for the unit panel's keyword line.
-  - `docs/assets.md` rows GUI / Fonts / Lang updated.
+## State (2026-09-17, checkpoint 26)
+- Phases 1-3 done, 799 tests pass. Sandbox `game/main.tscn`: blue deck on keys 1-9,0,-,= or by clicking a card
+  (drops/spells then need a left click on the ground, spawners go to the next free field); red AI plays Black.
+- **Phase 4 (HUD): step 1 done.** `game/ui/` holds the code-built HUD from `docs/hud.md`: top bar (clock, nexus
+  bars), resource panel (rows, income fill, tier book + tech timer), deck panel (stage groups, locked tier plates
+  with countdown, ready glow, darken, radial cooldown + seconds, charge/hotkey badges, spawner jump button),
+  minimap (WorldToMiniMap port with the original angle/scale, icons by kind, camera ground quad, menu button
+  without a menu yet), unit info panel on left click (portrait + league icon, name, health/mana or ammo, DPS,
+  armor caption, ability keywords; spawners show the produced unit), `Selection.png` ground decal.
+  `tools/screenshot.gd` runs the game and saves `.tmp/shot_<s>.png` (`-- 30 31 select` selects a unit first).
+- Verified by screenshot against `reference/media/ingame/*.webp` (those use the client's small layout; ours is
+  the normal 1920x1080 layout, so sizes differ but the structure matches).
 
 ## Next step (in order, one at a time, run the game after each)
-1. Build the HUD from `docs/hud.md` in `game/ui/` (pure code Controls on the `HUD` CanvasLayer of `main.tscn`,
-   `project.godot` stretch `canvas_items` at 1920x1080): `lang.gd` (key lookup + card name rule), `hud_style.gd`
-   (fonts, textures, card icon/frame atlases, team colours, `IntToTime`, roman numerals), `game_info_bar.gd`,
-   `resource_panel.gd`, `deck_panel.gd` (slot views, tier plates, click -> play, spawner jump), `minimap.gd`
-   (`WorldToMiniMap` port, entity icons, camera view quad, menu button), `info_panel.gd` (click-select a unit,
-   `Selection.png` ground decal), `hud.gd` (owner of all panels, updates from the sim each frame). Replace the
-   sandbox label in `main.gd`. Then compare against `reference/media/ingame/*.webp` with a screenshot and tune.
-2. Card hint on hover (`MainMenu/Shared/Card/CardHUD.dui` + `shared_card.scss`), announcements (warm-up
-   countdown), in-world health bars, floating combat text.
-3. **Settings menu (the gear button on the minimap): do NOT build it yet.** The owner will add screenshots of the
+1. Card hint on hover (`MainMenu/Shared/Card/CardHUD.dui` + `shared_card.scss`, 334 wide, 260 px above the
+   bottom): card name, cost, tier, short description (`card_short_description_<ident>`), ability names.
+2. Announcements (`AnnouncementBackground.png` 1189x206, 150 px from the top): warm-up countdown / "Game is
+   about to begin" (`core_game_commencing`), stage 2/3 and showdown titles (`core_announcement_title_*`).
+3. In-world health bars over units (`Visuals.pas` `THealthbarComponent`: quads above the unit, team colour,
+   segment ticks) and floating combat text.
+4. **Settings menu (the gear button on the minimap): do NOT build it yet.** The owner will add screenshots of the
    live client's settings screens to `reference/media/` first; build it only after they exist.
-4. Later: audit the Steam patch notes newer than 2022-01-19 (CLAUDE.md Decisions) and apply via the extractor.
+5. Later: audit the Steam patch notes newer than 2022-01-19 (CLAUDE.md Decisions) and apply via the extractor.
 
 ## Rules that bit us
 - Run `--import` before `-s tests/run_tests.gd` when new class_name scripts or assets were added.
+- `TextureRect`: set `expand_mode = EXPAND_IGNORE_SIZE` **before** `texture`/`size`, else the texture's
+  minimum size sticks and the node stays 256 px (use `HudStyle.picture`).
+- Card icon file names differ in case from script names (`BlackVoidbane.tga` vs `VoidBane`): `HudStyle.card_atlas`
+  matches the folder listing case-insensitively; never `load()` those paths directly.
+- Card frames (`Card_<Color>.tga`) are opaque: draw the frame first, the round icon on top.
+- Children of a Control draw above the Control's own `_draw`: minimap icons go on an overlay child.
 - Lambdas connected to sim signals must be disconnected in tests; lambdas capture ints by value (use Arrays).
 - `alive_entities(-1)` = all teams; team 0 is the neutral team (lane nodes).
 - Spell cards are keyed with their `.sps` suffix (`Spells/White/LightPulse.sps`), effects without it.
