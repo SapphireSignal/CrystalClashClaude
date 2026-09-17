@@ -1315,7 +1315,7 @@ func deal_damage(target: SimEntity, amount: float, damage_type: int, source: Sim
 	if target.health <= 0.0:
 		_kill(target, source)
 	elif done > 0.0:
-		_fire_on_hit(target, source, true)
+		_fire_on_hit(target, source, true, done)
 	return done
 
 
@@ -1380,7 +1380,7 @@ func _on_take_damage(target: SimEntity, amount: float, _damage_type: int, source
 				w.cooldown_ready_at = time_ms + target.cooldown(w.group)
 				_fire_group(target, pair[1], source)
 				break
-	_fire_on_hit(target, source, false)
+	_fire_on_hit(target, source, false, amount)
 	for b in target.buffs.duplicate():   # Shieldblock granted by a buff (Shields Up): one block, then spent
 		if b.block_threshold >= 0.0 and amount >= b.block_threshold:
 			amount *= b.block_factor
@@ -1412,7 +1412,7 @@ func _on_take_damage(target: SimEntity, amount: float, _damage_type: int, source
 ## TAutoBrainOnTakeDamageComponent.FireSelfInGroup: the group fires on the owner when hit, or (with
 ## TThinkImpulseFireComponent.TargetGroup) its target groups pick a victim (Atlas' Active Armor shoots back,
 ## PhaseDrone's Shield Overload goes invincible). TriggersAfterDamage groups run once the health dropped.
-func _fire_on_hit(target: SimEntity, source: SimEntity, after_damage: bool) -> void:
+func _fire_on_hit(target: SimEntity, source: SimEntity, after_damage: bool, amount: float) -> void:
 	for w in target.welas:
 		if w.kind != Wela.Kind.ON_TAKE_DAMAGE or not w.fires_on_hit or w.used or w.triggers_after_damage != after_damage:
 			continue
@@ -1424,6 +1424,10 @@ func _fire_on_hit(target: SimEntity, source: SimEntity, after_damage: bool) -> v
 			continue
 		if w.passive_if_conscious and not target.can_think(time_ms):
 			continue
+		if w.checks_damage_threshold:   # Splinter: only hits of 35+ count
+			var threshold := target.bb.get_float("eiWelaDamage", w.group, 0.0)
+			if not (amount <= threshold if w.threshold_lesser_equal else amount >= threshold):
+				continue
 		w.cooldown_ready_at = time_ms + target.cooldown(w.group)
 		if w.chain_groups.is_empty():
 			_fire_group(target, w.group, target)
@@ -1431,9 +1435,36 @@ func _fire_on_hit(target: SimEntity, source: SimEntity, after_damage: bool) -> v
 			var cw := target.wela(cg)
 			if cw == null or not _wela_ready(target, cw):
 				continue
+			if w.chain_to_ground:   # Splinter: lob at a random ground point 3-4 away, clamped to the walk zone
+				_fire_group_at_ground(target, cg, _jittered_ground(target.position, w.ground_jitter))
+				continue
 			var victim := _pick_target(target, cw, target.range_of(cg))
 			if victim != null:
 				_fire_group(target, cg, victim)
+
+
+## TWelaEffectFireComponent.RedirectToGround + RandomizeGroundtarget(min, max): the target position plus a
+## random offset of length min..max in a random direction, clamped into the walk zone.
+func _jittered_ground(pos: Vector2, jitter: Array) -> Vector2:
+	if not jitter.is_empty():
+		var length: float = jitter[0] + rng.randf() * (jitter[1] - jitter[0])
+		pos += Vector2(0, length).rotated(rng.randf() * TAU)
+	return map.clamp_to_zone("Walkzone", pos)
+
+
+## A group fired at a ground position (no target entity): its projectile flies to the point and its
+## factory spawns there.
+func _fire_group_at_ground(e: SimEntity, group: int, pos: Vector2) -> void:
+	var w := e.wela(group)
+	if w == null:
+		return
+	e.mana -= w.mana_cost
+	if w.projectile != "":
+		_launch_projectile_at(w.projectile, e, pos, e.damage(group), e.damage_type(group), group)
+	elif w.spawns:
+		var pattern: String = e.bb.get_value("eiWelaUnitPattern", group, "").replace("\\", "/")
+		if UnitDb.has_unit(pattern):
+			_spawn_produced(pattern, e.team, pos, w.produced_scripts, e)
 
 
 ## THealthComponent.OnHeal: heal up to max health; with dtOverheal the rest becomes overheal, capped at
@@ -1640,6 +1671,24 @@ func _launch_projectile(pattern: String, shooter: SimEntity, target: SimEntity, 
 	return p
 
 
+## A projectile aimed at a ground point (no target entity): it lands there and runs its factory.
+func _launch_projectile_at(pattern: String, shooter: SimEntity, pos: Vector2, dmg: float, damage_type: int, group: int = -1) -> Projectile:
+	var p := _launch_projectile(pattern, shooter, shooter, dmg, damage_type, group)
+	p.target_id = -1
+	p.last_target_position = pos
+	return p
+
+
+## TWelaEffectFactoryComponent on a landing projectile or a ground-fired group: spawn the unit and apply
+## the ApplyToProducedUnits scripts (LegendarySpawn 500 ms for splinter golems).
+func _spawn_produced(pattern: String, team: int, pos: Vector2, produced_scripts: Array, source: SimEntity) -> SimEntity:
+	var unit := spawn(pattern, team, pos)
+	for item in produced_scripts:
+		if Buff.exists(item[0]):
+			apply_buff(unit, item[0], _script_params(item[0], item[1]), source)
+	return unit
+
+
 ## TWarheadSplashDamageComponent on impact: every enemy within the area takes damage; with a splash
 ## factor the total pool is damage * factor spread evenly, each capped at the full damage.
 func _projectile_splash(p: Projectile, primary: SimEntity) -> void:
@@ -1725,6 +1774,8 @@ func _move_projectiles() -> void:
 						continue
 				if _reflect_projectile(p, target):   # ShieldDrone's Reflective Shield: back to the shooter
 					continue
+			if not hit and p.spawn_pattern != "" and UnitDb.has_unit(p.spawn_pattern):   # a stone lands: SmallMeleeGolem
+				_spawn_produced(p.spawn_pattern, p.team, p.position, p.produced_scripts, entities.get(p.source_id))
 			projectiles.erase(id)
 			projectile_removed.emit(p, hit)
 		else:

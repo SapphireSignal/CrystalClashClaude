@@ -2341,3 +2341,36 @@ func test_golems_boss_golem() -> void:
 	while near.health == 265.0 and not (wisp.health < 75.0) and sim.time_ms < t + 4000:
 		sim.step()
 	runner.check(near.health < 265.0 or not wisp.alive, "370 cone cleave against ground or flying targets")
+
+
+func test_golems_big_melee_splinter() -> void:
+	var sim := Simulation.new(2, 4)
+	var big := sim.spawn("Units/Golems/GolemsBigMeleeGolem", Simulation.TEAM_BLUE, Vector2(-40, -23))
+	var hitter := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(-20, -23))
+	hitter.locked_until = 1 << 30
+	sim.step()
+	sim.deal_damage(big, 34.0, SimConstants.DamageType.TRUE, hitter)
+	runner.check(sim.projectiles.is_empty(), "splinter: a 34 hit is below the 35 threshold")
+	sim.deal_damage(big, 35.0, SimConstants.DamageType.TRUE, hitter)
+	runner.check_eq(sim.projectiles.size(), 1, "a 35 hit lobs one splinter stone")
+	var stone: Projectile = sim.projectiles.values()[0]
+	var dist := stone.last_target_position.distance_to(big.position)
+	runner.check(dist >= 3.0 - 0.01 and dist <= 4.0 + 0.01, "aimed at a ground point 3-4 away")
+	runner.check(sim.map.in_zone("Walkzone", stone.last_target_position), "inside the walk zone")
+	sim.deal_damage(big, 35.0, SimConstants.DamageType.TRUE, hitter)
+	runner.check_eq(sim.projectiles.size(), 1, "at most once per 3 s")
+	var t := sim.time_ms
+	while not sim.projectiles.is_empty() and sim.time_ms < t + 3000:
+		sim.step()
+	var small: SimEntity = null
+	for e in sim.alive_entities(Simulation.TEAM_BLUE):
+		if e.unit_id == "Units/Golems/GolemsSmallMeleeGolem":
+			small = e
+	runner.check(small != null, "the stone spawns a SmallMeleeGolem on landing")
+	if small != null:
+		runner.check(small.position.distance_to(stone.last_target_position) < 0.01, "at the impact point")
+		runner.check(small.has_buff("LegendarySpawn"), "with the 500 ms spawn lockout")
+	while sim.time_ms < t + 3100:
+		sim.step()
+	sim.deal_damage(big, 35.0, SimConstants.DamageType.TRUE, hitter)
+	runner.check_eq(sim.projectiles.size(), 1, "ready again after 3 s")

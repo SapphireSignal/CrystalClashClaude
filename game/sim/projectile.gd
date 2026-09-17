@@ -38,6 +38,8 @@ var damage_change_per_hit: float = 0.0   # eiWelaModifier of the on-deal-damage 
 var no_reflection: bool = false      # TBrainProjectileComponent.CantBeReflected (tower shots), or already reflected once
 var kills: bool = false              # TWarheadSpottyKillComponent (AegisRiftProjectile)
 var exiles: bool = false             # .Exile: no death effects, no soul
+var spawn_pattern: String = ""       # TWelaEffectFactoryComponent: a unit appears where the projectile lands (SplinterProjectile)
+var produced_scripts: Array = []     # TWarheadApplyScriptComponent.ApplyToProducedUnits: [script, [int values]]
 
 
 func _init(p_unit_id: String, league: int) -> void:
@@ -118,8 +120,19 @@ func _init(p_unit_id: String, league: int) -> void:
 				for c in calls:
 					if c[0] == "Exile":
 						exiles = true
+			"TWelaEffectFactoryComponent":
+				spawn_pattern = str(bb.get_value("eiWelaUnitPattern", int(comp["groups"][0]), "")).replace("\\", "/")
 			"TWarheadApplyScriptComponent":
-				if hit_group != "" and comp["groups"].has(hit_group):
+				var produced := false
+				var passed: Array = []
+				for c in calls:
+					if c[0] == "ApplyToProducedUnits":
+						produced = true
+					elif c[0] == "PassIntValue":
+						passed.append(int(c[1][0]))
+				if produced:
+					produced_scripts.append([Wela.script_key(str(comp["args"][0])), passed])
+				elif hit_group != "" and comp["groups"].has(hit_group):
 					on_hit_script = Wela.script_key(str(comp["args"][0]))
 				else:
 					impact_script = Wela.script_key(str(comp["args"][0]))

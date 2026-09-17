@@ -121,6 +121,8 @@ var chain_first: bool = false      # the fire component precedes the warhead: ch
 var produced_scripts: Array = []   # TWarheadApplyScriptComponent.ApplyToProducedUnits: [script, [int values]]
 var ready_not_empty: bool = false  # TWelaReadyResourceCompareComponent.CheckNotEmpty
 var chain_to_self: bool = false
+var chain_to_ground: bool = false  # TWelaEffectFireComponent.RedirectToGround: the chain fires at a ground point
+var ground_jitter: Array = []      # .RandomizeGroundtarget(min, max): random offset from the target position
 var reset_cooldown_groups: Array = []   # TWelaEffectResetCooldownComponent
 var instant_target_groups: Array = []   # TWelaEffectInstantComponent.TargetGroup (splash warheads)
 var splash: bool = false
@@ -131,6 +133,7 @@ var range_scales_with_time: bool = false
 var range_ready_group: int = -1
 # ON_TAKE_DAMAGE (Shieldblock)
 var threshold_lesser_equal: bool = false
+var checks_damage_threshold: bool = false   # TWelaTriggerCheckTakeDamageThresholdComponent: the hit must reach eiWelaDamage
 # DEALT_DAMAGE_MULT (Relentless)
 var weapon_groups: Array = []
 var must_not_have_damage_types: int = 0
@@ -479,6 +482,10 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 						w.chain_groups.append(UnitDb.group_id(c[1][0][0], map))
 					elif c[0] == "RedirectToSelf":
 						w.chain_to_self = true
+					elif c[0] == "RedirectToGround":
+						w.chain_to_ground = true
+					elif c[0] == "RandomizeGroundtarget":
+						w.ground_jitter = [float(c[1][0]), float(c[1][1])]
 			"TWelaEffectResetCooldownComponent":
 				var w: Wela = get.call(g, Kind.SUB)
 				for c in calls:
@@ -675,6 +682,7 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 						w.on_deal_groups.append(UnitDb.group_id(c[1][0][0], map))
 			"TWelaTriggerCheckTakeDamageThresholdComponent":
 				var w: Wela = get.call(g, Kind.ON_TAKE_DAMAGE)
+				w.checks_damage_threshold = true
 				for c in calls:
 					if c[0] == "LesserEqual":
 						w.threshold_lesser_equal = true

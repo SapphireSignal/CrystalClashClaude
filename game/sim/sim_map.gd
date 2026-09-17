@@ -55,6 +55,24 @@ func in_zone_padded(zone_name: String, p: Vector2, padding: float) -> bool:
 	return true
 
 
+## TMap.ClampToZone: a point inside the zone stays; otherwise the nearest point on any polygon border,
+## pushed a hair inward (TMultipolygon.EnsurePointInMultiPoly).
+func clamp_to_zone(zone_name: String, p: Vector2) -> Vector2:
+	if not zones.has(zone_name) or in_zone(zone_name, p):
+		return p
+	var best := p
+	var best_dist := INF
+	for poly in zones[zone_name]:
+		var points: PackedVector2Array = poly["points"]
+		for i in points.size():
+			var q := Geometry2D.get_closest_point_to_segment(p, points[i], points[(i + 1) % points.size()])
+			var d := p.distance_to(q)
+			if d < best_dist:
+				best_dist = d
+				best = q
+	return best + (best - p).normalized() * 0.001
+
+
 ## Base layout per team: {"nexus": Vector2, "lanetowers": [Vector2], "lane_nodes": [Vector2]}.
 ## Blue (team 1) sits at -x, Red (team 2) at +x. Values from PvPRed.dws / PvPBlue.dws / PvPBase.dws.
 func base_layout(team: int) -> Dictionary:
