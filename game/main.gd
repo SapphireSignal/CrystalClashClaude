@@ -17,7 +17,8 @@ const SLOT_KEYS := [KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7, KEY_8, KEY_
 
 var sim: Simulation
 var _accumulator_ms: float = 0.0
-var _views: Dictionary = {}   # entity id -> MeshInstance3D
+var _views: Dictionary = {}   # entity id -> Node3D (UnitModel or placeholder mesh)
+var _last_fire: Dictionary = {}   # entity id -> fire_at last seen (attack animation trigger)
 var _hud: Hud
 var _selection_decal: MeshInstance3D
 var _armed_slot: int = -1      # card clicked in the deck panel, played at the next left click on the ground
@@ -286,6 +287,11 @@ func _place_camera(look_at_2d: Vector2) -> void:
 func _on_spawned(e: SimEntity) -> void:
 	if e.think_once_waits:   # one-tick helper entities (soul gather spawner) have no body
 		return
+	var model := UnitModel.create(e.unit_id)   # the original model when its visuals are known
+	if model != null:
+		_units_root.add_child(model)
+		_views[e.id] = model
+		return
 	var mesh := MeshInstance3D.new()
 	if e.is_spawner():
 		var box := BoxMesh.new()
@@ -324,15 +330,16 @@ func _on_projectile_spawned(p: Projectile) -> void:
 
 
 func _on_died(e) -> void:
-	var view: MeshInstance3D = _views.get(e.id)
+	var view: Node3D = _views.get(e.id)
 	if view:
 		view.queue_free()
 		_views.erase(e.id)
+		_last_fire.erase(e.id)
 
 
 func _sync_views() -> void:
 	for id in _views:
-		var view: MeshInstance3D = _views[id]
+		var view: Node3D = _views[id]
 		var p: Projectile = sim.projectiles.get(id)
 		if p != null:
 			view.position = Vector3(p.position.x, 1.2, p.position.y)
@@ -340,7 +347,17 @@ func _sync_views() -> void:
 		var e: SimEntity = sim.entities.get(id)
 		if e == null:
 			continue
-		var y := 0.2 if e.is_spawner() else (2.0 if e.is_building() else 0.9)
-		view.position = Vector3(e.position.x, y, e.position.y)
+		if view is UnitModel:
+			view.position = Vector3(e.position.x, 0.0, e.position.y)
+			view.set_moving(e.moving)
+			if e.fire_at >= 0 and _last_fire.get(id, -1) != e.fire_at:   # a new attack started
+				_last_fire[id] = e.fire_at
+				view.play_attack()
+		else:
+			var y := 0.2 if e.is_spawner() else (2.0 if e.is_building() else 0.9)
+			view.position = Vector3(e.position.x, y, e.position.y)
 		if e.front.length_squared() > 0.0:
-			view.rotation.y = atan2(-e.front.y, e.front.x) + PI / 2
+			if view is UnitModel:   # the models face their local +Z
+				view.rotation.y = atan2(e.front.x, e.front.y)
+			else:
+				view.rotation.y = atan2(-e.front.y, e.front.x) + PI / 2

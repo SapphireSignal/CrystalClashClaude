@@ -24,6 +24,12 @@ RE_RADIUS = re.compile(r"Entity\.CollisionRadius\s*:=\s*([0-9.]+)")
 RE_ABILITY = re.compile(
     r"TTooltipUnitAbilityComponent\.Create(?:Grouped)?\(Entity,\s*(?:\[[^\]]*\],\s*)?'(\w+)'\)(.*?);", re.S
 )
+RE_MESH = re.compile(
+    r"TMeshComponent\.Create(?:Grouped)?\(Entity(?:,\s*\[([^\]]*)\])?,\s*'([^']*)'(\s*\+\s*Entity\.SkinFileSuffix\s*\+\s*'([^']*)')?\s*\)(.*?);", re.S
+)
+RE_MESH_CALL = re.compile(r"\.([A-Za-z]+)(?:\(([^()]*(?:\([^()]*\)[^()]*)*)\))?")
+RE_MODEL_SIZE = re.compile(r"WriteGrouped\(eiModelSize,\s*\[([0-9.]+)\],\s*\[([^\]]*)\]")
+RE_SKIN_ELSE = re.compile(r"\belse\s*\n\s*begin", re.S)
 RE_UNIT_BAR = re.compile(
     r"TResourceDisplay(IntegerProgressBar|ProgressBar)Component\.Create(?:Grouped)?\(Entity(?:,\s*\[[^\]]*\])?\)(.*?);", re.S
 )
@@ -409,6 +415,74 @@ def _split_args(raw: str) -> list:
     return args
 
 
+def _anim_name(raw: str) -> str:
+    raw = raw.strip().strip("'")
+    return raw[len("ANIMATION_"):].lower() if raw.startswith("ANIMATION_") else raw.lower()
+
+
+def _zone_name(raw: str) -> str:
+    raw = raw.strip()
+    return raw[len("BIND_ZONE_"):].lower() if raw.startswith("BIND_ZONE_") else raw.strip("'").lower()
+
+
+def parse_visuals(text: str) -> dict:
+    """Client-side TMeshComponent chains: model path (`{skin}` where Entity.SkinFileSuffix is inserted),
+    wela groups, animations {name: [first frame, last frame]} (default skin branch when skins differ),
+    animation speeds, ApplyLegacySizeFactor / IgnoreScalingForAnimations, bind zones and bone offsets,
+    plus eiModelSize."""
+    meshes = []
+    default_branch_start = 0
+    if "Entity.SkinID" in text:
+        matches = list(RE_SKIN_ELSE.finditer(text))
+        if matches:
+            default_branch_start = matches[-1].end()
+    for groups, path, skin, rest, chain in RE_MESH.findall(text):
+        mesh = {"path": (path + "{skin}" + rest) if skin else path, "groups": [g.strip() for g in groups.split(",") if g.strip()],
+                "animations": {}, "bind_zones": {}}
+        _apply_mesh_chain(mesh, chain)
+        meshes.append(mesh)
+    if not meshes:
+        return {}
+    # animations declared on the MeshComponent variable inside skin branches: take the default (last else) branch
+    branch = text[default_branch_start:]
+    for m in re.finditer(r"MeshComponent\s*((?:\s*\.[A-Za-z]+(?:\([^()]*(?:\([^()]*\)[^()]*)*\))?)+);", branch):
+        _apply_mesh_chain(meshes[0], m.group(1))
+    visuals = {"meshes": meshes}
+    sizes = {}
+    for value, groups in RE_MODEL_SIZE.findall(text):   # eiModelSize per wela group (Nexus: 0.12 for [0,1,2,3,6])
+        for g in groups.split(","):
+            if g.strip():
+                sizes[g.strip()] = float(value)
+    if sizes:
+        visuals["model_sizes"] = sizes
+    return visuals
+
+
+def _apply_mesh_chain(mesh: dict, chain: str) -> None:
+    for method, raw_args in RE_MESH_CALL.findall(chain):
+        args = _split_args(raw_args) if raw_args else []
+        if method == "CreateNewAnimation" and len(args) >= 3:
+            mesh["animations"][_anim_name(args[0])] = [int(args[1]), int(args[2])]
+        elif method == "SetAnimationSpeed" and len(args) >= 2:
+            mesh.setdefault("animation_speeds", {})[_anim_name(args[0])] = float(args[1])
+        elif method == "ApplyLegacySizeFactor":
+            mesh["legacy_size_factor"] = True
+        elif method == "IgnoreScalingForAnimations":
+            mesh["ignore_scaling_for_animations"] = True
+        elif method == "BindZoneToBone" and len(args) >= 2:
+            mesh["bind_zones"][_zone_name(args[0])] = args[1].strip().strip("'")
+        elif method == "BoneOffset" and len(args) >= 4:
+            mesh.setdefault("bone_offsets", {})[_zone_name(args[0])] = [float(args[1]), float(args[2]), float(args[3])]
+        elif method == "SetModelOffset" and len(args) >= 3:
+            mesh["model_offset"] = [float(a) for a in args[:3]]
+        elif method == "FixedOrientationDefault":
+            mesh["fixed_orientation"] = True
+        elif method == "HasAttackLoop":
+            mesh["has_attack_loop"] = True
+        elif method == "IgnoreModelSize":
+            mesh["ignore_model_size"] = True
+
+
 def parse_unit_bars(text: str) -> list:
     """Client-side resource bars above the unit (TResourceDisplay*Component chains): kind integer (chunks) or
     progress, the resource shown (reMana, reWelaCharge), HideIfEmpty / HideIfFull, FixedCap, SizeY."""
@@ -482,9 +556,23 @@ def parse_script(path: Path) -> dict:
         data["ability_details"] = [dict(d) for d in parent.get("ability_details", [])]
         if parent.get("unit_bars"):
             data["unit_bars"] = [dict(b) for b in parent["unit_bars"]]
+        if parent.get("visuals"):
+            data["visuals"] = json.loads(json.dumps(parent["visuals"]))
     bars = parse_unit_bars(text)
     if bars:
         data["unit_bars"] = bars
+    visuals = parse_visuals(text)
+    if visuals:   # a child script adds its meshes to the inherited ones and overrides model sizes per group
+        inherited = data.get("visuals", {})
+        merged_meshes = list(inherited.get("meshes", []))
+        for mesh in visuals["meshes"]:
+            if not any(m["path"] == mesh["path"] and m["groups"] == mesh["groups"] for m in merged_meshes):
+                merged_meshes.append(mesh)
+        sizes = dict(inherited.get("model_sizes", {}))
+        sizes.update(visuals.get("model_sizes", {}))
+        data["visuals"] = {"meshes": merged_meshes}
+        if sizes:
+            data["visuals"]["model_sizes"] = sizes
     # TTooltipUnitAbilityComponent (client side): ability names for the unit panel (unitability_name_<name>)
     # and the full tooltip chain (keywords, %(key) variables, IsCardDescription) for the card hint.
     for name, chain in RE_ABILITY.findall(text):

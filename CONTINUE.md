@@ -2,7 +2,7 @@
 
 Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
 
-## State (2026-09-17, checkpoint 28)
+## State (2026-09-17, checkpoint 29)
 - Phases 1-3 done, 799 tests pass. Sandbox `game/main.tscn`: blue deck on keys 1-9,0,-,= or by clicking a card
   (drops/spells then need a left click on the ground, spawners go to the next free field); red AI plays Black.
 - **Phase 4 (HUD): step 1 done.** `game/ui/` holds the code-built HUD from `docs/hud.md`: top bar (clock, nexus
@@ -26,8 +26,33 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
 - Verified by screenshot against `reference/media/ingame/*.webp` (those use the client's small layout; ours is
   the normal 1920x1080 layout, so sizes differ but the structure matches).
 
+- **Phase 5 started (checkpoint 29): unit models.** `tools/copy_unit_assets.py` copies `Graphics/Units/**` (FBX,
+  TGA, PNG, TMesh xml) to `assets/units/` and writes `game/data/models.json` (UnitScaleFactor per FBX). The extractor
+  records `visuals` per script (meshes with path/groups/animation frame ranges/bind zones/flags, `model_sizes` per
+  wela group, merged through inheritance). `game/units/unit_model.gd` instantiates the imported FBX, assigns the
+  diffuse material, applies the original scale (`docs/assets.md`), cuts stand/walk/attack clips at 30 fps and plays
+  them from the sim state (walk while moving, attack when `fire_at` changes). `main.gd` uses it, capsules remain for
+  entities without visuals (lane nodes, effects). Verified with `tools/screenshot.gd -- 30 31 zoom=unit` and the
+  debug view `.tmp/model_view.gd` (not committed).
+- Research results (subagent, verified): FBX loaded via assimp in raw units, `.msh` = cache; frames -> ms at 30 fps
+  (`Engine.Mesh.pas:2697`); `SIZE_FACTOR_3DSMAX = 2/125`; Material.tga = (A shading reduction, R spec intensity,
+  G spec power, B tint); team colour via a separate mask + HSV hue shift (`TeamColoring.fx`) or `BindTextureToTeam`
+  textures per team (Nexus: `NexusDiffuse.tga` team 1, `NexusDiffuse2.tga` team 2); maps are XML (`.ter` 513x513
+  zlib+base64 heights with `FScale` 300/50/300, `.veg` mesh scatter list, `.wat` water planes, `.lig` lights,
+  `.bcm` zones, `.bcc` decorations); `.pfx` XML particle patterns; FMOD banks + `Sound/Banks/GUIDs.txt`.
+
 ## Next step (in order, one at a time, run the game after each)
-1. **Phase 5 (assets)**: research first. Find the original mesh/animation formats under `reference/rise-of-legions/`
+1. Models polish: (a) `BindTextureToTeam` -> extractor `team_textures` per mesh, `UnitModel.create(unit_id,
+   displayed_team)`; (b) the NexusCrystal / single-bone skinned props land below the ground in Godot and Blender
+   (`.tmp/blender_probe.py` showed world z -3.4 m); read `Engine.Mesh.pas` TBone/skin offset handling
+   (`LoadRawMeshData`, line ~1783+) to find what the engine does differently, or place such meshes by their `.msh`
+   bounding box; (c) walk clip speed per the original formula (`Visuals.pas:3352`); (d) lane node model
+   (`Units/Neutral/LaneNode.ets`), spell effect meshes.
+2. **Maps**: `tools/convert_map.py` for `Maps/Classic`: `.ter` heightmap -> `assets/maps/Classic/height.png` or
+   ArrayMesh + the 16 chunk textures (`Classic<N>Diffuse.png`) as splat tiles, `.veg` instances -> a scene with
+   the vegetation FBX (copy `Graphics/Environment`), `.wat` water plane, `.lig` lights. Replace the flat plane in
+   `main.tscn`.
+3. Particles (`.pfx`) and sounds (FMOD banks: need a bank extractor) later. Find the original mesh/animation formats under `reference/rise-of-legions/`
    and the loaders in `reference/delphi3d-engine/`, textures (`.tga`/`.dds`), particles `.pfx`, FMOD sound banks.
    Write `docs/assets.md` rows per format with a conversion plan, then `tools/convert_*.py` for meshes first
    (Footman), swap the capsule in `main.gd` for the real model, then the maps.
@@ -48,6 +73,10 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
   (see `CardHint.refresh`).
 - Regex alternations must list the longer name first (`PassSingleAsInteger|PassSingle`).
 - Bash heredocs choke on apostrophes in long text: write doc/patch scripts with the Write tool, then run them.
+- `TextureRect`/`Label` typed `var x := node.method()` fails to parse when the return type is Variant: annotate.
+- Godot import errors "quaternion (nan)" / "Basis must be normalized" come from some FBX skins; models still load.
+- `UnitModel` must collect its AnimationPlayers in `create()` (before `_ready`), or `play()` finds none.
+- StandardMaterial3D has `metallic_specular`, not `specular`.
 - Lambdas connected to sim signals must be disconnected in tests; lambdas capture ints by value (use Arrays).
 - `alive_entities(-1)` = all teams; team 0 is the neutral team (lane nodes).
 - Spell cards are keyed with their `.sps` suffix (`Spells/White/LightPulse.sps`), effects without it.

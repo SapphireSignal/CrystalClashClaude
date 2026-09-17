@@ -74,7 +74,7 @@ Act as two people at once:
 - Tests for simulation logic (damage, spawning, lane movement, economy). UI needs no tests.
 
 ## Decisions
-- 2026-09-16 Tools: Git 2.55 (PATH), Python 3.14.6 (`python` on PATH), Godot 4.7.1 at `D:\Godot\`. Blender: not yet located.
+- 2026-09-16 Tools: Git 2.55 (PATH), Python 3.14.6 (`python` on PATH), Godot 4.7.1 at `D:\Godot\`. Blender 4.5.10 at `C:\Program Files\Blender Foundation\Blender 4.5\blender.exe` (probe/convert tool).
 - 2026-09-16 `reference/` holds read-only clones of the two original repos (gitignored, `.gdignore`). Never edit.
 - 2026-09-16 Codex's earlier attempt in `D:\Games\CrystalClash` is read-only. Lesson: it built launcher/accounts/shop
   and never combat. We build combat first. Reusable there: `game/data/reference_cards.json` (139 cards extracted from
@@ -107,6 +107,9 @@ Act as two people at once:
   and apply differences through the extractor/data (never by hand). Until then we replicate the repo.
 - 2026-09-16 The fourth faction is `Scripts/Units/Golems` in the source (`Colorless` holds the neutral
   golem variants); the live client calls it the Crystal Legion.
+- 2026-09-17 Models: Godot's FBX importer is the pipeline (no glb conversion); the original engine reads raw FBX units
+  (assimp without unit conversion), so `UnitModel` rescales Godot's metre conversion back (see `docs/assets.md`).
+  Model front axis is +Z. Animation frames are 30 fps. Blender is only a probe/fallback converter.
 - 2026-09-16 `reference/media/` is filled by the owner only (lobby/ and ingame/ screenshots). Never read or
   copy from the owner's personal Pictures / OneDrive folders.
 
@@ -177,4 +180,7 @@ with the WorldToMiniMap port, icons and camera quad, `info_panel.gd` for the cli
 `unit_bars.gd` health/mana/ammo bars projected over units, `final_screen.gd` victory/defeat banner with the
 original 4 s / 11 s timers). The extractor records `ability_details`
 (tooltip variables/keywords) and `unit_bars` per script. `tools/screenshot.gd` captures the running game for
-comparison with `reference/media`. See `CONTINUE.md`.
+comparison with `reference/media`. Phase 5 (assets) started: `tools/copy_unit_assets.py` copies all unit FBX/TGA/xml
+into `assets/units/` (Godot imports the FBX), `game/units/unit_model.gd` builds each unit's original model with the
+engine's scale rules and the script's animation frame ranges (extractor `visuals`); the sandbox shows real models,
+towers and the nexus base. See `CONTINUE.md`.
