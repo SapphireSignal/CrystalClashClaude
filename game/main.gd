@@ -287,7 +287,9 @@ func _place_camera(look_at_2d: Vector2) -> void:
 func _on_spawned(e: SimEntity) -> void:
 	if e.think_once_waits:   # one-tick helper entities (soul gather spawner) have no body
 		return
-	var model := UnitModel.create(e.unit_id)   # the original model when its visuals are known
+	if e.is_lane_node():   # the original shows only particle rings here
+		return
+	var model := UnitModel.create(e.unit_id, HudStyle.displayed_team(e.team, Simulation.TEAM_BLUE))
 	if model != null:
 		_units_root.add_child(model)
 		_views[e.id] = model

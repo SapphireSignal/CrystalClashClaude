@@ -481,6 +481,9 @@ def _apply_mesh_chain(mesh: dict, chain: str) -> None:
             mesh["has_attack_loop"] = True
         elif method == "IgnoreModelSize":
             mesh["ignore_model_size"] = True
+        elif method == "BindTextureToTeam" and len(args) >= 3:   # (mtDiffuse | mtGlow, file, team id)
+            kind = args[0].strip().lower().replace("mt", "", 1)
+            mesh.setdefault("team_textures", {}).setdefault(args[2].strip(), {})[kind] = args[1].strip().strip("'")
 
 
 def parse_unit_bars(text: str) -> list:

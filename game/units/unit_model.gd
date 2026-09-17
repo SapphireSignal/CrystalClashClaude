@@ -1,19 +1,18 @@
 class_name UnitModel
 extends Node3D
 ## The original unit visuals (TMeshComponent, BaseConflict.EntityComponents.Client.Visuals.pas) built from
-## units.json `visuals`: the FBX scene per mesh entry, the TMesh xml's textures as a StandardMaterial3D,
-## the original's scale (SIZE_FACTOR_3DSMAX for ApplyLegacySizeFactor meshes, eiModelSize) and the
-## animation clips cut from the FBX take by frame ranges at 30 fps.
+## units.json `visuals`: the glb per mesh entry (the engine's .msh cache converted by tools/msh_to_gltf.py,
+## raw units), the TMesh xml's textures as a StandardMaterial3D (team textures per displayed team), the
+## original's scale (SIZE_FACTOR_3DSMAX for ApplyLegacySizeFactor meshes, eiModelSize per wela group) and
+## the animation clips cut from the take by frame ranges at 30 fps.
 
 const SIZE_FACTOR_3DSMAX := 2.0 / 125.0     # Visuals.pas:873, applied by ApplyLegacySizeFactor
 const FRAME_MS := 1000.0 / 30.0             # Engine.Mesh.pas:2697 (frames -> ms)
 const DEFAULT_SKIN := "_Default"
-const MODELS_JSON := "res://game/data/models.json"
 const UNITS_DIR := "res://assets/units/"
 
-static var _models: Dictionary = {}          # relative FBX path -> {"unit_scale": cm per FBX unit}
-static var _scene_cache: Dictionary = {}     # FBX path -> PackedScene
-static var _material_cache: Dictionary = {}  # xml path -> StandardMaterial3D
+static var _scene_cache: Dictionary = {}     # glb path -> PackedScene
+static var _material_cache: Dictionary = {}  # xml path + team -> StandardMaterial3D
 static var _folder_index: Dictionary = {}    # folder -> {lowercase name -> real name}
 
 var _players: Array[AnimationPlayer] = []
@@ -24,7 +23,8 @@ var _one_shot := false
 
 
 ## Builds the model for a unit script, or null when the script has no client visuals / model files.
-static func create(unit_id: String) -> UnitModel:
+## `displayed_team` picks BindTextureToTeam textures (1 = own/blue, 2 = enemy/red).
+static func create(unit_id: String, displayed_team: int = 1) -> UnitModel:
 	if not UnitDb.has_unit(unit_id):
 		return null
 	var visuals: Dictionary = UnitDb.raw(unit_id).get("visuals", {})
@@ -39,7 +39,7 @@ static func create(unit_id: String) -> UnitModel:
 				if sizes.has(str(g)):
 					model_size = sizes[str(g)]
 					break
-		var node := _build_mesh(mesh, model_size)
+		var node := _build_mesh(mesh, model_size, displayed_team)
 		if node != null:
 			model.add_child(node)
 	if model.get_child_count() == 0:
@@ -54,7 +54,7 @@ static func create(unit_id: String) -> UnitModel:
 	return model
 
 
-static func _build_mesh(mesh: Dictionary, model_size: float) -> Node3D:
+static func _build_mesh(mesh: Dictionary, model_size: float, displayed_team: int) -> Node3D:
 	var xml_rel: String = str(mesh["path"]).replace("{skin}", DEFAULT_SKIN).replace("\\", "/")
 	if not xml_rel.begins_with("Units/"):
 		return null   # Effects/Meshes/* (spell decorations) are not unit models yet
@@ -62,22 +62,22 @@ static func _build_mesh(mesh: Dictionary, model_size: float) -> Node3D:
 	var descriptor := _read_descriptor(xml_path)
 	if descriptor.is_empty():
 		return null
-	var fbx_path := _real_path(xml_path.get_base_dir() + "/" + descriptor.get("GeometryFile", ""))
-	if not ResourceLoader.exists(fbx_path):
+	var geometry := str(descriptor.get("GeometryFile", ""))
+	var model_path := _real_path(xml_path.get_base_dir() + "/" + geometry.get_basename() + ".glb")
+	if not ResourceLoader.exists(model_path):
 		return null
-	var scene: PackedScene = _scene_cache.get(fbx_path)
+	var scene: PackedScene = _scene_cache.get(model_path)
 	if scene == null:
-		scene = load(fbx_path)
-		_scene_cache[fbx_path] = scene
+		scene = load(model_path)
+		_scene_cache[model_path] = scene
 	var node: Node3D = scene.instantiate()
-	var material := _material(xml_path, descriptor)
+	var team_textures: Dictionary = mesh.get("team_textures", {}).get(str(displayed_team), {})
+	var material := _material(xml_path, descriptor, team_textures)
 	for mi in node.find_children("*", "MeshInstance3D", true, false):
 		for i in mi.mesh.get_surface_count():
 			mi.set_surface_override_material(i, material)
-	# original scale: raw units x SIZE_FACTOR_3DSMAX (legacy) or x 1; Godot scaled raw units by unit_scale / 100
-	var unit_scale: float = _models_index().get(fbx_path.trim_prefix(UNITS_DIR).get_base_dir() + "/" + fbx_path.get_file(), {}).get("unit_scale", 1.0)
-	var raw_scale := SIZE_FACTOR_3DSMAX if mesh.get("legacy_size_factor", false) else 1.0
-	var s := raw_scale / (unit_scale / 100.0) * model_size
+	# original scale: raw units x SIZE_FACTOR_3DSMAX (legacy) or x 1, times eiModelSize
+	var s := (SIZE_FACTOR_3DSMAX if mesh.get("legacy_size_factor", false) else 1.0) * model_size
 	node.scale = Vector3(s, s, s)
 	if mesh.has("model_offset"):
 		var o: Array = mesh["model_offset"]
@@ -163,12 +163,6 @@ func _on_animation_finished(_anim: StringName) -> void:
 		play("stand")
 
 
-static func _models_index() -> Dictionary:
-	if _models.is_empty() and FileAccess.file_exists(MODELS_JSON):
-		_models = JSON.parse_string(FileAccess.get_file_as_string(MODELS_JSON))
-	return _models
-
-
 ## The TMesh xml: GeometryFile, DiffuseTetxure (sic), SpecularTexture, Cullmode, SpecularPower ...
 static func _read_descriptor(xml_path: String) -> Dictionary:
 	if not FileAccess.file_exists(xml_path):
@@ -192,12 +186,13 @@ static func _read_descriptor(xml_path: String) -> Dictionary:
 
 ## Standardshader.fx: diffuse albedo; Material.tga argb = (shading reduction, specular intensity, specular
 ## power, specular tint). Godot's spec/roughness approximate the specular term; no shadow reduction.
-static func _material(xml_path: String, descriptor: Dictionary) -> StandardMaterial3D:
-	if _material_cache.has(xml_path):
-		return _material_cache[xml_path]
+static func _material(xml_path: String, descriptor: Dictionary, team_textures: Dictionary = {}) -> StandardMaterial3D:
+	var key := xml_path + "|" + str(team_textures)
+	if _material_cache.has(key):
+		return _material_cache[key]
 	var mat := StandardMaterial3D.new()
 	var folder := xml_path.get_base_dir()
-	var diffuse := str(descriptor.get("DiffuseTetxure", descriptor.get("DiffuseTexture", "")))
+	var diffuse := str(team_textures.get("diffuse", descriptor.get("DiffuseTetxure", descriptor.get("DiffuseTexture", ""))))
 	if diffuse != "":
 		var tex_path := _real_path(folder + "/" + diffuse)
 		if ResourceLoader.exists(tex_path):
@@ -213,7 +208,7 @@ static func _material(xml_path: String, descriptor: Dictionary) -> StandardMater
 	mat.roughness = clampf(1.0 - spec_power / 256.0, 0.3, 1.0)
 	mat.metallic = 0.0
 	mat.metallic_specular = clampf(float(str(descriptor.get("SpecularIntensity", "1")).replace(",", ".")) * 0.5, 0.0, 1.0)
-	_material_cache[xml_path] = mat
+	_material_cache[key] = mat
 	return mat
 
 

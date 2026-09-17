@@ -2,7 +2,7 @@
 
 Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
 
-## State (2026-09-17, checkpoint 29)
+## State (2026-09-17, checkpoint 30)
 - Phases 1-3 done, 799 tests pass. Sandbox `game/main.tscn`: blue deck on keys 1-9,0,-,= or by clicking a card
   (drops/spells then need a left click on the ground, spawners go to the next free field); red AI plays Black.
 - **Phase 4 (HUD): step 1 done.** `game/ui/` holds the code-built HUD from `docs/hud.md`: top bar (clock, nexus
@@ -41,13 +41,19 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
   zlib+base64 heights with `FScale` 300/50/300, `.veg` mesh scatter list, `.wat` water planes, `.lig` lights,
   `.bcm` zones, `.bcc` decorations); `.pfx` XML particle patterns; FMOD banks + `Sound/Banks/GUIDs.txt`.
 
+- **Checkpoint 30: exact meshes.** Godot's FBX import lost the assimp pivot animations (nexus crystal underground),
+  so `tools/msh.py` reads the engine's `.msh` caches and `tools/msh_to_gltf.py --all` writes `assets/units/**/*.glb`
+  (174 meshes, pivots collapsed, static nodes as exact matrices, winding reversed back). Verified against the
+  engine's skinning math in Python (`tools/msh.py` `skinned_positions`) and visually (nexus base + blue crystal,
+  footman, Void Bane). FBX files are no longer copied. `BindTextureToTeam` -> `team_textures` per mesh, applied
+  by `UnitModel.create(unit_id, displayed_team)`. Lane nodes have no mesh (particles only) and get no view.
+
 ## Next step (in order, one at a time, run the game after each)
-1. Models polish: (a) `BindTextureToTeam` -> extractor `team_textures` per mesh, `UnitModel.create(unit_id,
-   displayed_team)`; (b) the NexusCrystal / single-bone skinned props land below the ground in Godot and Blender
-   (`.tmp/blender_probe.py` showed world z -3.4 m); read `Engine.Mesh.pas` TBone/skin offset handling
-   (`LoadRawMeshData`, line ~1783+) to find what the engine does differently, or place such meshes by their `.msh`
-   bounding box; (c) walk clip speed per the original formula (`Visuals.pas:3352`); (d) lane node model
-   (`Units/Neutral/LaneNode.ets`), spell effect meshes.
+1. Models polish: (a) walk clip speed per the original formula (`Visuals.pas:3352`, IgnoreScalingForAnimations
+   variant at 3355); (b) glow textures (`GlowTexture`, team glow) as emission; (c) `Effects/Meshes` spell props and
+   the Environment/Gameplay `.msh` (13 + 2) once the map needs them; (d) the 18 "Basis must be normalized" import
+   errors: find which glb nodes have zero scale (probably `_Scaling` pivots folded into static matrices are fine;
+   check animated ones) - cosmetic unless a model looks wrong.
 2. **Maps**: `tools/convert_map.py` for `Maps/Classic`: `.ter` heightmap -> `assets/maps/Classic/height.png` or
    ArrayMesh + the 16 chunk textures (`Classic<N>Diffuse.png`) as splat tiles, `.veg` instances -> a scene with
    the vegetation FBX (copy `Graphics/Environment`), `.wat` water plane, `.lig` lights. Replace the flat plane in
@@ -77,6 +83,8 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
 - Godot import errors "quaternion (nan)" / "Basis must be normalized" come from some FBX skins; models still load.
 - `UnitModel` must collect its AnimationPlayers in `create()` (before `_ready`), or `play()` finds none.
 - StandardMaterial3D has `metallic_specular`, not `specular`.
+- `tools/msh_to_gltf.py --all` skips glbs newer than their `.msh`: delete `assets/units/**/*.glb` to force a rebuild.
+- Godot's glTF importer keeps `matrix` nodes exactly; TRS decomposition of zero-scale pivots loses rotations.
 - Lambdas connected to sim signals must be disconnected in tests; lambdas capture ints by value (use Arrays).
 - `alive_entities(-1)` = all teams; team 0 is the neutral team (lane nodes).
 - Spell cards are keyed with their `.sps` suffix (`Spells/White/LightPulse.sps`), effects without it.

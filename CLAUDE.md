@@ -107,9 +107,12 @@ Act as two people at once:
   and apply differences through the extractor/data (never by hand). Until then we replicate the repo.
 - 2026-09-16 The fourth faction is `Scripts/Units/Golems` in the source (`Colorless` holds the neutral
   golem variants); the live client calls it the Crystal Legion.
-- 2026-09-17 Models: Godot's FBX importer is the pipeline (no glb conversion); the original engine reads raw FBX units
-  (assimp without unit conversion), so `UnitModel` rescales Godot's metre conversion back (see `docs/assets.md`).
-  Model front axis is +Z. Animation frames are 30 fps. Blender is only a probe/fallback converter.
+- 2026-09-17 Models: the engine's `.msh` caches (exact render data: raw units, assimp pivot bones, skin offsets,
+  animation keys) are converted to glb by `tools/msh_to_gltf.py`; Godot's FBX importer is NOT used (it loses the
+  pivot animations, e.g. the nexus crystal). Conventions verified numerically: RMatrix4x3 = row-vector 3x3 +
+  translation column (transpose the 3x3), hierarchy `Parent * Child`, skinning `Combined * Offset * v`, pivots
+  collapsed into their bone, triangle winding reversed back for glTF. Model front axis is +Z, frames at 30 fps.
+  Blender is only a probe tool.
 - 2026-09-16 `reference/media/` is filled by the owner only (lobby/ and ingame/ screenshots). Never read or
   copy from the owner's personal Pictures / OneDrive folders.
 
@@ -180,7 +183,7 @@ with the WorldToMiniMap port, icons and camera quad, `info_panel.gd` for the cli
 `unit_bars.gd` health/mana/ammo bars projected over units, `final_screen.gd` victory/defeat banner with the
 original 4 s / 11 s timers). The extractor records `ability_details`
 (tooltip variables/keywords) and `unit_bars` per script. `tools/screenshot.gd` captures the running game for
-comparison with `reference/media`. Phase 5 (assets) started: `tools/copy_unit_assets.py` copies all unit FBX/TGA/xml
-into `assets/units/` (Godot imports the FBX), `game/units/unit_model.gd` builds each unit's original model with the
-engine's scale rules and the script's animation frame ranges (extractor `visuals`); the sandbox shows real models,
-towers and the nexus base. See `CONTINUE.md`.
+comparison with `reference/media`. Phase 5 (assets) started: `tools/copy_unit_assets.py` copies unit textures/xml, `tools/msh_to_gltf.py`
+converts every unit mesh cache to glb, `game/units/unit_model.gd` builds each unit's original model with the engine's
+scale rules, team textures and the script's animation frame ranges (extractor `visuals`); the sandbox shows the real
+units, towers and nexus. See `CONTINUE.md`.
