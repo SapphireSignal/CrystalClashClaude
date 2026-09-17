@@ -80,6 +80,7 @@ var think_count: int = 0
 var produced_fire_group: int = -1      # TAutoBrainWelaTargetProducedUnitComponent.FireInGroup
 var resource_percentage: bool = false  # TWarheadSpottyResourceComponent.AmountIsPercentage (of the target's cap)
 var resource_sets_value: bool = false  # TWarheadSpottyResourceComponent.SetsResourceToValue
+var resolve_team_id: bool = false      # TWelaHelperResolveComponent.ResolveTeamID: pattern indexed by the owner's team
 # effects
 var heals: bool = false
 var damages: bool = false
@@ -225,6 +226,10 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 				for c in calls:
 					if c[0] == "FireInGroup":
 						get.call(g, Kind.SUB).produced_fire_group = UnitDb.group_id(c[1][0][0], map)
+			"TWelaHelperResolveComponent":
+				for c in calls:
+					if c[0] == "ResolveTeamID":
+						get.call(g, Kind.SUB).resolve_team_id = true
 			"TBrainWelaSelftargetGroundComponent":
 				var w: Wela = get.call(g, Kind.SELF_GROUND)
 				w.kind = Kind.SELF_GROUND

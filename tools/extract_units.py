@@ -100,8 +100,8 @@ def parse_set_lines(body: str, values: dict) -> None:
         if "GROUP_" in m.group(3):
             # BaseConflict.Constants.pas: spawner groups are 0, GROUP_BUILDING_LIFETIME 10, GROUP_SOUL 11
             groups = [FIXED_GROUPS.get(g, 0) for g in re.findall(r"GROUP_\w+", groups)]
-        else:  # numeric groups, or symbolic ones reserved by inlined procedures
-            groups = [int(g) if g.isdigit() else g for g in (x.strip() for x in groups.split(",")) if g]
+        else:  # numeric groups (also '10+1'), or symbolic ones reserved by inlined procedures
+            groups = [int(group_token(g)) if group_token(g).isdigit() else g for g in (x.strip() for x in groups.split(",")) if g]
         value = parse_value(raw)
         key = event if not indexed else f"{event}.{index}"
         entry = values.setdefault(key, {})
@@ -157,6 +157,14 @@ def parse_components(body: str) -> list:
     return out + _parse_components_plain(body[pos:])
 
 
+def group_token(g: str) -> str:
+    """'10+1' (LaneNode_Red: block group 10 + team id) -> '11'; names stay symbolic."""
+    g = g.strip()
+    if re.fullmatch(r"[0-9+\-* ]+", g):
+        return str(eval(g, {"__builtins__": {}}, {}))
+    return g
+
+
 def _parse_components_plain(body: str) -> list:
     body = strip_comments(body)
     body = re.sub(r"\{\$IFDEF SERVER\}|\{\$ENDIF\}|\{\$IFNDEF \w+\}|\{\$ELSE\}", "", body)
@@ -169,7 +177,7 @@ def _parse_components_plain(body: str) -> list:
         if not m:
             continue
         cls, grouped, groups, extra, chain = m.groups()
-        comp = {"class": cls, "groups": [g.strip() for g in groups.split(",") if g.strip()] if groups is not None else []}
+        comp = {"class": cls, "groups": [group_token(g) for g in groups.split(",") if g.strip()] if groups is not None else []}
         if extra:
             comp["args"] = parse_args(extra)
         calls = []

@@ -389,6 +389,13 @@ func test_lane_node_capture() -> void:
 	# killing it leaves a neutral lane node again
 	sim.deal_damage(captured, 1e6, SimConstants.DamageType.TRUE, captured)
 	runner.check_eq(sim.alive_entities(0).size(), 1, "lane node respawned on tower death")
+	var blocked_node: SimEntity = sim.alive_entities(0)[0]
+	runner.check_eq(blocked_node.unit_id, "Units/Neutral/LaneNode_Red", "the node blocks the team that lost the tower")
+	runner.check(sim._node_blocked_for(blocked_node, Simulation.TEAM_BLUE) and not sim._node_blocked_for(blocked_node, Simulation.TEAM_RED), "blue is blocked, red may capture")
+	var t1 := sim.time_ms
+	while sim._node_blocked_for(blocked_node, Simulation.TEAM_BLUE) and sim.time_ms < t1 + 45000:
+		sim.step()
+	runner.check(sim.time_ms - t1 >= 40000 and sim.time_ms - t1 < 40100, "recapture block lasts 40 s (got %d)" % (sim.time_ms - t1))
 
 
 func test_buffs_from_modifier_scripts() -> void:

@@ -581,6 +581,7 @@ func step() -> void:
 		if not e.alive or e.is_spawner():
 			continue
 		if e.is_lane_node():
+			_think_passives(e)   # the recapture block (group 10 + team) expires through its own passive group
 			_think_lane_node(e)
 			continue
 		if e.lifetime_ms > 0 and time_ms >= e.created_at + e.lifetime_ms:   # GROUP_BUILDING_LIFETIME suicide
@@ -1016,6 +1017,8 @@ func _fire_group(e: SimEntity, group: int, target: SimEntity) -> void:
 		e.removed_groups[group] = true
 	if w.spawns:   # TWelaEffectFactoryComponent: units appear at the target position
 		var pattern: String = e.bb.get_value("eiWelaUnitPattern", group, "").replace("\\", "/")
+		if w.resolve_team_id:   # Lanetower death: LaneNode_Red / _Blue block the former owner's recapture
+			pattern = str(e.bb.get_value("eiWelaUnitPattern.%d" % e.team, group, pattern)).replace("\\", "/").trim_suffix(".ets")
 		var count := e.bb.get_int("eiWelaCount", group, 1)
 		if pattern != "" and UnitDb.has_unit(pattern):
 			var team := e.team if w.spawn_team < 0 else w.spawn_team
@@ -1552,11 +1555,11 @@ func _think_lane_node(node: SimEntity) -> void:
 			continue
 		if e.position.distance_to(node.position) - e.collision_radius <= range:
 			near_teams[e.team] = true
-	if near_teams.size() == 1:
+	if near_teams.size() == 1 and not _node_blocked_for(node, near_teams.keys()[0]):
 		node.capturing_team = near_teams.keys()[0]
 	elif near_teams.size() > 1:
 		node.capturing_team = -1
-	if node.capturing_team < 0:
+	if node.capturing_team < 0 or _node_blocked_for(node, node.capturing_team):
 		return
 	var cap := node.bb.get_float("eiResourceCap.reTeamPower1", Blackboard.ANY_GROUP, 15.0)
 	for team in [TEAM_BLUE, TEAM_RED]:
@@ -1567,6 +1570,12 @@ func _think_lane_node(node: SimEntity) -> void:
 	if node.team_power[winner] >= cap:
 		var tier: int = commanders[winner].tier
 		replace_entity(node, "Units/Neutral/LanetowerLevel%d" % tier, winner)
+
+
+## TBrainCapturePointComponent.IsBlockedForTeam: group 10 + team exists while its 40 s block runs.
+func _node_blocked_for(node: SimEntity, team: int) -> bool:
+	var w := node.wela(10 + team)
+	return w != null and not w.used
 
 
 # ---------------------------------------------------------------- movement (TMovementComponent, server side)
