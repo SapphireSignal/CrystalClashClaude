@@ -29,7 +29,9 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
    sandbox label in `main.gd`. Then compare against `reference/media/ingame/*.webp` with a screenshot and tune.
 2. Card hint on hover (`MainMenu/Shared/Card/CardHUD.dui` + `shared_card.scss`), announcements (warm-up
    countdown), in-world health bars, floating combat text.
-3. Later: audit the Steam patch notes newer than 2022-01-19 (CLAUDE.md Decisions) and apply via the extractor.
+3. **Settings menu (the gear button on the minimap): do NOT build it yet.** The owner will add screenshots of the
+   live client's settings screens to `reference/media/` first; build it only after they exist.
+4. Later: audit the Steam patch notes newer than 2022-01-19 (CLAUDE.md Decisions) and apply via the extractor.
 
 ## Rules that bit us
 - Run `--import` before `-s tests/run_tests.gd` when new class_name scripts or assets were added.
