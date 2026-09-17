@@ -86,3 +86,7 @@ These are current and take precedence over Codex's older captures. Facts read fr
   target.", "- Status Reflector - Whenever this unit is attacked, it copies all of its status effects to the
   attacker. (0.5 seconds cooldown)" (source: 200 ms), "Status effects: banished, bleeding, blinded, frozen,
   grounded, lifted, petrified, rooted, silenced, stunned."
+- Economy tooltips (live names: Mana = source reGold, Essence = source reWood): "Mana is used to Summon units and
+  cast spells. Your Mana regenerates over time. If you reach the cap, Mana is automatically converted into
+  Essence." / "Essence is used to build Spawners. Generate more Essence by spending more Mana." / "You generate
+  more Mana once you've spent enough Essence to fill the bar." (income bar 0 / 1500).
