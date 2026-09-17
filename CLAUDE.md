@@ -128,6 +128,9 @@ Act as two people at once:
   1710x816 (`core_game_scaling.scss`: resources/minimap/top bar 80 %, deck slots 66x64, card hint 267 wide). **Sides**: the 2022 scripts' (Blue at -x, Red at +x, `SimMap.side()`); the camera never rotates per team and
   `GetDisplayedTeam` paints the own team blue whatever its id, so the owner's screenshots (own base top-right, lane
   leaving bottom-left, own nexus hover-outlined red) are the **Red** player's view: the sandbox human is team 2 (`Main.HUMAN_TEAM`).
+- 2026-09-17 **Planned upgrade (owner, after the replica is playable)**: a HUD size slider in the settings menu so the
+  HUD can stay the same size at any resolution (the 2022 client has no HUD scale option, only the fixed-pixel
+  layouts with the `.small` switch below 1710 px). Default = the original behaviour.
 - 2026-09-17 **Plan (owner)**: build **Rise of Legions exactly as the 2022 repo** until the developers hand over the
   live Crystal Clash files (expected via the owner). Everything that was bent toward the live client from screenshots
   (a wrong 'blue at +x' side swap, opaque blue water, no wheel zoom, no hotkey badge, countdown text) was reverted at checkpoint 56; the
