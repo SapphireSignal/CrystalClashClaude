@@ -121,6 +121,9 @@ These are current and take precedence over Codex's older captures. Facts read fr
   The game-start shot (blue nexus, "Game is about to begin") shows the own base
   top-right with the lane leaving to the bottom-left, and the minimap has blue top-right: the live client puts
   Blue at +x (2022 scripts: -x). Applied as `SimMap.side()`; the tests keep the 2022 layout.
+- Lighting (2026-09-17, game-start shot): patch medians ref vs ours after `MapView` ambient x0.35 / sun x1.06:
+  sand SW 157/159, sand W 228/219, shadowed jungle 65/58, platform 174/172. The original's gamma-space
+  `colour * (NdotL * sun + ambient)` makes shadow 63 % of lit on screen; the linear scales reproduce that.
 - Top bar in the live client: red bar left, blue bar right for both the blue and the red player (own team is
   not on the left). Ours puts blue (own) left: check the original `.dui` before changing.
 - Capture point (lane node): a white disc on the lane with a blue progress ring while a team captures it.

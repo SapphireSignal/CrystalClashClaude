@@ -104,6 +104,12 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
   the red/green occupation colouring while placing a spawner (`ShowOccupation`/`ShowInvalid` ColorAdjustment)
   and the `buildgrid_activate.pfx` burst on spawn. Reference tiles look a bit brighter (post-effect glow).
 
+- **Checkpoint 42: lighting matches the reference.** The original lights in gamma space (shadow = 63 % of lit
+  on screen); Godot in linear needs ambient x0.35 and sun x1.06 (`MapView.AMBIENT_SCALE` / `SUN_SCALE`, replaces
+  LIGHT_SCALE 0.7) plus a small shadow blur. Patch medians of sand / platform / shadowed jungle now match the
+  game-start reference within ~5 levels. The terrain and vegetation heights were already right (the jungle ring
+  rises up to 18 units); the "flat" look was the light balance. Fix-list item 3 (lane brightness) is thereby done.
+
 ## FIX FIRST (owner's request, before anything else)
 1. **Done (checkpoint 37): lane node capture circle verified.** The ring renders (mesh, y 0.01, orientation:
    start +Z about +Y, gaps across the lane, arcs along it, exactly `DrawCircle` Up=UNITZ Left=UNITX); it was

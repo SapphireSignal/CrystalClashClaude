@@ -5,9 +5,12 @@ extends Node3D
 
 const MAPS_DIR := "res://assets/maps/"
 const ENV_DIR := "res://assets/environment/"
-## The original lit in gamma space (Standardshader.fx:515 colour * (NdotL * light + ambient)); Godot lights in
-## linear space, so the map's intensities are scaled to match the reference screenshots' brightness.
-const LIGHT_SCALE := 0.7
+## The original lit in gamma space (Standardshader.fx:515 colour * (NdotL * light + ambient)): with ambient 0.772
+## and sun 0.52 a shadowed patch shows 63 % of the lit brightness on screen. Godot lights in linear space, so
+## the same numbers would show ~80 % (flat look). Ambient x0.35 and sun x1.06 give the 63 % display ratio with
+## the lit sand / platform at the reference's brightness (patch medians, docs/reference-material.md).
+const AMBIENT_SCALE := 0.35
+const SUN_SCALE := 1.06
 
 static var _material_cache: Dictionary = {}
 
@@ -82,7 +85,7 @@ func _add_water(water: Dictionary, dir: String, lights: Dictionary) -> void:
 func _add_lights(lights: Dictionary) -> void:
 	var ambient: Array = lights.get("ambient", [1, 1, 1, 1])
 	ambient_color = Color(ambient[0], ambient[1], ambient[2])
-	ambient_energy = float(ambient[3]) * LIGHT_SCALE
+	ambient_energy = float(ambient[3]) * AMBIENT_SCALE
 	for light in lights.get("directional", []):
 		if not light.get("enabled", false):
 			continue
@@ -91,8 +94,9 @@ func _add_lights(lights: Dictionary) -> void:
 		var dir := Vector3(d[0], d[1], d[2]).normalized()
 		var c: Array = light["color"]
 		node.light_color = Color(c[0], c[1], c[2])
-		node.light_energy = float(c[3]) * LIGHT_SCALE
+		node.light_energy = float(c[3]) * SUN_SCALE
 		node.shadow_enabled = true
+		node.shadow_blur = 1.5   # SHADOW_SAMPLING_RANGE 1: a small PCF blur
 		add_child(node)
 		node.look_at_from_position(Vector3(0, 60, 0), Vector3(0, 60, 0) + dir, Vector3.UP if absf(dir.y) < 0.99 else Vector3.RIGHT)
 
