@@ -109,3 +109,7 @@ These are current and take precedence over Codex's older captures. Facts read fr
   6-18 ammo and a single target. Nexus live: 8000 HP, 25 ammo, 96 damage (source: 110-120 damage, 8-20 ammo).
   Towers and bases were reworked after the repo snapshot; the patch-notes audit must cover them first.
 - Capture point (lane node): a white disc on the lane with a blue progress ring while a team captures it.
+- Lane node after a tower dies: the losing team cannot recapture for a while (owner: ~20 s live; source
+  LaneNode_Red/_Blue block 40 s). Selecting an enemy squad: panel "Thistles", "40 / 40", attack "8.8", armor "0%",
+  "Doubleshot, Evasion" (source Thistle: 27 HP, 14 damage x2). Enemy nexus is drawn red. Floating combat text
+  such as "DODGED" appears above units.
