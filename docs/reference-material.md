@@ -4,8 +4,11 @@ Two read-only places hold real-game references. Nothing here is copied into the 
 from these paths directly. Rights: the developers gave the owner permission to use everything.
 
 ## `reference/media/` (this repo, gitignored)
-Drop folder for screenshots and videos the owner records from the real game. Empty except its README as
-of 2026-09-16. Check it before the HUD (phase 4) and asset (phase 5) work.
+The owner's screenshots of the live Crystal Clash client, sorted by the owner: `lobby/` (36 files: loading,
+home, play tabs, deck builder, card vendor trees, leaderboards, shop, tooltips) and `ingame/` (21 files: match
+loading, warm-up, HUD, economy tooltips, unit / nexus / tower panels, capture point, combat). Files are
+`image-<timestamp>.png|webp`. The facts read from them are in the sections below. Only the owner adds files
+here; never copy from the owner's Pictures folders. Check it before the HUD (phase 4) and asset (phase 5) work.
 
 ## Codex's earlier project: `D:\Games\CrystalClash` (read-only)
 Its research folders are worth reusing; its game code is not (see CLAUDE.md Decisions).
@@ -27,7 +30,7 @@ Its research folders are worth reusing; its game code is not (see CLAUDE.md Deci
 Codex's design docs (`docs/design/*`) describe a different game of its own ("Siegefront" directions,
 five-faction roster proposals) and must not influence the replica.
 
-## Owner screenshots of the live Crystal Clash client (2026-09-16, sent in chat; files to follow in `reference/media/`)
+## Owner screenshots of the live Crystal Clash client (2026-09-16, files in `reference/media/lobby` and `ingame`)
 These are current and take precedence over Codex's older captures. Facts read from them:
 - Top bar: PLAY, DECKBUILDER, CARD VENDOR, LEADERBOARDS, SHOP, CHAT; currencies gold (coin) and crystals (pink gem);
   player badge with level (e.g. "sorrow (141)"). Loading screen: "Loading main menu...", credits "Soundeffects by

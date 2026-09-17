@@ -106,7 +106,9 @@ Act as two people at once:
   have later balance patches: after the port is playable, audit the Steam patch notes newer than that date
   and apply differences through the extractor/data (never by hand). Until then we replicate the repo.
 - 2026-09-16 The fourth faction is `Scripts/Units/Golems` in the source (`Colorless` holds the neutral
-  golem variants); the display name follows whatever the Steam build calls it.
+  golem variants); the live client calls it the Crystal Legion.
+- 2026-09-16 `reference/media/` is filled by the owner only (lobby/ and ingame/ screenshots). Never read or
+  copy from the owner's personal Pictures / OneDrive folders.
 
 ## Status
 Phase 1 done (docs written). Phase 2 in progress: `game/sim/` has fixed-tick Simulation, Blackboard stats from

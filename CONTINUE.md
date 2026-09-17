@@ -46,7 +46,8 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
 - Sandbox `game/main.tscn`: capsules, 12-slot white deck on keys 1-9,0,-,= , red AI plays Black; right-drag pans,
   arrows nudge, wheel zooms; label shows Mana / Essence / tier like the live client. Renderer: Compatibility.
 - `docs/factions/black.md`: complete Black faction spec (souls, 12 units, 7 spells, component semantics).
-- `reference/media/` (local, gitignored): folder for real-game screenshots/videos the owner drops in.
+- `reference/media/` (local, gitignored): the owner's live-client screenshots, `lobby/` (36) and `ingame/` (21).
+  Only the owner adds files there; never copy from their Pictures folders.
 - `docs/reference-material.md`: where the real-game screenshots, UI captures, trailer, menu audio and the
   Steam news/patch-note archive live (Codex's `D:\Games\CrystalClash` research folders). Use in phases 3-5
   and for the patch-notes audit.
