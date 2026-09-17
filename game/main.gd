@@ -475,7 +475,7 @@ func _sync_views() -> void:
 			continue
 		if view is UnitModel:
 			view.position = Vector3(e.position.x, 0.0, e.position.y)
-			view.set_moving(e.moving)
+			view.set_moving(e.moving, e.speed())
 			for pair in _ready_effects.get(id, []):   # VisibleWithWelaReady
 				var w := e.wela(pair[1])
 				pair[0].visible = w != null and sim._wela_ready(e, w)

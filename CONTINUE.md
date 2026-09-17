@@ -211,8 +211,8 @@ Then checkpoint (tests, Status, CONTINUE.md, commit + push, give the new-chat pr
    replica against the original (palm variants/rotations) if a screenshot shows a mismatch; (e) grass wind
    animation (`Custom` vertex data = time offset) as a shader.
 2. Models polish (glow textures done: `copy_unit_assets.py` bakes `*Glow*` maps as premultiplied png used as
-   emission with `emission = BLACK` + ADD): (a) walk clip speed per the original formula (`Visuals.pas:3352`, IgnoreScalingForAnimations
-   variant at 3355); (b) glow textures (`GlowTexture`, team glow) as emission; (c) `Effects/Meshes` spell props and
+   emission with `emission = BLACK` + ADD): (a) done (checkpoint 59): walk clip length per `Visuals.pas:3343-3361`
+   incl. the IgnoreScalingForAnimations variant, SpeedFactor as a length multiplier, random 0-70 % walk offset; (b) glow textures (`GlowTexture`, team glow) as emission; (c) `Effects/Meshes` spell props and
    the Environment/Gameplay `.msh` (13 + 2) once the map needs them; (d) the 18 "Basis must be normalized" import
    errors: find which glb nodes have zero scale (probably `_Scaling` pivots folded into static matrices are fine;
    check animated ones) - cosmetic unless a model looks wrong.
@@ -224,8 +224,9 @@ Then checkpoint (tests, Status, CONTINUE.md, commit + push, give the new-chat pr
    and the loaders in `reference/delphi3d-engine/`, textures (`.tga`/`.dds`), particles `.pfx`, FMOD sound banks.
    Write `docs/assets.md` rows per format with a conversion plan, then `tools/convert_*.py` for meshes first
    (Footman), swap the capsule in `main.gd` for the real model, then the maps.
-2. **Settings menu (the gear button on the minimap): do NOT build it yet.** The owner will add screenshots of the
-   live client's settings screens to `reference/rolmedia/` first; build it only after they exist.
+2. **Pre-match screens and settings menu: build from the repo's `.dui`/`.scss`/images** (owner, 2026-09-17: "we
+   know all of it, build it all"). Spec: `docs/lobby.md` (state flow, every screen's layout, GUI engine units,
+   build order). No waiting for screenshots; `reference/rolmedia/lobby` verifies what it can.
 3. Later: audit the Steam patch notes newer than 2022-01-19 (CLAUDE.md Decisions) and apply via the extractor.
 
 ## Rules that bit us

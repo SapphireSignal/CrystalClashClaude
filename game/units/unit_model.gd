@@ -23,7 +23,10 @@ var _players: Array[AnimationPlayer] = []
 var _bind_zones: Dictionary = {}             # zone -> bone name (BindZoneToBone)
 var _bone_offsets: Dictionary = {}           # zone -> [x, y, z] (BoneOffset, raw units)
 var _attachments: Dictionary = {}            # zone -> BoneAttachment3D
-var _speeds: Dictionary = {}                 # animation name -> SetAnimationSpeed factor
+var _speeds: Dictionary = {}                 # animation name -> SetAnimationSpeed factor (multiplies the clip LENGTH)
+var _walk_ignore_scaling := false            # IgnoreScalingForAnimations: walk length = base x size x factor
+var _walk_model_scale := 1.0                 # FMesh.Scale / FSizeNormalization = eiModelSize (eiSize assumed 1)
+var _speed_per_ms := 0.004                   # eiSpeed of the simulated unit, world units per ms
 var _has_attack_loop := false
 var _current := ""
 var _one_shot := false
@@ -53,6 +56,11 @@ static func create(unit_id: String, displayed_team: int = 1) -> UnitModel:
 		model.free()
 		return null
 	model._speeds = visuals["meshes"][0].get("animation_speeds", {})
+	model._walk_ignore_scaling = visuals["meshes"][0].get("ignore_scaling_for_animations", false)
+	for g in visuals["meshes"][0].get("groups", []):
+		if sizes.has(str(g)):
+			model._walk_model_scale = sizes[str(g)]
+			break
 	for mesh in visuals["meshes"]:
 		model._bind_zones.merge(mesh.get("bind_zones", {}))
 		model._bone_offsets.merge(mesh.get("bone_offsets", {}))
@@ -169,12 +177,20 @@ func play(name: String, one_shot: bool = false) -> void:
 		return
 	_current = name
 	_one_shot = one_shot
-	var speed: float = _speeds.get(name, 1.0)
+	# Visuals.pas:3343-3361: the clip's length is base x SpeedFactor; the walk cycle is additionally tied to
+	# the unit's speed: length = base / speed x scale / normalization x SIZE_FACTOR_3DSMAX x factor x 0.077 x 2.5
+	# (or base x size x factor with IgnoreScalingForAnimations), and starts at a random offset up to 70 %.
+	var factor: float = _speeds.get(name, 1.0)
+	var rate := 1.0 / factor
+	if name == "walk" and not _walk_ignore_scaling:
+		rate = _speed_per_ms / (_walk_model_scale * SIZE_FACTOR_3DSMAX * factor * 0.077 * 2.5)
 	for p in _players:
 		if p.has_animation("unit/" + name):
-			p.play("unit/" + name, -1, speed)
+			p.play("unit/" + name, -1, rate)
 			if one_shot:
 				p.seek(0.0, true)
+			elif name == "walk":
+				p.seek(randf() * 0.7 * p.get_animation("unit/" + name).length, true)
 
 
 func is_busy() -> bool:
@@ -182,9 +198,10 @@ func is_busy() -> bool:
 
 
 ## Idle / walking state from the simulation; ignored while a one-shot clip runs.
-func set_moving(moving: bool) -> void:
+func set_moving(moving: bool, speed_per_ms: float) -> void:
 	if _one_shot:
 		return
+	_speed_per_ms = speed_per_ms
 	play("walk" if moving else "stand")
 
 
