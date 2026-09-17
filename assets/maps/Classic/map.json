@@ -51540,7 +51540,7 @@
     {
      "mesh": "Stones1/stones1.glb",
      "diffuse": "Stones1/Stones1Diffuse.tga",
-     "scale": 0.016
+     "scale": 0.0
     }
    ]
   },
@@ -51680,7 +51680,7 @@
     {
      "mesh": "BridgeParts/bridgepart2.glb",
      "diffuse": "BridgeParts/BridgePartDiffuse.tga",
-     "scale": 0.016
+     "scale": 0.00015999999642372128
     }
    ]
   },
@@ -51700,7 +51700,7 @@
     {
      "mesh": "BridgeParts/bridgepart1.glb",
      "diffuse": "BridgeParts/BridgePartDiffuse.tga",
-     "scale": 0.016
+     "scale": 0.00015999999642372128
     }
    ]
   },
@@ -51720,7 +51720,7 @@
     {
      "mesh": "BridgeParts/bridgepart2.glb",
      "diffuse": "BridgeParts/BridgePartDiffuse.tga",
-     "scale": 0.016
+     "scale": 0.00015999999642372128
     }
    ]
   },
@@ -51740,7 +51740,7 @@
     {
      "mesh": "BridgeParts/bridgepart1.glb",
      "diffuse": "BridgeParts/BridgePartDiffuse.tga",
-     "scale": 0.016
+     "scale": 0.00015999999642372128
     }
    ]
   },
@@ -51760,7 +51760,7 @@
     {
      "mesh": "BridgeParts/bridgepart1.glb",
      "diffuse": "BridgeParts/BridgePartDiffuse.tga",
-     "scale": 0.016
+     "scale": 0.00015999999642372128
     }
    ]
   },
@@ -51780,7 +51780,7 @@
     {
      "mesh": "BridgeParts/bridgepart2.glb",
      "diffuse": "BridgeParts/BridgePartDiffuse.tga",
-     "scale": 0.016
+     "scale": 0.00015999999642372128
     }
    ]
   },
@@ -51800,7 +51800,7 @@
     {
      "mesh": "BridgeParts/bridgepart2.glb",
      "diffuse": "BridgeParts/BridgePartDiffuse.tga",
-     "scale": 0.016
+     "scale": 0.00015999999642372128
     }
    ]
   },
@@ -51820,7 +51820,7 @@
     {
      "mesh": "BridgeParts/bridgepart2.glb",
      "diffuse": "BridgeParts/BridgePartDiffuse.tga",
-     "scale": 0.016
+     "scale": 0.00015999999642372128
     }
    ]
   },
@@ -51840,7 +51840,7 @@
     {
      "mesh": "BridgeParts/bridgepart2.glb",
      "diffuse": "BridgeParts/BridgePartDiffuse.tga",
-     "scale": 0.016
+     "scale": 0.00015999999642372128
     }
    ]
   },
@@ -51860,7 +51860,7 @@
     {
      "mesh": "BridgeParts/bridgepart1.glb",
      "diffuse": "BridgeParts/BridgePartDiffuse.tga",
-     "scale": 0.016
+     "scale": 0.00015999999642372128
     }
    ]
   },
@@ -51880,7 +51880,7 @@
     {
      "mesh": "BridgeParts/bridgepart2.glb",
      "diffuse": "BridgeParts/BridgePartDiffuse.tga",
-     "scale": 0.016
+     "scale": 0.00015999999642372128
     }
    ]
   },
@@ -51900,7 +51900,7 @@
     {
      "mesh": "BridgeParts/bridgepart1.glb",
      "diffuse": "BridgeParts/BridgePartDiffuse.tga",
-     "scale": 0.016
+     "scale": 0.00015999999642372128
     }
    ]
   },
@@ -51920,7 +51920,7 @@
     {
      "mesh": "BridgeParts/bridgepart2.glb",
      "diffuse": "BridgeParts/BridgePartDiffuse.tga",
-     "scale": 0.016
+     "scale": 0.00015999999642372128
     }
    ]
   },
@@ -51940,7 +51940,7 @@
     {
      "mesh": "BridgeParts/bridgepart1.glb",
      "diffuse": "BridgeParts/BridgePartDiffuse.tga",
-     "scale": 0.016
+     "scale": 0.00015999999642372128
     }
    ]
   },
@@ -51960,7 +51960,7 @@
     {
      "mesh": "BridgeParts/bridgepart1.glb",
      "diffuse": "BridgeParts/BridgePartDiffuse.tga",
-     "scale": 0.016
+     "scale": 0.00015999999642372128
     }
    ]
   },
@@ -51980,7 +51980,7 @@
     {
      "mesh": "BridgeParts/bridgepart2.glb",
      "diffuse": "BridgeParts/BridgePartDiffuse.tga",
-     "scale": 0.016
+     "scale": 0.00015999999642372128
     }
    ]
   },
@@ -52000,7 +52000,7 @@
     {
      "mesh": "BridgeParts/bridgepart2.glb",
      "diffuse": "BridgeParts/BridgePartDiffuse.tga",
-     "scale": 0.016
+     "scale": 0.00015999999642372128
     }
    ]
   },
@@ -52020,7 +52020,7 @@
     {
      "mesh": "BridgeParts/bridgepart2.glb",
      "diffuse": "BridgeParts/BridgePartDiffuse.tga",
-     "scale": 0.016
+     "scale": 0.00015999999642372128
     }
    ]
   },
@@ -52040,7 +52040,7 @@
     {
      "mesh": "BridgeParts/bridgepart2.glb",
      "diffuse": "BridgeParts/BridgePartDiffuse.tga",
-     "scale": 0.016
+     "scale": 0.00015999999642372128
     }
    ]
   },
@@ -52060,7 +52060,7 @@
     {
      "mesh": "BridgeParts/bridgepart1.glb",
      "diffuse": "BridgeParts/BridgePartDiffuse.tga",
-     "scale": 0.016
+     "scale": 0.00015999999642372128
     }
    ]
   },
@@ -52080,7 +52080,7 @@
     {
      "mesh": "BridgeParts/bridgepart2.glb",
      "diffuse": "BridgeParts/BridgePartDiffuse.tga",
-     "scale": 0.016
+     "scale": 0.00015999999642372128
     }
    ]
   },
@@ -52100,7 +52100,7 @@
     {
      "mesh": "BridgeParts/bridgepart1.glb",
      "diffuse": "BridgeParts/BridgePartDiffuse.tga",
-     "scale": 0.016
+     "scale": 0.00015999999642372128
     }
    ]
   },
@@ -52120,7 +52120,7 @@
     {
      "mesh": "BridgeParts/bridgepart2.glb",
      "diffuse": "BridgeParts/BridgePartDiffuse.tga",
-     "scale": 0.016
+     "scale": 0.00015999999642372128
     }
    ]
   },
@@ -52140,7 +52140,7 @@
     {
      "mesh": "BridgeParts/bridgepart1.glb",
      "diffuse": "BridgeParts/BridgePartDiffuse.tga",
-     "scale": 0.016
+     "scale": 0.00015999999642372128
     }
    ]
   },
@@ -52160,7 +52160,7 @@
     {
      "mesh": "BridgeParts/bridgepart1.glb",
      "diffuse": "BridgeParts/BridgePartDiffuse.tga",
-     "scale": 0.016
+     "scale": 0.00015999999642372128
     }
    ]
   },
@@ -52180,7 +52180,7 @@
     {
      "mesh": "BridgeParts/bridgepart2.glb",
      "diffuse": "BridgeParts/BridgePartDiffuse.tga",
-     "scale": 0.016
+     "scale": 0.00015999999642372128
     }
    ]
   },
@@ -52200,7 +52200,7 @@
     {
      "mesh": "BridgeParts/bridgepart2.glb",
      "diffuse": "BridgeParts/BridgePartDiffuse.tga",
-     "scale": 0.016
+     "scale": 0.00015999999642372128
     }
    ]
   },
@@ -52220,7 +52220,7 @@
     {
      "mesh": "BridgeParts/bridgepart2.glb",
      "diffuse": "BridgeParts/BridgePartDiffuse.tga",
-     "scale": 0.016
+     "scale": 0.00015999999642372128
     }
    ]
   },
@@ -52240,7 +52240,7 @@
     {
      "mesh": "BridgeParts/bridgepart2.glb",
      "diffuse": "BridgeParts/BridgePartDiffuse.tga",
-     "scale": 0.016
+     "scale": 0.00015999999642372128
     }
    ]
   },
@@ -52260,7 +52260,7 @@
     {
      "mesh": "BridgeParts/bridgepart1.glb",
      "diffuse": "BridgeParts/BridgePartDiffuse.tga",
-     "scale": 0.016
+     "scale": 0.00015999999642372128
     }
    ]
   },
@@ -52280,7 +52280,7 @@
     {
      "mesh": "BridgeParts/bridgepart2.glb",
      "diffuse": "BridgeParts/BridgePartDiffuse.tga",
-     "scale": 0.016
+     "scale": 0.00015999999642372128
     }
    ]
   },
@@ -52300,7 +52300,7 @@
     {
      "mesh": "BridgeParts/bridgepart1.glb",
      "diffuse": "BridgeParts/BridgePartDiffuse.tga",
-     "scale": 0.016
+     "scale": 0.00015999999642372128
     }
    ]
   },
@@ -52320,7 +52320,7 @@
     {
      "mesh": "BridgeParts/bridgepart2.glb",
      "diffuse": "BridgeParts/BridgePartDiffuse.tga",
-     "scale": 0.016
+     "scale": 0.00015999999642372128
     }
    ]
   },
@@ -52340,7 +52340,7 @@
     {
      "mesh": "BridgeParts/bridgepart1.glb",
      "diffuse": "BridgeParts/BridgePartDiffuse.tga",
-     "scale": 0.016
+     "scale": 0.00015999999642372128
     }
    ]
   },
@@ -52360,7 +52360,7 @@
     {
      "mesh": "BridgeParts/bridgepart1.glb",
      "diffuse": "BridgeParts/BridgePartDiffuse.tga",
-     "scale": 0.016
+     "scale": 0.00015999999642372128
     }
    ]
   },
@@ -52380,7 +52380,7 @@
     {
      "mesh": "BridgeParts/bridgepart2.glb",
      "diffuse": "BridgeParts/BridgePartDiffuse.tga",
-     "scale": 0.016
+     "scale": 0.00015999999642372128
     }
    ]
   },
@@ -52400,7 +52400,7 @@
     {
      "mesh": "BridgeParts/bridgepart2.glb",
      "diffuse": "BridgeParts/BridgePartDiffuse.tga",
-     "scale": 0.016
+     "scale": 0.00015999999642372128
     }
    ]
   },
@@ -52420,7 +52420,7 @@
     {
      "mesh": "BridgeParts/bridgepart2.glb",
      "diffuse": "BridgeParts/BridgePartDiffuse.tga",
-     "scale": 0.016
+     "scale": 0.00015999999642372128
     }
    ]
   },
@@ -52440,7 +52440,7 @@
     {
      "mesh": "BridgeParts/bridgepart2.glb",
      "diffuse": "BridgeParts/BridgePartDiffuse.tga",
-     "scale": 0.016
+     "scale": 0.00015999999642372128
     }
    ]
   },
@@ -52460,7 +52460,7 @@
     {
      "mesh": "BridgeParts/bridgepart1.glb",
      "diffuse": "BridgeParts/BridgePartDiffuse.tga",
-     "scale": 0.016
+     "scale": 0.00015999999642372128
     }
    ]
   }

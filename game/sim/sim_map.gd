@@ -74,9 +74,20 @@ func clamp_to_zone(zone_name: String, p: Vector2) -> Vector2:
 
 
 ## Base layout per team: {"nexus": Vector2, "lanetowers": [Vector2], "lane_nodes": [Vector2]}.
-## Blue (team 1) sits at -x, Red (team 2) at +x. Values from PvPRed.dws / PvPBlue.dws / PvPBase.dws.
+## Live-client sides: Blue (team 1) at +x, Red (team 2) at -x (reference minimap / base screenshots,
+## docs/reference-material.md). The 2022 scripts (PvPRed.dws / PvPBlue.dws / PvPBase.dws) had blue at -x;
+## the tests keep those coordinates through legacy_sides (set by tests/run_tests.gd).
+static var legacy_sides := false
+
+
+## x sign of a team's base side.
+func side(team: int) -> float:
+	var blue := -1.0 if legacy_sides else 1.0
+	return blue if team == 1 else -blue
+
+
 func base_layout(team: int) -> Dictionary:
-	var sx := -1.0 if team == 1 else 1.0
+	var sx := side(team)
 	if is_single():
 		return {"nexus": Vector2(96 * sx, -23), "lanetowers": [Vector2(48 * sx, -23)]}
 	return {"nexus": Vector2(92 * sx, 0), "lanetowers": [Vector2(48 * sx, 23), Vector2(48 * sx, -23)]}
@@ -89,12 +100,14 @@ func lane_node_positions() -> Array:
 ## Build zones exactly as PvPRed.dws / PvPBlue.dws define them (id, team, center, front, spawn target, normal).
 func build_zones() -> Array[BuildZone]:
 	var out: Array[BuildZone] = []
+	var b := side(1)
+	var r := side(2)
 	if is_single():
-		out.append(BuildZone.new(0, 1, Vector2(-106.7, -23), Vector2(1, 0), Vector2(-90, -23), Vector2(-1, 0)))
-		out.append(BuildZone.new(1, 2, Vector2(106.7, -23), Vector2(-1, 0), Vector2(90, -23), Vector2(1, 0)))
+		out.append(BuildZone.new(0, 1, Vector2(106.7 * b, -23), Vector2(-b, 0), Vector2(90 * b, -23), Vector2(b, 0)))
+		out.append(BuildZone.new(1, 2, Vector2(106.7 * r, -23), Vector2(-r, 0), Vector2(90 * r, -23), Vector2(r, 0)))
 	else:
-		out.append(BuildZone.new(0, 1, Vector2(-102, -17), Vector2(1, 0), Vector2(-86, -6), Vector2(-1, 1)))
-		out.append(BuildZone.new(1, 1, Vector2(-102, 17), Vector2(1, 0), Vector2(-86, 6), Vector2(-1, -1)))
-		out.append(BuildZone.new(2, 2, Vector2(102, -17), Vector2(-1, 0), Vector2(86, -6), Vector2(1, 1)))
-		out.append(BuildZone.new(3, 2, Vector2(102, 17), Vector2(-1, 0), Vector2(86, 6), Vector2(1, -1)))
+		out.append(BuildZone.new(0, 1, Vector2(102 * b, -17), Vector2(-b, 0), Vector2(86 * b, -6), Vector2(b, 1)))
+		out.append(BuildZone.new(1, 1, Vector2(102 * b, 17), Vector2(-b, 0), Vector2(86 * b, 6), Vector2(b, -1)))
+		out.append(BuildZone.new(2, 2, Vector2(102 * r, -17), Vector2(-r, 0), Vector2(86 * r, -6), Vector2(r, 1)))
+		out.append(BuildZone.new(3, 2, Vector2(102 * r, 17), Vector2(-r, 0), Vector2(86 * r, 6), Vector2(r, -1)))
 	return out

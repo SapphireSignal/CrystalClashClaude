@@ -116,7 +116,7 @@ func test_nexus_death_ends_game() -> void:
 	sim.spawn_bases()
 	var nexus := sim.enemy_nexus(Simulation.TEAM_RED)
 	runner.check_eq(nexus.team, Simulation.TEAM_BLUE, "enemy nexus of red is blue")
-	runner.check_eq(nexus.position, Vector2(-96, -23), "blue nexus at -96,-23 on Single")
+	runner.check_eq(nexus.position, Vector2(-96, -23), "blue nexus at -96,-23 on Single (2022 sides, SimMap.legacy_sides)")
 	runner.check_near(nexus.max_health, 3750.0, "nexus hp league 4")
 	var lost := []
 	sim.team_lost.connect(func(t): lost.append(t))

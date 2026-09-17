@@ -438,6 +438,9 @@ def read_decorations(path: Path, index: dict) -> list[dict]:
             meshes.append({"mesh": resolved[0], "diffuse": resolved[1], "scale": (SIZE_FACTOR_3DSMAX if legacy else 1.0) * model_size})
         if not meshes:
             continue
+        entity_size = num(item.findtext("Size")) if item.find("Size") is not None else 1.0   # eiSize (BridgeParts 0.01)
+        for m in meshes:
+            m["scale"] *= entity_size
         result.append({"script": script, "position": vec(item.find("Position")), "front": vec(item.find("Front")), "meshes": meshes})
     return result
 

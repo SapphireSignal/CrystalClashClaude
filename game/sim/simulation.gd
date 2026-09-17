@@ -70,7 +70,7 @@ func spawn(unit_id: String, team: int, pos: Vector2, front: Vector2 = Vector2.ZE
 			assert(m != null, "unsupported eiCooldown expression %s in %s" % [v, unit_id])
 			e.bb.set_value("eiCooldown", g, int(roundf(rng.randf() * float(m.get_string(1)))))
 	e.position = pos
-	e.front = front if front != Vector2.ZERO else Vector2(-1.0 if team == TEAM_RED else 1.0, 0.0)
+	e.front = front if front != Vector2.ZERO else Vector2(-map.side(team), 0.0)   # towards the enemy
 	e.created_at = time_ms
 	e.lifetime_started_at = time_ms
 	entities[e.id] = e
@@ -189,7 +189,7 @@ static func spawning_pattern(pos: Vector2, front: Vector2, is_spawner: bool, ind
 ## Modifiers/SummoningSickness.dws for 1000 ms.
 func spawn_squad(unit_id: String, team: int, pos: Vector2, count: int, is_spawner: bool, level: int = 0) -> Array[SimEntity]:
 	var result: Array[SimEntity] = []
-	var front := Vector2(-1.0 if team == TEAM_RED else 1.0, 0.0)
+	var front := Vector2(-map.side(team), 0.0)   # towards the enemy
 	for i in count:
 		var e := spawn(unit_id, team, spawning_pattern(pos, front, is_spawner, i, count), front, level)
 		apply_buff(e, "SummoningSickness", {"Duration": SimConstants.SUMMONING_SICKNESS_MS})
