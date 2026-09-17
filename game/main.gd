@@ -331,6 +331,12 @@ func _on_spawned(e: SimEntity) -> void:
 
 
 func _on_projectile_spawned(p: Projectile) -> void:
+	var model := UnitModel.create(p.unit_id, HudStyle.displayed_team(p.team, Simulation.TEAM_BLUE))   # arrows, missiles ...
+	if model != null:
+		model.position = Vector3(p.position.x, 1.2, p.position.y)
+		_units_root.add_child(model)
+		_views[p.id] = model
+		return
 	var mesh := MeshInstance3D.new()
 	var sphere := SphereMesh.new()
 	sphere.radius = 0.2
@@ -356,7 +362,10 @@ func _sync_views() -> void:
 		var view: Node3D = _views[id]
 		var p: Projectile = sim.projectiles.get(id)
 		if p != null:
+			var flight := Vector3(p.position.x, 1.2, p.position.y) - view.position   # face the flight direction
 			view.position = Vector3(p.position.x, 1.2, p.position.y)
+			if view is UnitModel and flight.length_squared() > 0.0001:
+				view.rotation.y = atan2(flight.x, flight.z)
 			continue
 		var e: SimEntity = sim.entities.get(id)
 		if e == null:
