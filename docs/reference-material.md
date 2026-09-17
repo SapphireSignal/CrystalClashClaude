@@ -100,3 +100,6 @@ These are current and take precedence over Codex's older captures. Facts read fr
 - Hovering a building outlines it: the live client outlines the player's own nexus red and the enemy's blue.
   **Owner decision (2026-09-16): in our version own = blue, enemy = red**, consistent with the team colors
   (blue = player, red = enemy in the top bar and minimap).
+- Clicking the nexus (stage II, card level 5): panel "Nexus", health "8000 / 8000", ammo "25 / 25", attack "96.0",
+  armor "0%", keywords "Primary Target, Monumental, Spell Immune, Crystal Ammunition Refill, Crystal Ammunition,
+  Doubleshot, Radiating Shot, Upgrade"; a white range circle is drawn on the ground while selected.
