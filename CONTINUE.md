@@ -23,7 +23,7 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
   sandbox reloads the scene. Timers use the wall clock because the sim stops stepping once finished.
   `tools/screenshot.gd -- 3 9 finish` kills the red nexus at the first shot. Phase 4 (HUD) is complete except
   the settings menu (blocked, see below), chat, scoreboard and pings (multiplayer).
-- Verified by screenshot against `reference/media/ingame/*.webp` (those use the client's small layout; ours is
+- Verified by screenshot against `reference/ccmedia/ingame/*.webp` (those use the client's small layout; ours is
   the normal 1920x1080 layout, so sizes differ but the structure matches).
 
 - **Phase 5 started (checkpoint 29): unit models.** `tools/copy_unit_assets.py` copies `Graphics/Units/**` (FBX,
@@ -75,7 +75,7 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
   BoneAttachment3D + BoneOffset, model scale countered) and `VisibleWithWelaReady` effects toggle with
   `sim._wela_ready` (the footmen's shield rings). `tools/screenshot.gd -- 15 17 zoom=nexus play=2` shows them.
 
-- **Checkpoint 36 (HUD fixes 1-2 of the owner's list, verified against `reference/media/ingame`):** resource
+- **Checkpoint 36 (HUD fixes 1-2 of the owner's list, verified against `reference/ccmedia/ingame`):** resource
   panel rows/roman/timer at the art's positions (the 21 px content offset had been applied twice; roman 28 px
   bold, caption right pad 31, icon 110 % centred 10 px inside the row end); deck panel darken is the engine's
   COLOR_REPLACEMENT lerp (`game/ui/color_override.gdshader` on frame + icon, not a square), tier plate behind the
@@ -220,7 +220,7 @@ Then checkpoint (tests, Status, CONTINUE.md, commit + push, give the new-chat pr
    Write `docs/assets.md` rows per format with a conversion plan, then `tools/convert_*.py` for meshes first
    (Footman), swap the capsule in `main.gd` for the real model, then the maps.
 2. **Settings menu (the gear button on the minimap): do NOT build it yet.** The owner will add screenshots of the
-   live client's settings screens to `reference/media/` first; build it only after they exist.
+   live client's settings screens to `reference/rolmedia/` first; build it only after they exist.
 3. Later: audit the Steam patch notes newer than 2022-01-19 (CLAUDE.md Decisions) and apply via the extractor.
 
 ## Rules that bit us

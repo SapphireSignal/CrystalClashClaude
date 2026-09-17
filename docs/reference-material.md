@@ -3,7 +3,9 @@
 Two read-only places hold real-game references. Nothing here is copied into the repo; later phases read
 from these paths directly. Rights: the developers gave the owner permission to use everything.
 
-## `reference/media/` (this repo, gitignored)
+## `reference/ccmedia/` (Crystal Clash) and `reference/rolmedia/` (Rise of Legions), gitignored
+`reference/rolmedia/` is the reference for the current build (the 2022 Rise of Legions). `reference/ccmedia/` was
+`reference/media/` until 2026-09-17:
 The owner's screenshots of the live Crystal Clash client, sorted by the owner: `lobby/` (36 files: loading,
 home, play tabs, deck builder, card vendor trees, leaderboards, shop, tooltips) and `ingame/` (21 files: match
 loading, warm-up, HUD, economy tooltips, unit / nexus / tower panels, capture point, combat). Files are
@@ -30,7 +32,7 @@ Its research folders are worth reusing; its game code is not (see CLAUDE.md Deci
 Codex's design docs (`docs/design/*`) describe a different game of its own ("Siegefront" directions,
 five-faction roster proposals) and must not influence the replica.
 
-## Owner screenshots of the live Crystal Clash client (2026-09-16, files in `reference/media/lobby` and `ingame`)
+## Owner screenshots of the live Crystal Clash client (2026-09-16, files in `reference/ccmedia/lobby` and `ingame`)
 These are current and take precedence over Codex's older captures. Facts read from them:
 - Top bar: PLAY, DECKBUILDER, CARD VENDOR, LEADERBOARDS, SHOP, CHAT; currencies gold (coin) and crystals (pink gem);
   player badge with level (e.g. "sorrow (141)"). Loading screen: "Loading main menu...", credits "Soundeffects by

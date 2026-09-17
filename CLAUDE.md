@@ -135,7 +135,9 @@ Act as two people at once:
   for engine-level checks (camera, lighting, HUD pixels, effect scale). When the files arrive: put them read-only in
   `reference/crystal-clash/` (gitignored, `.gdignore`), point the extractors/converters at it, inventory the changes
   against 2022 first, then regenerate data/maps/effects/GUI and patch changed logic. Drop the Steam patch-notes audit.
-- 2026-09-16 `reference/media/` is filled by the owner only (lobby/ and ingame/ screenshots). Never read or
+- 2026-09-17 Reference media: `reference/rolmedia/` (Rise of Legions, the game we build now: **the only visual
+  reference**) and `reference/ccmedia/` (the owner's Crystal Clash screenshots, kept for the later refresh). Both
+  filled by the owner only. Never read or
   copy from the owner's personal Pictures / OneDrive folders.
 
 ## Status
@@ -205,7 +207,7 @@ with the WorldToMiniMap port, icons and camera quad, `info_panel.gd` for the cli
 `unit_bars.gd` health/mana/ammo bars projected over units, `final_screen.gd` victory/defeat banner with the
 original 4 s / 11 s timers). The extractor records `ability_details`
 (tooltip variables/keywords) and `unit_bars` per script. `tools/screenshot.gd` captures the running game for
-comparison with `reference/media`. Phase 5 (assets) started: `tools/copy_unit_assets.py` copies unit textures/xml, `tools/msh_to_gltf.py`
+comparison with `reference/rolmedia`. Phase 5 (assets) started: `tools/copy_unit_assets.py` copies unit textures/xml, `tools/msh_to_gltf.py`
 converts every unit mesh cache to glb, `game/units/unit_model.gd` builds each unit's original model with the engine's
 scale rules, team textures and the script's animation frame ranges (extractor `visuals`). `tools/convert_map.py`
 converts the maps (terrain glb from the heightmap, water, lights, vegetation instances, decorations) and
