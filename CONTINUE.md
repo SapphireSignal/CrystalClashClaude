@@ -2,12 +2,9 @@
 
 Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
 
-**Model routing (owner):** every step below is tagged `[Opus]` (spec-following: screens from .dui/.scss, wiring,
-tests, docs, known formats, polish) or `[Fable]` (reverse-engineering, disagreeing screenshot comparisons,
-determinism/multiplayer, the Crystal Clash hand-over diff, bugs that survived two Opus attempts). Name the tag in the
-first line of the step; if it differs from the session's model, checkpoint and stop with the prompt above so the
-owner can switch (`/model` mid-session keeps the context). Effort is fixed: Opus medium, Fable low; a step that resists two
-Opus attempts goes to Fable instead of a higher effort.
+**Model routing (owner, 2026-09-17):** obsolete — the owner runs everything on **Fable 5** now. Ignore any
+leftover `[Opus]`/`[Fable]` tags below; never stop over the model. The owner also **playtests**: at each
+checkpoint give the run command and a short list of things to check, and fix what they report first.
 
 ## State (2026-09-17, checkpoint 66)
 - Phases 1-3 done, 835 tests pass. Sandbox `game/main.tscn`: blue deck on keys 1-9,0,-,= or by clicking a card
@@ -196,9 +193,17 @@ Opus attempts goes to Fable instead of a higher effort.
    `docs/reference-material.md`. Still open here: `LaneNode.pfx` (the disc particles) did not show in the shot,
    check `_spawn_effects(e, "create", holder)` for lane nodes; the blue progress ring (`TResourceDisplayComponent`
    team power) and `Capture%d.pfx` on fire are not built yet.
-2. **[Fable]** The footmen's shield-block ring shows as scattered dots: check the effect scale rule
-   (`ScaleWith(eiCollisionRadius)` x model size / 1.7) against the reference and a debug view.
-3. **[Fable]** Lane stones still brighter/flatter than the reference: revisit `MapView.LIGHT_SCALE` and the terrain
+2. **Done (checkpoint 67): shield-block ring + three particle-player fixes.** (a) `convert_particles.py` parsed
+   `Tangent1/2` with `vec()` but they are varied vectors (Mean/Variance children) -> every Hermite tangent was zero
+   (all 366 effects regenerated); (b) bone-attached effects inherited the skeleton's scale (footman: -160!) into the
+   emission base -> `ParticleEffect._emit` now uses `basis.orthonormalized()` + `effect_size` only, like the engine's
+   `FParticleEffect.Update(pos, front, up, FinalSize.X)` (scalar size, no parent scale); (c) `FStickToEmitter` was
+   ignored -> sticky particles (shield ring) now recompute their origin from the live emitter transform each frame,
+   like `Particle.Origin := ownBase * rotMat` + current base (Emitters.pas:238-249); (d) `main.gd` no longer
+   multiplies model size into `eiWelaRange`/`eiWelaAreaOfEffect` scaling (GAMEPLAY_SCALE_EVENTS skip it,
+   Visuals.pas:2538). `main._play` returns the PlayResult; `tools/screenshot.gd` `play=N` tries look-at +-6 and the
+   nexus +-8 as drop points. Footmen now show the orbiting golden shields + shimmer ring, moving with the unit.
+3. Lane stones still brighter/flatter than the reference: revisit `MapView.LIGHT_SCALE` and the terrain
    material (roughness, Material.png) with a side-by-side crop.
 Then checkpoint (tests, Status, CONTINUE.md, commit + push, give the new-chat prompt and STOP).
 

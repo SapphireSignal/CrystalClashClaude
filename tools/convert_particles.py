@@ -99,8 +99,8 @@ def parse_node(item) -> dict:
         "color": varied(pattern.find("Color") if pattern is not None else None, ("X", "Y", "Z", "W")),
         "scheme": (item.findtext("InterpolationScheme") or "isLinear").strip(),
         "position": varied(item.find("Position")),
-        "tangent1": vec(item.find("Tangent1")),
-        "tangent2": vec(item.find("Tangent2")),
+        "tangent1": varied(item.find("Tangent1")),
+        "tangent2": varied(item.find("Tangent2")),
         "time": varied_scalar(item.find("PathTime")),
     }
 

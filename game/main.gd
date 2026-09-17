@@ -192,20 +192,20 @@ var _pending_slot: int = -1        # multi-point spell (Relocate): press the key
 var _pending_points: Array = []
 
 
-func _play(team: int, slot: int, where: Vector2) -> void:
+func _play(team: int, slot: int, where: Vector2) -> int:
 	var c: Commander = sim.commanders[team]
 	var card := c.slots[slot].card
 	var target: Variant = where
 	if card.is_spawner():
 		target = _next_free_field(team)
 		if target == null:
-			return
+			return Simulation.PlayResult.BAD_TARGET
 	elif card.is_spell():
 		if card.target_type == "ctEntity":   # SolarFlare, Frenzy: the unit under the mouse
 			var unit := _unit_at(where)
 			if unit == null:
 				print("play %s: no unit under the mouse" % card.name)
-				return
+				return Simulation.PlayResult.BAD_TARGET
 			target = unit.id
 		else:
 			var count := _spell_point_count(card)
@@ -216,12 +216,13 @@ func _play(team: int, slot: int, where: Vector2) -> void:
 				_pending_points.append(where)
 				if _pending_points.size() < count:
 					print("play %s: point %d of %d set" % [card.name, _pending_points.size(), count])
-					return
+					return Simulation.PlayResult.OK
 				target = _pending_points
 				_pending_slot = -1
 	var result := sim.play_card(team, slot, target)
 	if result != Simulation.PlayResult.OK:
 		print("play %s: %s" % [card.name, Simulation.PlayResult.keys()[result]])
+	return result
 
 
 func _spell_point_count(card: Cards.CardDef) -> int:
@@ -476,17 +477,22 @@ func _spawn_effects(e, activation: String, parent: Node3D) -> void:
 		var groups: Array = effect.get("groups", [])
 		var group := int(groups[0]) if not groups.is_empty() else 0
 		var scale := 1.0
+		var gameplay_scale := false   # eiWelaRange/eiWelaAreaOfEffect skip model size (GAMEPLAY_SCALE_EVENTS)
 		match str(effect.get("scale_with", "")):
 			"eiCollisionRadius": scale = e.collision_radius if e is SimEntity else 0.5
-			"eiWelaRange": scale = e.range_of(group) if e is SimEntity else 1.0
-			"eiWelaAreaOfEffect": scale = float(e.bb.get_value("eiWelaAreaOfEffect", group, 1.0)) if e is SimEntity else 1.0
+			"eiWelaRange":
+				scale = e.range_of(group) if e is SimEntity else 1.0
+				gameplay_scale = true
+			"eiWelaAreaOfEffect":
+				scale = float(e.bb.get_value("eiWelaAreaOfEffect", group, 1.0)) if e is SimEntity else 1.0
+				gameplay_scale = true
 		var model_size := 1.0
 		var sizes: Dictionary = UnitDb.raw(e.unit_id).get("visuals", {}).get("model_sizes", {})
 		for g in groups:
 			if sizes.has(str(g)):
 				model_size = sizes[str(g)]
 				break
-		var size := scale * (1.0 if effect.get("ignore_model_size", false) else model_size) / float(effect.get("size_normalization", 1.0))
+		var size := scale * (1.0 if gameplay_scale or effect.get("ignore_model_size", false) else model_size) / float(effect.get("size_normalization", 1.0))
 		var fx := ParticleEffect.create(path, size)
 		if fx == null:
 			continue

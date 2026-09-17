@@ -46,6 +46,7 @@ var _last_position := Vector3.INF
 
 class Particle:
 	var origin: Transform3D
+	var rot_basis: Basis      # emitter-local random rotation (FStickToEmitter recomputes origin per frame)
 	var spawn_ms: float
 	var time_sum: float
 	var positions: PackedVector3Array
@@ -188,7 +189,9 @@ func _emit(state: EmitterState) -> void:
 	var e: Dictionary = state.data
 	var count: int = maxi(1, int(e["count"]))
 	var times: int = maxi(1, int(e.get("times", 1)))
-	var current_base := global_transform * Transform3D(Basis().scaled(Vector3.ONE * effect_size), Vector3.ZERO)
+	# The engine binds position + front/up + a scalar size (TParticleEffectComponent.Apply): parent scale
+	# (model/bone scale on attachments) must never reach the particles, only the orientation and effect_size.
+	var current_base := Transform3D(global_transform.basis.orthonormalized(), global_position) * Transform3D(Basis().scaled(Vector3.ONE * effect_size), Vector3.ZERO)
 	var rot: Dictionary = e["rotation"]
 	var offset: Dictionary = e["offset"]
 	for iteration in times:
@@ -203,6 +206,7 @@ func _emit(state: EmitterState) -> void:
 			var total := times * count
 			var fixed := float(i + iteration * count) / float(total - 1) if total > 1 else 0.0
 			var p := Particle.new()
+			p.rot_basis = rot_basis
 			p.origin = current_base * state.base * Transform3D(rot_basis, Vector3.ZERO)
 			var time_offset: float
 			if float(offset["variance"]) < 0.0:
@@ -253,8 +257,8 @@ func _build_path(p: Particle, nodes: Array, fixed: float) -> void:
 		if i != nodes.size() - 1:
 			p.time_sum += path_time
 		p.positions.append(pos)
-		p.tangent1.append(_random_vector_special(_vd(n["tangent1"]), fixed))
-		p.tangent2.append(_random_vector_special(_vd(n["tangent2"]), fixed))
+		p.tangent1.append(_random_vector_special(n["tangent1"], fixed))
+		p.tangent2.append(_random_vector_special(n["tangent2"], fixed))
 		p.fronts.append(_v3(n["front"]))
 		p.ups.append(_v3(n["up"]))
 		p.sizes.append(size)
@@ -282,11 +286,16 @@ func _update_particles(state: EmitterState, camera: Camera3D) -> int:
 	var cam_dir := -camera.global_transform.basis.z
 	var screen_left := -camera.global_transform.basis.x
 	var screen_up := camera.global_transform.basis.y
+	var stick: bool = state.data.get("stick_to_emitter", false)
+	var stick_base := Transform3D()
+	if stick:
+		stick_base = Transform3D(global_transform.basis.orthonormalized(), global_position) \
+			* Transform3D(Basis().scaled(Vector3.ONE * effect_size), Vector3.ZERO) * state.base
 	for idx in alive.size():
 		var p: Particle = alive[idx]
 		var elapsed: float = maxf(0.0, _time_ms - p.spawn_ms)
 		var d := _evaluate(p, elapsed)
-		var origin: Transform3D = p.origin
+		var origin: Transform3D = stick_base * Transform3D(p.rot_basis, Vector3.ZERO) if stick else p.origin
 		var position: Vector3 = origin * d["position"]
 		var front: Vector3 = (origin.basis * d["front"])
 		var up: Vector3 = (origin.basis * d["up"])
@@ -428,10 +437,6 @@ func _random_in_sphere(radius: float) -> Vector3:
 
 static func _v3(a: Array) -> Vector3:
 	return Vector3(float(a[0]), float(a[1]), float(a[2]))
-
-
-static func _vd(a: Array) -> Dictionary:
-	return {"mean": a, "variance": [0.0, 0.0, 0.0]}
 
 
 static func _material(texture: Dictionary) -> ShaderMaterial:

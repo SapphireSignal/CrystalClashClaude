@@ -87,7 +87,10 @@ func _process(delta: float) -> bool:
 					_main._place_camera(nodes[0].position + (_main._ground_at(centre) - _main._ground_at(_screen)))
 		if _play >= 0:   # play=N: the blue deck slot N at the camera's look-at point (free cards not needed: 300 gold)
 			_main.sim.commanders[_main.HUMAN_TEAM].free_cards = true
-			_main._play(_main.HUMAN_TEAM, _play, _main._look_at + Vector2(6, 0))
+			var nexus: Vector2 = _main.sim.entities[_main.sim.nexus_ids[_main.HUMAN_TEAM]].position
+			for at in [_main._look_at + Vector2(6, 0), _main._look_at - Vector2(6, 0), nexus + Vector2(8, 0), nexus - Vector2(8, 0)]:
+				if _main._play(_main.HUMAN_TEAM, _play, at) == Simulation.PlayResult.OK:
+					break
 			_play = -1
 		if _menu:   # the game menu, with the settings dialog on top when settings= is given
 			_main._toggle_menu()

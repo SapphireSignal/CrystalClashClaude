@@ -232,7 +232,8 @@ lane-locked z = -23) and map lighting scaled by 0.7 to match the reference brigh
 player), scripts' effect components in `units.json` `effects`, played by the sandbox on create / fire / die /
 projectile impact. HUD verified against the live-client screenshots (resource panel, deck panel with the
 engine's colour-override darken shader); lane node capture circle (`game/effects/range_circle.gd`) verified: neutral
-grey tint like the source, faint arc; its `LaneNode.pfx` ring pulse renders (lowercase axis tags fixed in the converter). Spawner tiles (`game/maps/build_grid.gd`, `assets/gameplay/Buildgrid`) with
+grey tint like the source, faint arc; its `LaneNode.pfx` ring pulse renders (lowercase axis tags fixed in the converter). Particle player engine-faithful: varied Hermite tangents, no parent scale in the emission base (scalar
+FinalSize only, so bone-attached effects keep world units), StickToEmitter particles follow the live emitter. Spawner tiles (`game/maps/build_grid.gd`, `assets/gameplay/Buildgrid`) with
 the wave-rotation glow. Pre-match screens: `docs/lobby.md` (state flow, layouts, GUI units, build order) is the spec;
 `game/app.tscn` (`app.gd`) is the client state machine (MainMenu -> LoadGame -> Game, main scene now) with the
 menu's animated background (`game/ui/menu/menu_background.gd`, bg.anb parallax) and loading page
