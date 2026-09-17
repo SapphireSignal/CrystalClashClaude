@@ -20,7 +20,7 @@ var panel_height := HEIGHT
 var locked_shift := 0.55
 var spawner_margin := SPAWNER_MARGIN
 var slot_height := SLOT_H   # build-slot-wrapper height: 90 normal, 64 small (the 66 px frame then overflows the bottom by 2 px)
-const HOTKEYS := ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "="]
+var slot_step := SLOT_STEP  # wrapper pitch: 87 normal, 66 small (measured 66 on the live client; badges anchor to the wrapper bottom)
 const GLOW_PERIOD_MS := 2000.0     # $glow keyframes: opacity 1 -> 0.6 -> 1, scale 1.02 -> 1 -> 1.02, ease-in-out
 const OVERRIDE_SHADER := preload("res://game/ui/color_override.gdshader")
 
@@ -58,6 +58,7 @@ func set_small(small: bool) -> void:
 	locked_shift = 0.38 if small else 0.55
 	spawner_margin = 48.0 / slot_scale if small else SPAWNER_MARGIN
 	slot_height = 64.0 / slot_scale if small else SLOT_H
+	slot_step = 66.0 / slot_scale if small else SLOT_STEP
 
 
 func build(commander: Commander) -> void:
@@ -101,7 +102,7 @@ func _build_group(commander: Commander, tier: int, indices: Array) -> Group:
 	g.tier = tier
 	g.root = Control.new()
 	g.root.mouse_filter = MOUSE_FILTER_IGNORE
-	g.width = SLOT_STEP * indices.size()
+	g.width = slot_step * indices.size()
 	g.root.size = Vector2(g.width, panel_height)
 	var deco_h := panel_height * 0.8
 	var deco := "spawner" if tier == 0 else "main"
@@ -125,7 +126,7 @@ func _build_group(commander: Commander, tier: int, indices: Array) -> Group:
 	g.root.add_child(slots_root)
 	for k in indices.size():
 		var view := _build_slot(commander, indices[k])
-		view.root.position = Vector2(k * SLOT_STEP + 1, panel_height - slot_height)
+		view.root.position = Vector2(k * slot_step + 1, panel_height - slot_height)
 		slots_root.add_child(view.root)
 		g.slots.append(view)
 		_views.append(view)
@@ -141,7 +142,7 @@ func _build_group(commander: Commander, tier: int, indices: Array) -> Group:
 func _build_plate(count: int) -> Control:
 	var plate := Control.new()
 	plate.mouse_filter = MOUSE_FILTER_STOP
-	var w := SLOT_STEP * count
+	var w := slot_step * count
 	plate.size = Vector2(w, panel_height)
 	if count == 1:
 		plate.add_child(HudStyle.picture(HudStyle.tex("HUD/DeckPanel/tier_block_single.png"), Rect2((w - 84) / 2.0, 0, 84, panel_height)))
@@ -167,7 +168,7 @@ func _build_plate(count: int) -> Control:
 func _build_plate_top(count: int) -> Control:
 	var top := Control.new()
 	top.mouse_filter = MOUSE_FILTER_IGNORE
-	var w := SLOT_STEP * count
+	var w := slot_step * count
 	top.size = Vector2(w, panel_height)
 	var timer := HudStyle.label("00:00", int(panel_height * 0.25), HudStyle.WHITE, HudStyle.FONT_SEMIBOLD, HORIZONTAL_ALIGNMENT_LEFT)
 	timer.name = "Timer"
@@ -187,7 +188,7 @@ func _build_slot(commander: Commander, index: int) -> SlotView:
 	var card := v.slot.card
 	v.root = Button.new()
 	v.root.flat = true
-	v.root.size = Vector2(SLOT_W, SLOT_H)
+	v.root.size = Vector2(SLOT_W, slot_height)
 	v.root.mouse_filter = MOUSE_FILTER_STOP
 	v.root.focus_mode = Control.FOCUS_NONE
 	v.root.pressed.connect(func(): slot_clicked.emit(index))
@@ -229,17 +230,13 @@ func _build_slot(commander: Commander, index: int) -> SlotView:
 	HudStyle.place(v.cooldown_text, Rect2(0, 0, SLOT_W, SLOT_W))
 	v.root.add_child(v.cooldown_text)
 	# charge badge bottom-left, hotkey badge bottom centre
-	var charge_h := SLOT_H * 0.22
-	v.root.add_child(HudStyle.picture(HudStyle.tex("HUD/DeckPanel/charge_background.png"), Rect2(-2, SLOT_H - charge_h + 2, charge_h, charge_h)))
+	var charge_h := slot_height * 0.22
+	v.root.add_child(HudStyle.picture(HudStyle.tex("HUD/DeckPanel/charge_background.png"), Rect2(-2, slot_height - charge_h + 2, charge_h, charge_h)))
 	v.charge_text = HudStyle.label("0", int(charge_h * 0.65), HudStyle.WHITE, HudStyle.FONT_BOLD)
-	HudStyle.place(v.charge_text, Rect2(-2, SLOT_H - charge_h + 2, charge_h, charge_h))
+	HudStyle.place(v.charge_text, Rect2(-2, slot_height - charge_h + 2, charge_h, charge_h))
 	v.root.add_child(v.charge_text)
-	var hot_h := SLOT_H * 0.2
-	var hot_w := hot_h * 46.0 / 41.0
-	v.root.add_child(HudStyle.picture(HudStyle.tex("HUD/DeckPanel/hotkey_background.png"), Rect2((SLOT_W - hot_w) / 2.0, SLOT_H - hot_h, hot_w, hot_h)))
-	var hot := HudStyle.label(HOTKEYS[index] if index < HOTKEYS.size() else "", int(hot_h * 0.65), HudStyle.WHITE, HudStyle.FONT_BOLD)
-	HudStyle.place(hot, Rect2((SLOT_W - hot_w) / 2.0, SLOT_H - hot_h, hot_w, hot_h))
-	v.root.add_child(hot)
+	# The 2022 .dui has a hotkey badge bottom centre (hotkey_background.png); the live client draws none
+	# (owner's screenshots: only the charge count), so it is not built.
 	return v
 
 
@@ -255,7 +252,7 @@ func refresh(sim: Simulation, commander: Commander) -> void:
 		var locked := commander.tier < g.tier
 		g.plate.visible = locked
 		g.plate_top.visible = locked
-		g.root.get_node("Slots").position.y = SLOT_H * locked_shift if locked else 0.0
+		g.root.get_node("Slots").position.y = panel_height * locked_shift if locked else 0.0   # .cards.disabled Position-Y (% of the panel)
 		if locked:
 			g.timer.text = HudStyle.int_to_time(_time_to_tier(sim, g.tier))
 			# the countdown and the lock icon form one centred pair (lock 6 px after the text)
