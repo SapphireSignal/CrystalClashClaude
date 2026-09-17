@@ -5,3 +5,4 @@ reference/
 .tmp/
 *.log
 *.f32
+__pycache__/
