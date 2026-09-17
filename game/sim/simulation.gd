@@ -660,7 +660,8 @@ func _think(e: SimEntity) -> void:
 		if w.kind == Wela.Kind.SELF_GROUND:
 			if time_ms >= w.cooldown_ready_at and e.fire_at < 0:
 				_prefire(e, w, e)
-			return
+				return
+			continue
 		if w.kind != Wela.Kind.FIGHT:
 			continue
 		var target := _pick_target(e, w, e.range_of(w.group, time_ms))
@@ -881,6 +882,9 @@ func _fire_group(e: SimEntity, group: int, target: SimEntity) -> void:
 	for item in w.extra_apply_scripts:
 		if target.alive and Buff.exists(item[0]):
 			_apply_scripted(target, item[0], item[1], item[2], e)
+	if w.suicide and e.is_targetable() and e.alive:   # TWelaEffectSuicideComponent on a real unit: eiDie
+		_kill(e)
+		return
 	for ag in w.activates_groups:   # TWelaEffectActivationAbilityComponent.SetsActive
 		var aw := e.wela(ag)
 		if aw != null:
@@ -1000,12 +1004,13 @@ func deal_damage(target: SimEntity, amount: float, damage_type: int, source: Sim
 	var final := SimConstants.apply_armor(amount, target.armor(), damage_type)
 	var from_overheal := minf(final, target.overheal)   # THealthComponent.OnDamage: overheal absorbs first
 	target.overheal -= from_overheal
+	var done := from_overheal + minf(final - from_overheal, target.health)   # damage done is capped at the health left
 	target.health -= final - from_overheal
-	if final > 0.0 and source != null and source.alive:
+	if done > 0.0 and source != null and source.alive:
 		_on_dealt_damage(source, target)
 	if target.health <= 0.0:
 		_kill(target, source)
-	return final
+	return done
 
 
 ## TAutoBrainOnDealDamageComponent inside a buff (Grievous Wounds): when ready and the victim passes the
@@ -1085,9 +1090,13 @@ func _on_take_damage(target: SimEntity, amount: float, _damage_type: int, source
 			amount *= target.bb.get_float("eiWelaModifier", w.group, 1.0)
 			target.mana -= w.mana_cost   # Tyrus' Soul Armor pays a soul per blocked hit
 			w.cooldown_ready_at = time_ms + target.cooldown(w.group)
-	for w in target.welas:   # TBuffTakenDamageMultiplierComponent on a unit group (Vecra's prison)
-		if w.taken_mult != 1.0 and not w.used and not (_damage_type & w.taken_mult_not_types):
+	for w in target.welas:   # TBuffTakenDamageMultiplierComponent on a unit group (Vecra's prison, Thistle's evasion)
+		if w.used or (_damage_type & w.taken_mult_not_types):
+			continue
+		if w.taken_mult != 1.0:
 			amount *= w.taken_mult
+		if w.dodge_chance > 0.0 and rng.randf() < w.dodge_chance:
+			amount = 0.0
 	return amount
 
 
@@ -1331,10 +1340,33 @@ func _move_projectiles() -> void:
 					if dealt > 0.0 and p.on_hit_script != "" and target.alive and Buff.exists(p.on_hit_script) \
 						and not _has_any(target, p.on_hit_must_not_have) and _has_all(target, p.on_hit_must_have):
 						apply_buff(target, p.on_hit_script, {}, entities.get(p.source_id))
+					if p.bounces_max > 0 and _bounce(p, target, dealt):
+						continue
 			projectiles.erase(id)
 			projectile_removed.emit(p, hit)
 		else:
 			p.position += to_target / dist * walking
+
+
+## TBrainProjectileComponent.Bounces: blacklist the hit target, deplete, then retarget a random enemy in range.
+func _bounce(p: Projectile, hit: SimEntity, dealt: float) -> bool:
+	p.hit_ids.append(hit.id)
+	p.damage += dealt * p.damage_change_per_hit
+	if p.bounce_count >= p.bounces_max or p.damage <= 0.0:
+		return false
+	var candidates: Array[SimEntity] = []
+	for other: SimEntity in entities.values():
+		if not other.alive or other.team == p.team or other.team == 0 or not other.is_targetable() or p.hit_ids.has(other.id):
+			continue
+		if _has_any(other, p.bounce_must_not_have):
+			continue
+		if other.position.distance_to(hit.position) - other.collision_radius <= p.bounce_range:
+			candidates.append(other)
+	if candidates.is_empty():
+		return false
+	p.target_id = candidates[rng.randi_range(0, candidates.size() - 1)].id
+	p.bounce_count += 1
+	return true
 
 
 # ---------------------------------------------------------------- ammo, tech-ups, lane nodes

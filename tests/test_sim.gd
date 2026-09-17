@@ -1296,3 +1296,71 @@ func test_shatter_ice() -> void:
 	runner.check_near(frozen.health, 265.0 - 250.0, "250 to frozen units")
 	runner.check_near(warm.health, 265.0, "unfrozen units untouched")
 	runner.check_near(tower.health, tower_hp - 800.0, "800 to frozen buildings")
+
+
+func test_sapling_timed_life_and_flourish() -> void:
+	var sim := Simulation.new(7, 4)
+	sim.spawn_bases()
+	var sapling := sim.spawn("Units/Green/Sapling", Simulation.TEAM_BLUE, Vector2(-60, -23))
+	runner.check_near(sapling.max_health, 2.0, "sapling has 2 hp")
+	while sapling.alive and sim.time_ms < 20000:
+		sim.step()
+	runner.check(not sapling.alive, "sapling died")
+	runner.check(sim.time_ms >= 17000 and sim.time_ms < 17100, "timed life 17 s (got %d)" % sim.time_ms)
+	var blessed := sim.spawn("Units/Green/Sapling", Simulation.TEAM_BLUE, Vector2(-60, -23))
+	var t := sim.time_ms
+	while sim.time_ms < t + 1500:
+		sim.step()
+	runner.check(blessed.position.distance_to(Vector2(-60, -23)) > 1.0, "saplings walk the lane")
+	sim.apply_buff(blessed, "BlessingStrength")
+	runner.check_near(blessed.max_health, 2.0 + 40.0 + 50.0, "flourish: +50 max hp on the first enchantment")
+	while sim.time_ms < t + 20000:
+		sim.step()
+	runner.check(blessed.alive, "an enchanted sapling is permanent")
+
+
+func test_thistle_evasion() -> void:
+	var sim := Simulation.new(7, 4)
+	var thistle := sim.spawn("Units/Green/Thistle", Simulation.TEAM_BLUE, Vector2(0, -23))
+	runner.check_eq(thistle.target_count(1), 2, "multishot: 2 targets")
+	var dodged := 0
+	for i in 400:
+		thistle.health = 27.0
+		sim.deal_damage(thistle, 5.0, SimConstants.DamageType.RANGED, null)
+		if thistle.health == 27.0:
+			dodged += 1
+	runner.check(dodged > 120 and dodged < 200, "about 40%% of hits are dodged (got %d of 400)" % dodged)
+	var spell_dodged := 0
+	for i in 100:
+		thistle.health = 27.0
+		sim.deal_damage(thistle, 5.0, SimConstants.DamageType.SPELL, null)
+		if thistle.health == 27.0:
+			spell_dodged += 1
+	runner.check_eq(spell_dodged, 0, "spell damage cannot be dodged")
+
+
+func test_wisp_depleting_bounce() -> void:
+	var sim := Simulation.new(7, 4)
+	var wisp := sim.spawn("Units/Green/Wisp", Simulation.TEAM_BLUE, Vector2(0, -23))
+	var monks: Array = []   # 2 hp saplings: each hit only depletes 2 of the 64, so the shot keeps bouncing
+	for i in 9:
+		var m := sim.spawn("Units/Green/Sapling", Simulation.TEAM_RED, Vector2(4 + (i % 3) * 1.5, -23 + (i / 3) * 1.5))
+		m.locked_until = 1 << 30
+		monks.append(m)
+	var shots: Array = []
+	var on_proj := func(p): shots.append(p)
+	sim.projectile_spawned.connect(on_proj)
+	while shots.is_empty() and sim.time_ms < 6000:
+		sim.step()
+	for i in 60:
+		sim.step()
+	sim.projectile_spawned.disconnect(on_proj)
+	runner.check_eq(shots.size(), 1, "one wisp shot")
+	if shots.is_empty():
+		return
+	var hit := 0
+	for m in monks:
+		if not m.alive:
+			hit += 1
+	runner.check_eq(hit, 7, "6 bounces after the first hit: 7 saplings killed")
+	runner.check_near(shots[0].damage, 64.0 - 7 * 2.0, "each hit depletes the damage dealt")

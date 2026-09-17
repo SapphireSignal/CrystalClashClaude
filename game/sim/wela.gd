@@ -48,6 +48,7 @@ var active: bool = true                # eiWelaActive (Vecra's aura starts inact
 var removes_groups: Array = []         # TWelaEffectRemoveAfterUseComponent.TargetGroup: other groups removed on use
 var taken_mult: float = 1.0            # TBuffTakenDamageMultiplierComponent on a unit group (Vecra's prison: 0.2)
 var taken_mult_not_types: int = 0      # DamageTypeMustNotHave
+var dodge_chance: float = 0.0          # TBuffTakenDamageMultiplierComponent.DodgeDamage: chance to take 0 (Thistle 0.4)
 var cap_op: String = ""                # TWelaTargetConstraintResourceComponent.CompareCapToReference (VoidAltar: max hp <= 60)
 var cap_ref: float = 0.0
 var modifies_amount: bool = false      # TAutoBrainOnTakeDamageComponent.ModifiesAmount
@@ -301,6 +302,9 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 				for c in calls:
 					if c[0] == "DamageTypeMustNotHave":
 						w.taken_mult_not_types = SimConstants.damage_mask(c[1][0])
+					elif c[0] == "DodgeDamage":
+						w.dodge_chance = w.taken_mult
+						w.taken_mult = 1.0
 			"TWelaEffectInstantComponent":
 				var w: Wela = get.call(g, Kind.SUB)
 				warhead_seen[g] = true
