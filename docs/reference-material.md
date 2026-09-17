@@ -26,9 +26,10 @@ and the Lang tables. Screenshots only verify rendering.
 | Capture-mode (no HUD) | 4 | - |
 | Victory banner / summary | 3 | 1 |
 | Leaderboards | 4 languages | yes |
-| Collection / deck unlocked / queue | 1 each | deck builder, card vendor, shop, tabs |
+| Deck builder / card detail (Ascend) | 2 (2019 Steam store shots, 1280x720, `store2019_*`: early navbar DECKBUILDER / LEGIONS / SHOP) | deck builder, card vendor, shop, tabs |
+| Collection / deck unlocked / queue | 1 each | - |
 | Maintenance splash | 1 | - |
-| Loading screen, login queue, dashboard/home, deckbuilder, shop, quests, settings, loot, friends, scoreboard, in-game menu | **none found online** (Steam community shots are almost all victories/fights) | lobby set covers home, play tabs, deck builder, shop, vendor trees, tooltips, loading |
+| Loading screen, login queue, dashboard/home, shop, quests, settings, loot, friends, scoreboard, in-game menu | **none found online** (Steam community shots are almost all victories/fights) | lobby set covers home, play tabs, deck builder, shop, vendor trees, tooltips, loading |
 For screens without a Rise of Legions shot: build from the `.dui`/`.scss`/images (exact), use the `ccmedia` lobby
 shots only as a structural sanity check (later client, may differ), never copy their look.
 
