@@ -72,6 +72,7 @@ func spawn(unit_id: String, team: int, pos: Vector2, front: Vector2 = Vector2.ZE
 	e.position = pos
 	e.front = front if front != Vector2.ZERO else Vector2(-1.0 if team == TEAM_RED else 1.0, 0.0)
 	e.created_at = time_ms
+	e.lifetime_started_at = time_ms
 	entities[e.id] = e
 	if e.has("upNexus"):
 		nexus_ids[team] = e.id
@@ -617,7 +618,7 @@ func step() -> void:
 			_think_passives(e)   # the recapture block (group 10 + team) expires through its own passive group
 			_think_lane_node(e)
 			continue
-		if e.lifetime_ms > 0 and time_ms >= e.created_at + e.lifetime_ms:   # GROUP_BUILDING_LIFETIME suicide
+		if e.lifetime_ms > 0 and time_ms >= e.lifetime_started_at + e.lifetime_ms:   # GROUP_BUILDING_LIFETIME suicide
 			_kill(e)
 			continue
 		_update_buffs(e)
@@ -1039,6 +1040,23 @@ func _fire_group(e: SimEntity, group: int, target: SimEntity) -> void:
 		for b in target.buffs.duplicate():
 			if _has_any_in(b.properties + b.late_properties, w.remove_beacon_props):
 				target.remove_buff(b)
+	if w.reset_beacon_props.has("upBuildingLimitedTime") and target.lifetime_ms > 0:   # FactoryReset: the lifetime beacon restarts
+		target.lifetime_started_at = time_ms
+	if w.removes_all_buffs:   # TWarheadSpottyRemoveBuffComponent.All.MustNotHave([btSummoningSickness])
+		for b in target.buffs.duplicate():
+			var keep := false
+			for t in w.removes_buff_types_not:
+				if b.has_type(t):
+					keep = true
+			if not keep:
+				target.remove_buff(b)
+	for res in w.reset_resources:   # TWarheadSpottyResourceComponent.ResetResource: balance := cap
+		match res:
+			"reHealth": target.health = target.max_health
+			"reMana": target.mana = target.mana_cap
+			"reOverheal": target.overheal = 0.0
+	if w.stops_wela:   # TWarheadSpottyWelaStopComponent: the current action is cancelled
+		target.fire_at = -1
 	var dtype := e.damage_type(group)
 	if w.teleport_to_target and target != e:   # PhaseDrone's Teleport Strike: blink to the near side of the target
 		var away := (e.position - target.position).normalized()

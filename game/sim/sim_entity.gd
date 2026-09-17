@@ -32,6 +32,7 @@ var thought_once: bool = false
 var think_once_waits: bool = false   # TThinkImpulseOnceComponent.WaitOneFrame: acts on the next tick instead
 var think_delay_ms: int = 0          # TThinkImpulseTimerCooldownComponent: acts once after this delay (RipOutSoul 500)
 var lifetime_ms: int = 0             # BuildingTemplate GROUP_BUILDING_LIFETIME: the building dies after this
+var lifetime_started_at: int = 0     # restarted by FactoryReset (TWelaEffectResetCooldownComponent on the beacon)
 var group_properties: Dictionary = {}   # TUnitPropertyComponent on a wela group: group -> props, gone when the group is removed
 var removed_groups: Dictionary = {}     # TWelaEffectRemoveAfterUseComponent.TargetGroup
 

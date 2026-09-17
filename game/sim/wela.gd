@@ -74,6 +74,11 @@ var extra_apply_scripts: Array = []    # further TWarheadApplyScriptComponents o
 var apply_script_same_team: bool = false   # PassSameTeam: the script gets SameTeam = target on the owner's team
 var removes_buff_types_any: Array = [] # TWarheadSpottyRemoveBuffComponent.MustHaveAny (Frenzy strips state effects)
 var remove_beacon_props: Array = []    # TWelaEffectRemoveBeaconComponent.SearchForWelaBeacon (PermaFrost wipes Frozen)
+var reset_beacon_props: Array = []     # TWelaEffectResetCooldownComponent.SearchForWelaBeacon (FactoryReset restarts building lifetimes)
+var removes_all_buffs: bool = false    # TWarheadSpottyRemoveBuffComponent.All
+var removes_buff_types_not: Array = [] # .MustNotHave: buff types that survive (btSummoningSickness)
+var reset_resources: Array = []        # TWarheadSpottyResourceComponent.ResetResource: balance := cap (reHealth, reMana, reOverheal)
+var stops_wela: bool = false           # TWarheadSpottyWelaStopComponent: cancels the target's current action
 var damage_percent_of_max: bool = false   # TWarheadSpottyDamageComponent.PercentageOfMaxHealth
 var ignore_own_radius: bool = false    # TWelaTargetingRadialComponent.IgnoreOwnCollisionradius
 var approach: bool = false             # TBrainApproachComponent: walk toward this group's attention targets
@@ -386,6 +391,12 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 				for c in calls:
 					if c[0] == "MustHaveAny":
 						get.call(g, Kind.SUB).removes_buff_types_any = c[1][0]
+					elif c[0] == "All":
+						get.call(g, Kind.SUB).removes_all_buffs = true
+					elif c[0] == "MustNotHave":
+						get.call(g, Kind.SUB).removes_buff_types_not = c[1][0]
+			"TWarheadSpottyWelaStopComponent":
+				get.call(g, Kind.SUB).stops_wela = true
 			"TWelaEffectRemoveBeaconComponent":
 				for c in calls:
 					if c[0] == "SearchForWelaBeacon":
@@ -459,6 +470,8 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 				for c in calls:
 					if c[0] == "TargetGroup":
 						w.reset_cooldown_groups = c[1][0].map(func(s): return UnitDb.group_id(s, map))
+					elif c[0] == "SearchForWelaBeacon":
+						w.reset_beacon_props = c[1][0]
 			"TWarheadApplyScriptComponent":
 				if not args.is_empty():
 					var w: Wela = get.call(g, Kind.SUB)
@@ -673,6 +686,9 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 						get.call(g, Kind.SUB).resource_percentage = true
 					elif c[0] == "SetsResourceToValue":
 						get.call(g, Kind.SUB).resource_sets_value = true
+					elif c[0] == "ResetResource":
+						get.call(g, Kind.SUB).reset_resources.append(res)
+						res = ""   # FactoryReset: not a gain, the balance goes back to the cap
 				if res == "reWelaCharge" and by_group.has(g) and by_group[g].kind in [Kind.SELF_PASSIVE, Kind.SELF_GROUND]:
 					by_group[g].kind = Kind.SUB   # ammo recharge groups are handled by _recharge_ammo
 				if res == "reWelaCharge" and target_group >= 0:

@@ -2077,3 +2077,47 @@ func test_energy_rift() -> void:
 	while sim.time_ms < t + 31000:
 		sim.step()
 	runner.check(not turret.has("upHasEnergyRift"), "the rift ends after 30 s")
+
+
+func test_inverse_gravity() -> void:
+	var sim := _blue_spell_sim()
+	var wisp := sim.spawn("Units/Green/Wisp", Simulation.TEAM_RED, Vector2(-30, -23))
+	var monk := sim.spawn("Units/White/Monk", Simulation.TEAM_BLUE, Vector2(-31, -21))
+	var far := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(-20, -23))
+	for m in [wisp, monk, far]:
+		m.locked_until = 1 << 30
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 5, Vector2(-30, -23)), Simulation.PlayResult.OK, "inverse gravity at a point")
+	runner.check(wisp.has("upGround") and not wisp.has("upFlying") and wisp.has("upGrounded"), "flyers in 4.5 are grounded")
+	runner.check(monk.has("upFlying") and not monk.has("upGround") and monk.has("upLifted"), "ground units of both teams are lifted")
+	runner.check(not far.has("upLifted"), "not beyond 4.5")
+	var t := sim.time_ms
+	while sim.time_ms < t + 15100:
+		sim.step()
+	runner.check(wisp.has("upFlying") and not wisp.has("upGrounded"), "grounding ends after 15 s")
+	runner.check(wisp.has("upImmuneToGrounded") and monk.has("upImmuneToLifted"), "then 10 more seconds of immunity")
+	runner.check(wisp.has("upImmobilized"), "and 500 ms immobilized while taking off")
+	while sim.time_ms < t + 25100:
+		sim.step()
+	runner.check(not wisp.has("upImmuneToGrounded") and not wisp.has("upImmobilized"), "immunity over after 25 s")
+
+
+func test_factory_reset() -> void:
+	var sim := _blue_spell_sim()
+	var turret := sim.spawn("Units/Blue/GatlingTurret", Simulation.TEAM_BLUE, Vector2(-30, -23))
+	var monk := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(-31, -20))
+	monk.locked_until = 1 << 30
+	turret.mana = 3
+	turret.health = 50.0
+	monk.health = 100.0
+	sim.apply_buff(monk, "Stun", {}, turret)
+	var t := sim.time_ms
+	while sim.time_ms < t + 5000:
+		sim.step()
+	var tower := sim.spawn("Units/White/Suntower", Simulation.TEAM_BLUE, Vector2(-28, -25))
+	tower.lifetime_started_at = t
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 3, Vector2(-30, -23)), Simulation.PlayResult.OK, "factory reset at a point")
+	runner.check_near(turret.health, turret.max_health, "health reset to full")
+	runner.check_eq(turret.mana, 20, "energy reset to full")
+	runner.check_eq(tower.lifetime_started_at, sim.time_ms, "a timed building's lifetime restarts")
+	runner.check_near(monk.health, 265.0, "enemies in radius 4 are reset too")
+	runner.check(not monk.has("upStunned"), "and stripped of all buffs")
