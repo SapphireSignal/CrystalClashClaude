@@ -43,7 +43,7 @@ func test_league_arrays() -> void:
 
 func test_economy_tick() -> void:
 	var sim := Simulation.new(1, 4)
-	var c: Simulation.Commander = sim.commanders[Simulation.TEAM_RED]
+	var c: Commander = sim.commanders[Simulation.TEAM_RED]
 	runner.check_near(c.gold, 300.0, "starting gold")
 	runner.check_near(c.wood, 1600.0, "starting wood")
 	while sim.time_ms < SimConstants.GAME_WARMING_MS:
@@ -200,6 +200,77 @@ func test_spawner_waves() -> void:
 		sim.step()
 	runner.check_eq(spawned.size(), 12, "and once per following rotation")
 	sim.entity_spawned.disconnect(on_spawn)
+
+
+func test_card_formulas() -> void:
+	runner.check_near(Cards.base_cost(1, false, false, false), 100.0, "tier1 drop 100 gold")
+	runner.check_near(Cards.base_cost(2, false, false, false), 150.0, "tier2 drop 150")
+	runner.check_near(Cards.base_cost(3, true, false, false), 300.0, "tier3 legendary 300")
+	runner.check_near(Cards.base_cost(1, false, true, false), 80.0, "tier1 spell 80")
+	runner.check_near(Cards.base_cost(1, false, false, true), 800.0, "tier1 spawner 800 wood")
+	runner.check_near(Cards.base_cost(3, false, false, true), 2400.0, "tier3 spawner 2400 wood")
+	runner.check_eq(Cards.charge_cooldown(1, 4, 5, false, false), 25000, "L4 lvl5 tier1 charge cooldown")
+	runner.check_eq(Cards.charge_cooldown(2, 1, 1, false, false), 55500, "tier2 x1.5")
+	runner.check_eq(Cards.charge_cooldown(3, 5, 5, true, false), 110000, "tier3 legendary x2 x2.5")
+	runner.check_eq(Cards.charge_cooldown(1, 4, 5, false, true), 150000, "tier1 spawner x6")
+	runner.check_eq(Cards.charge_count(1, 4, false), 4, "tier1 league4 = 4 charges")
+	runner.check_eq(Cards.charge_count(3, 4, false), 2, "tier3 league4 = 2 charges")
+	runner.check_eq(Cards.charge_count(3, 5, true), 2, "legendary league5 = 2")
+	var footman := Cards.by_script("Units/White/FootmanDrop")
+	runner.check_eq(footman.name, "Footman", "english name from Lang/cards.csv")
+	runner.check_eq(footman.type, "ctDrop", "footman drop type")
+	runner.check(Cards.by_script("Units/White/DefenderDrop").legendary, "defender is legendary")
+	runner.check_eq(Cards.all().size(), 160, "160 registered cards")
+
+
+func test_play_cards_and_economy() -> void:
+	var sim := Simulation.new(2, 4)
+	sim.spawn_bases()
+	var c: Commander = sim.commanders[Simulation.TEAM_BLUE]
+	c.set_deck(["Units/White/FootmanDrop", "Units/White/FootmanSpawner", "Units/White/MarksmanDrop", "Units/White/DefenderDrop"])
+	runner.check_eq(c.slots[0].charges, 4, "footman starts with 4 charges")
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 0, Vector2(-50, -23)), Simulation.PlayResult.OK, "drop footmen in drop zone")
+	runner.check_near(c.gold, 200.0, "paid 100 gold")
+	runner.check_near(c.wood, 1700.0, "gold spent becomes wood")
+	runner.check_eq(c.slots[0].charges, 3, "one charge used")
+	runner.check_eq(c.slots[0].recharge_at, sim.time_ms + 25000, "recharge started")
+	runner.check_eq(sim.alive_entities(Simulation.TEAM_BLUE).filter(func(e): return e.has("upMelee")).size(), 4, "4 footmen spawned")
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 0, Vector2(-50, 40)), Simulation.PlayResult.BAD_TARGET, "outside drop zone")
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 2, Vector2(-50, -23)), Simulation.PlayResult.NOT_READY, "tier 2 card locked at tier 1")
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 3, Vector2(-50, -23)), Simulation.PlayResult.NOT_READY, "tier 3 legendary locked at tier 1")
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 1, [0, Vector2i(3, 1)]), Simulation.PlayResult.OK, "spawner placed for 800 wood")
+	runner.check_near(c.wood, 900.0, "wood paid")
+	runner.check_near(c.spent_wood, 800.0, "spent wood tracked")
+	runner.check_eq(c.income_upgrades, 0, "no income upgrade yet")
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 1, [0, Vector2i(3, 1)]), Simulation.PlayResult.BAD_TARGET, "field occupied")
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 1, [0, Vector2i(4, 1)]), Simulation.PlayResult.OK, "second spawner")
+	runner.check_eq(c.income_upgrades, 1, "1600 spent wood bought the 1500 upgrade")
+	runner.check_near(c.spent_wood, 100.0, "remainder kept")
+	runner.check_near(c.income(), 12.0, "income now 12")
+	runner.check_near(c.income_upgrade_cost(), 1750.0, "next upgrade costs 1750")
+	# charges come back after the cooldown
+	var t0 := sim.time_ms
+	while sim.time_ms < t0 + 25000 + SimConstants.TICK_MS:
+		sim.step()
+	runner.check_eq(c.slots[0].charges, 4, "charge regenerated after 25 s")
+	runner.check_eq(c.slots[0].recharge_at, -1, "recharging stops at cap")
+	# tier 3 unlocks the legendary, and only one may be alive
+	c.raise_tier(3)
+	c.gold = 1000.0
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 3, Vector2(-50, -23)), Simulation.PlayResult.OK, "defender dropped")
+	runner.check_eq(c.slots[3].charges, 0, "legendary has a single charge at league 4")
+	c.slots[3].charges = 1
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 3, Vector2(-50, -23)), Simulation.PlayResult.LEGENDARY_ALIVE, "second legendary refused while one lives")
+
+
+func test_sandbox_free_cards() -> void:
+	var sim := Simulation.new(2, 4)
+	var c: Commander = sim.commanders[Simulation.TEAM_RED]
+	c.free_cards = true
+	c.set_deck(["Units/White/FootmanDrop"])
+	for i in 6:
+		runner.check_eq(sim.play_card(Simulation.TEAM_RED, 0, Vector2(50, -23)), Simulation.PlayResult.OK, "free play %d" % i)
+	runner.check_near(c.gold, 300.0, "sandbox pays nothing")
 
 
 func test_drop_formation() -> void:

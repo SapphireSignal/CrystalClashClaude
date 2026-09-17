@@ -31,39 +31,12 @@ var build_zones: Dictionary = {}     # zone id -> BuildZone
 var _spawn_rotations: Dictionary = {} # zone id -> Array[Vector2i] of fields not yet spawned this cycle
 
 
-class Commander:
-	var team: int
-	var gold: float = SimConstants.STARTING_GOLD
-	var wood: float = SimConstants.STARTING_WOOD
-	var tier: int = SimConstants.STARTING_TIER
-	var income_upgrades: int = 0
-
-	func gold_cap() -> float:
-		return SimConstants.GOLD_CAP + SimConstants.GOLD_CAP_PER_TIER * (tier - 1)
-
-	func income() -> float:
-		return SimConstants.STARTING_INCOME + SimConstants.INCOME_PER_UPGRADE * income_upgrades
-
-	func income_upgrade_cost() -> float:
-		return SimConstants.INCOME_UPGRADE_COST + SimConstants.INCOME_UPGRADE_COST_STEP * income_upgrades
-
-	## TCommanderIncomeDefaultComponent + TCommanderIncomeOverflowComponent: gold above cap becomes wood.
-	func pay_income() -> void:
-		var amount := income()
-		var room := maxf(0.0, gold_cap() - gold)
-		var to_gold := minf(amount, room)
-		gold += to_gold
-		wood += amount - to_gold
-
-
 func _init(seed: int = 1, p_league: int = 4, map_name: String = SimMap.SINGLE) -> void:
 	rng.seed = seed
 	league = p_league
 	map = SimMap.load_map(map_name)
 	for team in [TEAM_BLUE, TEAM_RED]:
-		var c := Commander.new()
-		c.team = team
-		commanders[team] = c
+		commanders[team] = Commander.new(team, league)
 	for zone in map.build_zones():
 		build_zones[zone.id] = zone
 		_spawn_rotations[zone.id] = []
@@ -130,6 +103,56 @@ func drop_squad(unit_id: String, team: int, pos: Vector2, count: int) -> Array[S
 	return spawn_squad(unit_id, team, pos, count, false)
 
 
+# ---------------------------------------------------------------- card play (TCommanderAbility)
+
+enum PlayResult { OK, NOT_READY, BAD_TARGET, LEGENDARY_ALIVE, GAME_OVER }
+
+## Play deck slot `slot_index` of a team. `target` is a Vector2 (drops, buildings) or [zone_id, Vector2i]
+## for spawners. Validates readiness, tier, cost, zone and legendary limit, then pays and spawns.
+func play_card(team: int, slot_index: int, target: Variant) -> PlayResult:
+	if finished:
+		return PlayResult.GAME_OVER
+	var c: Commander = commanders[team]
+	var slot: Commander.DeckSlot = c.slots[slot_index]
+	if not slot.is_ready(time_ms, c):
+		return PlayResult.NOT_READY
+	var card := slot.card
+	if card.legendary and _has_legendary_unit(team):
+		return PlayResult.LEGENDARY_ALIVE
+	var unit_data := UnitDb.raw(card.unit_id)
+	var pattern: String = unit_data["values"].get("eiWelaUnitPattern", {}).get("0", "").replace("\\", "/")
+	if card.is_spawner():
+		if not (target is Array and target.size() == 2):
+			return PlayResult.BAD_TARGET
+		var zone: BuildZone = build_zones.get(target[0])
+		if zone == null or zone.team != team or not zone.is_free(target[1]):
+			return PlayResult.BAD_TARGET
+		c.pay(slot, time_ms)
+		place_spawner(card.unit_id, team, target[0], target[1])
+		return PlayResult.OK
+	if not (target is Vector2) or not _in_drop_zone(team, target):
+		return PlayResult.BAD_TARGET
+	c.pay(slot, time_ms)
+	if card.is_building():
+		spawn(pattern, team, target)
+	else:
+		var count: int = int(unit_data["values"].get("eiWelaCount", {}).get("0", 1))
+		drop_squad(pattern, team, target, count)
+	return PlayResult.OK
+
+
+## ZONE_DROP: the map's Drop polygon. The dynamic nexus/lane-push zones are not implemented yet.
+func _in_drop_zone(_team: int, p: Vector2) -> bool:
+	return map.in_zone("Drop", p)
+
+
+func _has_legendary_unit(team: int) -> bool:
+	for e: SimEntity in entities.values():
+		if e.alive and e.team == team and e.has("upLegendary"):
+			return true
+	return false
+
+
 ## Place a spawner card on a build-grid field. Returns null when the field is not free or not the team's.
 func place_spawner(unit_id: String, team: int, zone_id: int, field: Vector2i) -> SimEntity:
 	var zone: BuildZone = build_zones.get(zone_id)
@@ -177,6 +200,8 @@ func step() -> void:
 		return
 	time_ms += SimConstants.TICK_MS
 	_update_game_tick()
+	for c: Commander in commanders.values():
+		c.update_charges(time_ms)
 	for e: SimEntity in entities.values():
 		if not e.alive or e.is_spawner():
 			continue
