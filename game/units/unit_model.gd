@@ -197,6 +197,14 @@ static func _material(xml_path: String, descriptor: Dictionary, team_textures: D
 		var tex_path := _real_path(folder + "/" + diffuse)
 		if ResourceLoader.exists(tex_path):
 			mat.albedo_texture = load(tex_path)
+	var glow := str(team_textures.get("glow", descriptor.get("GlowTexture", "")))
+	if glow != "":   # GlowTexture: emissive parts (crystals, runes, eyes), baked rgb * alpha as png by the copy tool
+		var glow_path := _real_path(folder + "/" + glow.get_basename() + ".png")
+		if ResourceLoader.exists(glow_path):
+			mat.emission_enabled = true
+			mat.emission_texture = load(glow_path)
+			mat.emission = Color.BLACK   # emission_operator ADD: colour + texture, so only the texture counts
+			mat.emission_energy_multiplier = 1.0
 	if str(descriptor.get("Cullmode", "cmCCW")) == "cmNone":
 		mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 	if str(descriptor.get("TextureSemiTransparency", "False")) == "True":

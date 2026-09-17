@@ -68,12 +68,17 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
    the original's shadow strength; (c) terrain `Material.png` (specular) later; (d) verify the Delphi `Random`
    replica against the original (palm variants/rotations) if a screenshot shows a mismatch; (e) grass wind
    animation (`Custom` vertex data = time offset) as a shader.
-2. Models polish: (a) walk clip speed per the original formula (`Visuals.pas:3352`, IgnoreScalingForAnimations
+2. Models polish (glow textures done: `copy_unit_assets.py` bakes `*Glow*` maps as premultiplied png used as
+   emission with `emission = BLACK` + ADD): (a) walk clip speed per the original formula (`Visuals.pas:3352`, IgnoreScalingForAnimations
    variant at 3355); (b) glow textures (`GlowTexture`, team glow) as emission; (c) `Effects/Meshes` spell props and
    the Environment/Gameplay `.msh` (13 + 2) once the map needs them; (d) the 18 "Basis must be normalized" import
    errors: find which glb nodes have zero scale (probably `_Scaling` pivots folded into static matrices are fine;
    check animated ones) - cosmetic unless a model looks wrong.
-3. Particles (`.pfx`) and sounds (FMOD banks: need a bank extractor) later. Find the original mesh/animation formats under `reference/rise-of-legions/`
+3. Particles: `docs/particles.md` is the researched spec (format, path simulation, triggers, blend modes,
+   game usage, port plan). Next: `tools/extract_units.py` records `TParticleEffectComponent` chains as `effects`
+   per script; `tools/convert_particles.py` -> `assets/effects/<path>.json` + textures; `game/effects/
+   particle_effect.gd` CPU path player (MultiMesh billboards per emitter, additive / mix / subtract materials);
+   hook `ActivateOnCreate/OnFire/OnDie` in the sandbox views. Sounds (FMOD banks: need a bank extractor) later. Find the original mesh/animation formats under `reference/rise-of-legions/`
    and the loaders in `reference/delphi3d-engine/`, textures (`.tga`/`.dds`), particles `.pfx`, FMOD sound banks.
    Write `docs/assets.md` rows per format with a conversion plan, then `tools/convert_*.py` for meshes first
    (Footman), swap the capsule in `main.gd` for the real model, then the maps.
