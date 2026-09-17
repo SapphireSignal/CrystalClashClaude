@@ -37,8 +37,9 @@ func _ready() -> void:
 	sim.projectile_removed.connect(func(p, _hit): _on_died(p))
 	sim.team_lost.connect(func(t): print("team %d lost" % t))
 	sim.spawn_bases()
-	sim.commanders[Simulation.TEAM_BLUE].set_deck(BLUE_DECK)
-	sim.commanders[Simulation.TEAM_RED].set_deck(RED_DECK)   # red plays Black so both factions show in the sandbox
+	# Decks go through the Deck rules (validates them) and its slot sort, like the real card bar.
+	sim.commanders[Simulation.TEAM_BLUE].set_deck(Deck.from_scripts(BLUE_DECK).card_ids())
+	sim.commanders[Simulation.TEAM_RED].set_deck(Deck.from_scripts(RED_DECK).card_ids())   # red plays Black so both factions show
 	_label = $HUD/Label
 	_place_camera(Vector2(-40, -23))
 

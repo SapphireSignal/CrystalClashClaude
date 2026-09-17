@@ -38,8 +38,13 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
   (spells target a random unit of the side the card is for, epics the own nexus, two-point spells press the key twice).
 
 ## Next step (in order, one at a time, test after each)
-1. Phase 3 deck rules (12 slots, 2 colors, 1 epic; `BaseConflict.Constants.Cards.pas` + the deck validation in the
-   original client) and the commander/deck data model. Read `docs/reference-material.md` for live-client facts.
+1. Phase 3 deck rules: DONE (`game/sim/deck.gd` = `BaseConflict.Api.Deckbuilding.pas` TDeck — 12 slots,
+   no duplicates, <= 2 colors with `ecColorless` excluded (Crystal Legion fits any deck), max 1 epic
+   (only Cataclysm in the 2022 snapshot), deck league = max card league, slot sort = `TCardInfo.Compare`
+   with nil slots between units and spawners; sandbox decks go through `Deck.from_scripts`).
+   Remaining phase 3: deck presets (`TUTORIAL_DECK_UIDS`, `deck_preset_title_*` in Lang) and per-player
+   deck persistence can wait for the lobby (phase 7). Next: check what else phase 3 needs (card
+   levels/leagues per player card, `TCardInstance`) or move to phase 4 HUD.
 2. Phase 4 HUD (card bar, resources, tier button, minimap) replicating the live-client screenshots in `reference/media/`.
 3. Late phase: audit Crystal Clash Steam patch notes newer than the repo snapshot (2022-01-19) and apply
    balance changes via the extractor (see CLAUDE.md Decisions).

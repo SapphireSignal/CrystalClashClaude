@@ -2666,3 +2666,52 @@ func test_echoes_of_the_future() -> void:
 	next_tick.call()
 	runner.check_near(c.gold, c.income(), "normal income after 60 s")
 	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 1, Vector2(0, -23)), Simulation.PlayResult.OK, "castable again")
+
+
+func test_deck_rules() -> void:
+	var deck := Deck.new()
+	runner.check(deck.is_empty() and not deck.is_full(), "new deck: 12 empty slots")
+	runner.check_eq(deck.slots.size(), 12, "DECKSLOT_COUNT = 12")
+	runner.check_eq(deck.league(), 1, "empty deck is league 1")
+	var footman := Cards.by_script("Units/White/FootmanDrop")
+	runner.check(deck.add_card(footman, 3), "add a white card")
+	runner.check(not deck.add_card(footman, 3), "a card fits only once")
+	runner.check_eq(deck.color_count(), 1, "one color")
+	runner.check_eq(deck.league(), 3, "deck league = max card league")
+	runner.check(deck.add_card(Cards.by_script("Units/Black/VoidSkeletonDrop"), 5), "a second color fits")
+	runner.check_eq(deck.league(), 5, "league follows the strongest card")
+	runner.check(not deck.can_add_card(Cards.by_script("Units/Green/WispSpawner")), "a third color does not")
+	runner.check(deck.can_add_card(Cards.by_script("Units/Golems/GolemsSmallMeleeGolemSpawner")), "colorless (Crystal Legion) always fits")
+	runner.check(deck.add_card(Cards.by_script("Spells/Golems/Cataclysm.sps")), "one epic is allowed")
+	runner.check_eq(deck.color_count(), 2, "colorless does not count as a color")
+	var deck2 := Deck.new()
+	deck2.add_card(Cards.by_script("Spells/Golems/Cataclysm.sps"))
+	runner.check(not deck2.can_add_card(Cards.by_script("Spells/Golems/Cataclysm.sps")), "no second epic")
+	deck.remove_card(footman)
+	runner.check(not deck.contains_card(footman), "remove card")
+	for unit_id in ["Units/White/ArcherDrop", "Units/White/FootmanSpawner", "Units/White/ArcherSpawner",
+			"Units/White/BallistaDrop", "Units/White/PriestDrop", "Units/White/MonkDrop",
+			"Units/White/SuntowerBuilding", "Spells/White/LightPulse.sps", "Spells/White/ShieldsUp.sps"]:
+		runner.check(deck.add_card(Cards.by_script(unit_id)), "fill up with %s" % unit_id)
+	runner.check(deck.add_card(footman), "12th card")
+	runner.check(deck.is_full(), "deck is full")
+	runner.check(not deck.add_card(Cards.by_script("Spells/White/SolarFlare.sps")), "no 13th card")
+
+
+func test_deck_sort_order() -> void:
+	var deck := Deck.from_scripts(["Units/White/FootmanSpawner", "Spells/White/LightPulse.sps",
+		"Units/White/SuntowerBuilding", "Units/White/BallistaDrop", "Units/White/FootmanDrop"])
+	var ids := deck.card_ids()
+	runner.check_eq(ids[ids.size() - 1], "Units/White/FootmanSpawner", "spawners sort last")
+	runner.check_eq(ids[0], "Units/White/BallistaDrop", "tier 1 units first, ties by filename (B < F)")
+	var ballista := ids.find("Units/White/BallistaDrop")
+	var pulse := ids.find("Spells/White/LightPulse.sps")
+	var tower := ids.find("Units/White/SuntowerBuilding")
+	runner.check(ballista >= 0 and pulse >= 0 and tower >= 0, "all cards kept")
+	for i in ids.size() - 2:   # non-spawner block is sorted by tier
+		runner.check(Cards.by_script(ids[i]).tier <= Cards.by_script(ids[i + 1]).tier, "tier order at %d" % i)
+	var gap := Deck.new()
+	gap.add_card(Cards.by_script("Units/White/FootmanDrop"))
+	gap.add_card(Cards.by_script("Units/White/FootmanSpawner"))
+	runner.check(gap.slots[0] != null and gap.slots[11] != null and gap.slots[5] == null,
+		"empty slots sit between units and spawners (TCardInfo.Compare nil rule)")

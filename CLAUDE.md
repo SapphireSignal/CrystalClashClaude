@@ -158,7 +158,9 @@ cast and OrbitalStrike's bombardment buffs). Golems (Crystal Legion) is complete
 lobbing stones that spawn small golems, SmallCaster Crystal Speed links one per 3 s, BigCaster ramping beam,
 SiegeGolem charge-and-shell artillery, boss, towers) and the 5 spells (Cataclysm epic: full gold bar, no charges,
 nexus zone only; Earthquake legendary field; Echoes of the Future income loan; Petrify with overheal HoT; Stone
-Circle charm with spellshield aura). All five factions are done. 757 tests pass.
+Circle charm with spellshield aura). All five factions are done. Phase 3 deck rules: `game/sim/deck.gd` (TDeck replica: 12 slots, no duplicates,
+max 2 colors with colorless excluded, 1 epic, league = max card league, TCardInfo.Compare slot sort);
+sandbox decks validate through it. 791 tests pass.
 `docs/reference-material.md` lists the owner's live-client screenshots and the balance deltas seen so far
 (towers/nexus reworked after 2022). `game/main.tscn` is a sandbox with capsule
 units on the Compatibility renderer: keys 1-9,0,-,= play the 12 deck slots, a simple red AI plays back.
