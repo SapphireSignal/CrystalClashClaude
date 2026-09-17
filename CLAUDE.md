@@ -222,4 +222,5 @@ player), scripts' effect components in `units.json` `effects`, played by the san
 projectile impact. HUD verified against the live-client screenshots (resource panel, deck panel with the
 engine's colour-override darken shader); lane node capture circle (`game/effects/range_circle.gd`) verified: neutral
 grey tint like the source, faint arc; its `LaneNode.pfx` ring pulse renders (lowercase axis tags fixed in the converter). Spawner tiles (`game/maps/build_grid.gd`, `assets/gameplay/Buildgrid`) with
-the wave-rotation glow. See `CONTINUE.md`.
+the wave-rotation glow. Pre-match screens: `docs/lobby.md` (state flow, layouts, GUI units, build order) written;
+building starts with the menu loading screen. See `CONTINUE.md`.

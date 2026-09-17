@@ -201,6 +201,12 @@ Then checkpoint (tests, Status, CONTINUE.md, commit + push, give the new-chat pr
 - Deck slot pitch 85 (was 87).
 
 ## Next step (in order, one at a time, run the game after each)
+0. **Pre-match screens** per `docs/lobby.md` section 4 (checkpoint 59 wrote the spec): (1) the menu's loading screen,
+   (2) MainMenu shell + Navbar + Dashboard (news tiles / online counter stubbed: master server), (3) Teambuilding
+   screen with Play jumping into the sandbox (no matchmaking), (4) the in-match LoadingScreen, (6) Final screen's
+   Continue back to the dashboard, (7) SettingsMenu tabs. New scene `game/ui/menu/` + a `game/app.tscn` state
+   machine (GAMESTATE_* from `Constants.Client.pas:51-58`); the sandbox `main.tscn` becomes the ingame state.
+   Note `docs/lobby.md` section 3: `ch` = % of container height (re-derive the `ch` uses in `docs/hud.md`).
 1. Particles polish: (a) `AtFireTarget` / `ClonesToTarget` effects; (c) light particles as
    OmniLight3D (100 emitters), `ptTrace` ribbons, nested `ptEffect`; (d) deactivation (`DeactivateOn*`,
    `stop_on_free`) and interval emitters that should stop when the wela ends; (e) the rotation sign convention
