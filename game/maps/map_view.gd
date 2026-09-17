@@ -22,7 +22,7 @@ func load_map(map_name: String) -> void:
 	var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(dir + "map.json"))
 	_add_terrain(dir + str(data["terrain"]["file"]))
 	for water in data.get("water", []):
-		_add_water(water)
+		_add_water(water, dir, data.get("lights", {}))
 	_add_lights(data.get("lights", {}))
 	_add_vegetation(data.get("vegetation", []))
 	for deco in data.get("decorations", []):
@@ -40,19 +40,38 @@ func _add_terrain(path: String) -> void:
 	add_child(terrain)
 
 
-## TWaterSurface: a plane of GeometrySize at Position with the water colour (the original's reflective /
-## refractive water shader is not ported yet).
-func _add_water(water: Dictionary) -> void:
+## TWaterSurface: a plane of GeometrySize at Position drawn with the water shader port (game/maps/water.gdshader)
+## fed with the .wat parameters (TextureNormalization = GeometrySize / 2000, Engine.Water.pas:366).
+func _add_water(water: Dictionary, dir: String, lights: Dictionary) -> void:
 	var mesh := MeshInstance3D.new()
 	var plane := PlaneMesh.new()
 	plane.size = Vector2(water["size"][0], water["size"][1])
 	mesh.mesh = plane
-	var mat := StandardMaterial3D.new()
+	var mat := ShaderMaterial.new()
+	mat.shader = load("res://game/maps/water.gdshader")
 	var c: Array = water["color"]
-	mat.albedo_color = Color(c[0], c[1], c[2], 1.0 - float(water.get("transparency", 0.3)))
-	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mat.roughness = 0.1
-	mat.metallic_specular = 0.8
+	var sky: Array = water.get("sky_color", [0.63, 0.73, 0.92, 0])
+	mat.set_shader_parameter("water_color", Vector3(c[0], c[1], c[2]))
+	mat.set_shader_parameter("sky_color", Vector3(sky[0], sky[1], sky[2]))
+	mat.set_shader_parameter("roughness", float(water.get("roughness", 0.9)))
+	mat.set_shader_parameter("fresnel_offset", float(water.get("fresnel_offset", 0.19)))
+	mat.set_shader_parameter("water_transparency", float(water.get("transparency", 0.33)))
+	mat.set_shader_parameter("depth_transparency_range", float(water.get("depth_transparency_range", 0.48)))
+	mat.set_shader_parameter("color_extinction_range", float(water.get("color_extinction_range", 52.0)))
+	mat.set_shader_parameter("specular_power", float(water.get("specular_power", 68.0)))
+	mat.set_shader_parameter("specular_intensity", float(water.get("specular_intensity", 0.94)))
+	mat.set_shader_parameter("size", float(water.get("shader_size", 224.0)))
+	mat.set_shader_parameter("texture_normalization", Vector2(water["size"][0], water["size"][1]) / 2000.0)
+	var wave := str(water.get("wave_texture", ""))
+	if wave != "" and ResourceLoader.exists(dir + wave):
+		mat.set_shader_parameter("wave_texture", load(dir + wave))
+	for light in lights.get("directional", []):
+		if light.get("enabled", false):
+			var d: Array = light["direction"]
+			var col: Array = light["color"]
+			mat.set_shader_parameter("sun_direction", Vector3(d[0], d[1], d[2]))
+			mat.set_shader_parameter("sun_color", Vector3(col[0], col[1], col[2]))
+			break
 	mesh.material_override = mat
 	mesh.position = Vector3(water["position"][0], water["position"][1], water["position"][2])
 	mesh.name = "Water"

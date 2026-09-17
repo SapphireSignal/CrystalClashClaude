@@ -172,13 +172,32 @@ def read_water(path: Path) -> list[dict]:
     root = ElementTree.parse(path).getroot()
     result = []
     for item in root.iter("Item"):
-        color = item.find("WaterColor/RGBA")
+        def rgba(tag: str, default: list[float]) -> list[float]:
+            node = item.find(tag + "/RGBA")
+            return vec(node, ("X", "Y", "Z", "W")) if node is not None else default
+        wave = (item.findtext("WaveTexture") or "").strip().replace("\\", "/")
+        wave_name = ""
+        if wave:
+            src = path.parent / Path(wave).name
+            candidates = [c for c in path.parent.iterdir() if c.name.lower() == Path(wave).name.lower()]
+            if candidates:
+                shutil.copy2(candidates[0], OUT / path.parent.name / candidates[0].name)
+                wave_name = candidates[0].name
         result.append({
             "position": vec(item.find("Position")),
             "size": vec(item.find("GeometrySize"), ("X", "Y")),
-            "color": vec(color, ("X", "Y", "Z", "W")) if color is not None else [0.18, 0.36, 0.44, 0.0],
+            "shader_size": num(item.findtext("Size")),
+            "color": rgba("WaterColor", [0.18, 0.36, 0.44, 0.0]),
+            "sky_color": rgba("SkyColor", [0.63, 0.73, 0.92, 0.0]),
             "transparency": num(item.findtext("Transparency")),
-            "wave_texture": (item.findtext("WaveTexture") or "").strip(),
+            "roughness": num(item.findtext("Roughness")),
+            "fresnel_offset": num(item.findtext("FresnelOffset")),
+            "depth_transparency_range": num(item.findtext("DepthTransparencyRange")),
+            "color_extinction_range": num(item.findtext("ColorExtinctionRange")),
+            "specular_power": num(item.findtext("Specularpower")),
+            "specular_intensity": num(item.findtext("Specularintensity")),
+            "wave_height": num(item.findtext("WaveHeight")),
+            "wave_texture": wave_name,
         })
     return result
 

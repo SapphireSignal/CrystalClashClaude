@@ -2,7 +2,7 @@
 
 Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
 
-## State (2026-09-17, checkpoint 32)
+## State (2026-09-17, checkpoint 33)
 - Phases 1-3 done, 799 tests pass. Sandbox `game/main.tscn`: blue deck on keys 1-9,0,-,= or by clicking a card
   (drops/spells then need a left click on the ground, spawners go to the next free field); red AI plays Black.
 - **Phase 4 (HUD): step 1 done.** `game/ui/` holds the code-built HUD from `docs/hud.md`: top bar (clock, nexus
@@ -60,9 +60,11 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
   stones render at ~190 like the reference (Godot lights in linear space, the original in gamma space,
   `Standardshader.fx:515`).
 
+- **Checkpoint 33:** water shader port (`game/maps/water.gdshader`, parameters from the `.wat` via `map.json`,
+  `TextureNormalization = GeometrySize / 2000`, wave texture copied next to the map).
+
 ## Next step (in order, one at a time, run the game after each)
-1. Map polish: (a) water: port the look roughly (colour, wave texture `Maps/Classic/WaterTexture.tga`,
-   transparency, reflections) as a shader; (b) shadows look weak: check the DirectionalLight shadow settings and
+1. Map polish: (b) shadows look weak: check the DirectionalLight shadow settings and
    the original's shadow strength; (c) terrain `Material.png` (specular) later; (d) verify the Delphi `Random`
    replica against the original (palm variants/rotations) if a screenshot shows a mismatch; (e) grass wind
    animation (`Custom` vertex data = time offset) as a shader.
