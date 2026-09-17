@@ -6,7 +6,8 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
 tests, docs, known formats, polish) or `[Fable]` (reverse-engineering, disagreeing screenshot comparisons,
 determinism/multiplayer, the Crystal Clash hand-over diff, bugs that survived two Opus attempts). Name the tag in the
 first line of the step; if it differs from the session's model, checkpoint and stop with the prompt above so the
-owner can switch.
+owner can switch (`/model` mid-session keeps the context). Effort: Fable low; Opus medium for spec work, high once a
+comparison or bug resists a first fix, and to Fable if it resists at high.
 
 ## State (2026-09-17, checkpoint 65)
 - Phases 1-3 done, 826 tests pass. Sandbox `game/main.tscn`: blue deck on keys 1-9,0,-,= or by clicking a card
