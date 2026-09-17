@@ -2,7 +2,7 @@
 
 Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
 
-## State (2026-09-17, checkpoint 61)
+## State (2026-09-17, checkpoint 62)
 - Phases 1-3 done, 799 tests pass. Sandbox `game/main.tscn`: blue deck on keys 1-9,0,-,= or by clicking a card
   (drops/spells then need a left click on the ground, spawners go to the next free field); red AI plays Black.
 - **Phase 4 (HUD): step 1 done.** `game/ui/` holds the code-built HUD from `docs/hud.md`: top bar (clock, nexus
@@ -225,7 +225,21 @@ Then checkpoint (tests, Status, CONTINUE.md, commit + push, give the new-chat pr
    sandbox. Verified with `.tmp/menu_shot.gd` (shell over the background) and `.tmp/app_flow.gd` (full flow, presses
    Play after 2 s; both not committed). Not built: SystemPanel (minimise/settings/close), hover-menu, notifications,
    the styled `.hint` tooltip, `$cyan-glow` on the highlighted banner, the `new-flag` badge.
-   Next: (3) Teambuilding
+   **(3) done (checkpoint 62):** `game/ui/menu/teambuilding.gd` (Teambuilding.dui + matchmaking.scss + Teamlist.dui
+   + Queue.dui): sub-navbar tabs Quick Match / 2v2 Match (level 2 lock) / Golem Challenge / Co-op Challenge (lock) /
+   Custom Game / Tutorial right, drawn above the navbar art with `z_index` 1 (the original's ZOffset 900); the tab
+   row is placed by the reference queue screenshot (strip top 62, text centre y 85, font 18: the scss `100% auto`
+   strip did not explain the reference, so these three are empirical); type description (80vw x 24) with the bold
+   tier hint + `exclamation_success.png` for PvP; PvE shows the Gamemode ("Sandbox - Solo Challenge") and Difficulty
+   (Stone, +0%) `Button_Sub.png` buttons (display only, dialogs not built); team row 75vw x 148 centred -5 %:
+   `player_icon_frame.png` + UnknownPlayer, name 40 %, "Teamleader" at 60 % opacity, `Deckslot.png` at 383 px with
+   UnknownDeck icon, deck name "Sandbox" (`scenario_sandbox`) and the deck's league icon, `selected_deck_banner.png`
+   above; Start = btn-xl 70 high at the bottom (-10 %), `enter_queue_tier_<league-1>.png` for PvP (auto league from
+   the sandbox deck = Gold) else `button_xl.tga`, hover variants; `tutorial_video_button.png` "QUICK GUIDES" bottom
+   left (no dialog). `MainMenu` mounts it for mtGame; Start -> `play_requested` -> app LoadGame -> sandbox. All
+   scenario types start the same sandbox for now. Not built: queue window / queue timer in the Play button,
+   scenario/difficulty/deck dialogs, match hints, the `$pulsate` animation on Start, DEBUG button.
+   Next: (4) the in-match LoadingScreen
    screen with Play jumping into the sandbox (no matchmaking), (4) the in-match LoadingScreen, (6) Final screen's
    Continue back to the dashboard, (7) SettingsMenu tabs. New scene `game/ui/menu/` + a `game/app.tscn` state
    machine (GAMESTATE_* from `Constants.Client.pas:51-58`); the sandbox `main.tscn` becomes the ingame state.

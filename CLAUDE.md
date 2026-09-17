@@ -227,4 +227,5 @@ the wave-rotation glow. Pre-match screens: `docs/lobby.md` (state flow, layouts,
 menu's animated background (`game/ui/menu/menu_background.gd`, bg.anb parallax) and loading page
 (`menu_loading_screen.gd`) over it, then the MainMenu shell (`main_menu.gd`: `navbar.gd` with the original buttons,
 level locks and player/currency panel; `dashboard.gd` with header, announcement, social icons and news tiles;
-profile/server values are local stubs). Play starts the sandbox until Teambuilding exists. See `CONTINUE.md`.
+profile/server values are local stubs; `teambuilding.gd` = the Play screen with the scenario sub-navbar, tier hint,
+team row with the deck banner and the Start button, which begins the sandbox match). See `CONTINUE.md`.

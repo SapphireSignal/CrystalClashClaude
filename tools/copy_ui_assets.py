@@ -21,10 +21,12 @@ FOLDERS = [
     "HUD/InfoPanel/Attack", "HUD/InfoPanel/Armor", "HUD/TechnicalPanel", "HUD/Announcements", "HUD/FinalScreen", "Shared/CardIcons", "Shared/LeagueIcons",
     "Shared/FactionIcons", "MainMenu/Shared/Card",
     "Shared/Logos", "Shared/AnimatedBackground", "MainMenu/LoadingScreen",
-    "MainMenu/Navbar", "MainMenu/Dashboard", "Shared/CurrencyIcons",
+    "MainMenu/Navbar", "MainMenu/Dashboard", "Shared/CurrencyIcons", "MainMenu/Teambuilding",
 ]
 FILES = ["Shared/Spinner.png", "HUD/Selection.png", "HUD/SelectionBuilding.png", "Shared/button_xl.tga", "Shared/button_xl_hover.tga",
-         "Shared/Lock.png", "Shared/Icons/UnknownPlayer.png", "MainMenu/Deckbuilding/new_flag.png"]
+         "Shared/Lock.png", "Shared/Icons/UnknownPlayer.png", "MainMenu/Deckbuilding/new_flag.png",
+         "Shared/Icons/UnknownDeck.png", "Shared/player_icon_frame.png", "Shared/exclamation_success.png",
+         "MainMenu/Deckbuilding/Deckslot.png", "MainMenu/Tutorial/tutorial_video_button.png"]
 FONT_FILES = ["ProzaLibre-Regular.ttf", "ProzaLibre-Medium.ttf", "ProzaLibre-SemiBold.ttf",
               "ProzaLibre-Bold.ttf", "ProzaLibre-ExtraBold.ttf"]
 
