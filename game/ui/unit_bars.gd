@@ -109,7 +109,7 @@ func _frame(rect: Rect2) -> Rect2:
 
 
 func _fill(rect: Rect2, gradient: Array) -> void:
-	if rect.size.x <= 0.0:
+	if rect.size.x < 1.0 or rect.size.y < 1.0:   # degenerate polygons fail to triangulate
 		return
 	var top: Color = gradient[0]
 	var bottom: Color = gradient[1]

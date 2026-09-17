@@ -19,6 +19,7 @@ var sim: Simulation
 var _accumulator_ms: float = 0.0
 var _views: Dictionary = {}   # entity id -> Node3D (UnitModel or placeholder mesh)
 var _last_fire: Dictionary = {}   # entity id -> fire_at last seen (attack animation trigger)
+var _effect_views: Dictionary = {}   # entity id -> Node3D holding the effects of entities without a model
 var _hud: Hud
 var _selection_decal: MeshInstance3D
 var _armed_slot: int = -1      # card clicked in the deck panel, played at the next left click on the ground
@@ -44,7 +45,7 @@ func _ready() -> void:
 	sim.entity_spawned.connect(_on_spawned)
 	sim.entity_died.connect(_on_died)
 	sim.projectile_spawned.connect(_on_projectile_spawned)
-	sim.projectile_removed.connect(func(p, _hit): _on_died(p))
+	sim.projectile_removed.connect(_on_projectile_removed)
 	sim.team_lost.connect(func(t): print("team %d lost" % t))
 	sim.spawn_bases()
 	_map = MapView.new()   # the original map: terrain, water, lights, vegetation, decorations
@@ -305,6 +306,14 @@ func _on_spawned(e: SimEntity) -> void:
 	if model != null:
 		_units_root.add_child(model)
 		_views[e.id] = model
+		_spawn_effects(e, "create", model)
+		return
+	if e.is_spell_effect() or not e.is_targetable():   # spell effects, fields: only their particle effects
+		var holder := Node3D.new()
+		holder.position = Vector3(e.position.x, 0.0, e.position.y)
+		_units_root.add_child(holder)
+		_views[e.id] = holder
+		_spawn_effects(e, "create", holder)
 		return
 	var mesh := MeshInstance3D.new()
 	if e.is_spawner():
@@ -352,9 +361,61 @@ func _on_projectile_spawned(p: Projectile) -> void:
 func _on_died(e) -> void:
 	var view: Node3D = _views.get(e.id)
 	if view:
+		if e is SimEntity:
+			_spawn_effects(e, "die", null)
+			_spawn_effects(e, "free", null)
 		view.queue_free()
 		_views.erase(e.id)
 		_last_fire.erase(e.id)
+
+
+func _on_projectile_removed(p: Projectile, _hit: bool) -> void:
+	_spawn_effects(p, "firewarhead", null)
+	_spawn_effects(p, "die", null)
+	_spawn_effects(p, "free", null)
+	_on_died(p)
+
+
+## TParticleEffectComponent: plays the script's effects for an activation ("create", "fire", "die", ...).
+## Attached effects follow the parent view; one-shot effects are placed at the entity's position.
+func _spawn_effects(e, activation: String, parent: Node3D) -> void:
+	if not UnitDb.has_unit(e.unit_id):
+		return
+	for effect in UnitDb.raw(e.unit_id).get("effects", []):
+		if not effect.get("activate", []).has(activation):
+			continue
+		if effect.get("visible_with_wela_ready", false) or effect.get("at_fire_target", false):
+			continue   # needs wela state / target tracking (later)
+		var path: String = effect["path"]
+		if path.contains("%d"):
+			path = path % HudStyle.displayed_team(e.team, Simulation.TEAM_BLUE)
+		var groups: Array = effect.get("groups", [])
+		var group := int(groups[0]) if not groups.is_empty() else 0
+		var scale := 1.0
+		match str(effect.get("scale_with", "")):
+			"eiCollisionRadius": scale = e.collision_radius if e is SimEntity else 0.5
+			"eiWelaRange": scale = e.range_of(group) if e is SimEntity else 1.0
+			"eiWelaAreaOfEffect": scale = float(e.bb.get_value("eiWelaAreaOfEffect", group, 1.0)) if e is SimEntity else 1.0
+		var model_size := 1.0
+		var sizes: Dictionary = UnitDb.raw(e.unit_id).get("visuals", {}).get("model_sizes", {})
+		for g in groups:
+			if sizes.has(str(g)):
+				model_size = sizes[str(g)]
+				break
+		var size := scale * (1.0 if effect.get("ignore_model_size", false) else model_size) / float(effect.get("size_normalization", 1.0))
+		var fx := ParticleEffect.create(path, size)
+		if fx == null:
+			continue
+		var offset := Vector3.ZERO
+		if effect.has("model_offset"):
+			var o: Array = effect["model_offset"]
+			offset = Vector3(o[0], o[1], o[2]) * model_size
+		if parent != null:
+			parent.add_child(fx)
+			fx.position = offset
+		else:
+			_units_root.add_child(fx)
+			fx.position = Vector3(e.position.x, 0.0, e.position.y) + offset
 
 
 func _sync_views() -> void:
@@ -376,6 +437,8 @@ func _sync_views() -> void:
 			if e.fire_at >= 0 and _last_fire.get(id, -1) != e.fire_at:   # a new attack started
 				_last_fire[id] = e.fire_at
 				view.play_attack()
+				_spawn_effects(e, "fire", view)
+				_spawn_effects(e, "prefire", view)
 		else:
 			var y := 0.2 if e.is_spawner() else (2.0 if e.is_building() else 0.9)
 			view.position = Vector3(e.position.x, y, e.position.y)

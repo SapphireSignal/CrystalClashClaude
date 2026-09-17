@@ -1,7 +1,7 @@
 extends SceneTree
 ## Runs game/main.tscn for a while and saves screenshots of the HUD for comparison with
 ## reference/media/ingame. Usage (windowed, not headless):
-##   godot --path <proj> -s tools/screenshot.gd --log-file <proj>/.tmp/godot.log -- <seconds> [<seconds> ...] [select] [hover=<slot>] [finish] [zoom=nexus|unit]
+##   godot --path <proj> -s tools/screenshot.gd --log-file <proj>/.tmp/godot.log -- <seconds> [<seconds> ...] [select] [hover=<slot>] [finish] [zoom=nexus|unit] [play=<slot>]
 ## Writes .tmp/shot_<seconds>.png for each requested time; "select" selects a unit (or the blue nexus), "hover=N" shows deck slot N's card hint.
 
 var _targets: Array = []
@@ -11,6 +11,7 @@ var _select := false
 var _hover := -1
 var _finish := false
 var _zoom := ""
+var _play := -1
 
 
 func _initialize() -> void:
@@ -25,6 +26,8 @@ func _initialize() -> void:
 			_finish = true
 		elif arg.begins_with("zoom="):
 			_zoom = arg.trim_prefix("zoom=")
+		elif arg.begins_with("play="):
+			_play = int(arg.trim_prefix("play="))
 	if _targets.is_empty():
 		_targets = [3.0]
 	_targets.sort()
@@ -53,6 +56,10 @@ func _process(delta: float) -> bool:
 					target = units[0]
 			_main._zoom = 2.6
 			_main._place_camera(target.position)
+		if _play >= 0:   # play=N: the blue deck slot N at the camera's look-at point (free cards not needed: 300 gold)
+			_main.sim.commanders[Simulation.TEAM_BLUE].free_cards = true
+			_main._play(Simulation.TEAM_BLUE, _play, _main._look_at + Vector2(6, 0))
+			_play = -1
 		if _finish:   # kill the red nexus at the first shot: later shots show the victory screen
 			_main.sim._kill(_main.sim.entities[_main.sim.nexus_ids[Simulation.TEAM_RED]])
 			_finish = false

@@ -189,4 +189,7 @@ scale rules, team textures and the script's animation frame ranges (extractor `v
 converts the maps (terrain glb from the heightmap, water, lights, vegetation instances, decorations) and
 `game/maps/map_view.gd` renders them (grass tufts baked like `TGrassTuft`); the sandbox runs on the original Single
 map with the real units, towers and nexus, the original camera (zoom 2.6-3.8 x 10 along CAMERAOFFSET, FOV 0.685 rad,
-lane-locked z = -23) and map lighting scaled by 0.7 to match the reference brightness. See `CONTINUE.md`.
+lane-locked z = -23) and map lighting scaled by 0.7 to match the reference brightness. Particle effects: `docs/particles.md`
+(spec), `tools/convert_particles.py` -> `assets/effects/`, `game/effects/particle_effect.gd` (engine-faithful CPU path
+player), scripts' effect components in `units.json` `effects`, played by the sandbox on create / fire / die /
+projectile impact. See `CONTINUE.md`.

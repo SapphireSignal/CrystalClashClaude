@@ -30,6 +30,10 @@ RE_MESH = re.compile(
 RE_MESH_CALL = re.compile(r"\.([A-Za-z]+)(?:\(([^()]*(?:\([^()]*\)[^()]*)*)\))?")
 RE_MODEL_SIZE = re.compile(r"WriteGrouped\(eiModelSize,\s*\[([0-9.]+)\],\s*\[([^\]]*)\]")
 RE_SKIN_ELSE = re.compile(r"\belse\s*\n\s*begin", re.S)
+RE_EFFECT = re.compile(
+    r"TParticleEffectComponent\.Create(?:Grouped)?\(Entity(?:,\s*\[([^\]]*)\])?,\s*'([^']*)'(?:\s*,\s*([^)]*))?\)(.*?);", re.S
+)
+RE_EFFECT_CALL = re.compile(r"\.([A-Za-z]+)(?:\(([^()]*(?:\([^()]*\)[^()]*)*)\))?")
 RE_UNIT_BAR = re.compile(
     r"TResourceDisplay(IntegerProgressBar|ProgressBar)Component\.Create(?:Grouped)?\(Entity(?:,\s*\[[^\]]*\])?\)(.*?);", re.S
 )
@@ -486,6 +490,65 @@ def _apply_mesh_chain(mesh: dict, chain: str) -> None:
             mesh.setdefault("team_textures", {}).setdefault(args[2].strip(), {})[kind] = args[1].strip().strip("'")
 
 
+def parse_effects(text: str) -> list:
+    """Client-side TParticleEffectComponent chains: effect path (%d = displayed team), size normalisation,
+    wela groups and the activation / placement options (docs/particles.md)."""
+    effects = []
+    for groups, path, size_norm, chain in RE_EFFECT.findall(text):
+        size_expr = size_norm.strip() if size_norm else "1.0"
+        try:
+            size_value = float(eval(size_expr, {"__builtins__": {}}, {}))   # noqa: S307 - literal arithmetic like 10.0/(3.0)
+        except Exception:  # noqa: BLE001
+            size_value = 1.0
+        effect = {"path": path.replace("\\", "/"), "size_normalization": size_value,
+                  "groups": [g.strip() for g in groups.split(",") if g.strip()]}
+        for method, raw_args in RE_EFFECT_CALL.findall(chain):
+            args = _split_args(raw_args) if raw_args else []
+            if method.startswith("ActivateOn") or method == "ActivateNow":
+                effect.setdefault("activate", []).append(method[len("Activate"):].lower().lstrip("on") if method != "ActivateNow" else "now")
+                if method == "ActivateOnFireDelayed" and args:
+                    effect["fire_delay"] = float(args[0])
+                if method == "ActivateOnLose" and args:
+                    effect["lose_team"] = args[0].strip()
+            elif method.startswith("DeactivateOn"):
+                effect.setdefault("deactivate", []).append(method[len("DeactivateOn"):].lower())
+                if method == "DeactivateOnTime" and args:
+                    effect["deactivate_after"] = float(args[0])
+            elif method == "IgnoreModelSize":
+                effect["ignore_model_size"] = True
+            elif method == "IgnoreSize":
+                effect["ignore_size"] = True
+            elif method == "ScaleWith" and args:
+                effect["scale_with"] = args[0].strip()
+            elif method in ("BindToSubPositionGroup", "BindToSubPosition") and args:
+                effect["bind_zone"] = _zone_name(args[0])
+            elif method == "SetModelOffset" and len(args) >= 1:
+                inner = raw_args.split("(", 1)[1].rsplit(")", 1)[0] if "(" in raw_args else raw_args   # RVector3.Create(x, y, z)
+                nums = re.findall(r"-?[0-9.]+", inner)
+                if len(nums) >= 3:
+                    effect["model_offset"] = [float(v) for v in nums[:3]]
+            elif method == "ShowAsTeam" and args:
+                effect["show_as_team"] = int(float(args[0]))
+            elif method == "FixedOrientationDefault":
+                effect["fixed_orientation"] = True
+            elif method == "FixedHeightGround":
+                effect["fixed_height_ground"] = True
+            elif method == "VisibleWithWelaReady":
+                effect["visible_with_wela_ready"] = True
+            elif method == "Delay" and args:
+                effect["delay"] = float(args[0])
+            elif method in ("ActivateAtFireTarget", "AtFireTarget"):
+                effect["at_fire_target"] = True
+            elif method == "ClonesToTarget":
+                effect["clones_to_target"] = True
+            elif method == "EmitFromAllBones":
+                effect["emit_from_all_bones"] = True
+            elif method == "StopOnFree":
+                effect["stop_on_free"] = True
+        effects.append(effect)
+    return effects
+
+
 def parse_unit_bars(text: str) -> list:
     """Client-side resource bars above the unit (TResourceDisplay*Component chains): kind integer (chunks) or
     progress, the resource shown (reMana, reWelaCharge), HideIfEmpty / HideIfFull, FixedCap, SizeY."""
@@ -559,11 +622,16 @@ def parse_script(path: Path) -> dict:
         data["ability_details"] = [dict(d) for d in parent.get("ability_details", [])]
         if parent.get("unit_bars"):
             data["unit_bars"] = [dict(b) for b in parent["unit_bars"]]
+        if parent.get("effects"):
+            data["effects"] = json.loads(json.dumps(parent["effects"]))
         if parent.get("visuals"):
             data["visuals"] = json.loads(json.dumps(parent["visuals"]))
     bars = parse_unit_bars(text)
     if bars:
         data["unit_bars"] = bars
+    effects = parse_effects(text)
+    if effects:
+        data["effects"] = list(data.get("effects", [])) + effects
     visuals = parse_visuals(text)
     if visuals:   # a child script adds its meshes to the inherited ones and overrides model sizes per group
         inherited = data.get("visuals", {})
@@ -630,6 +698,9 @@ def parse_spell(path: Path) -> dict:
             for g in [x.strip() for x in groups.split(",") if x.strip()]:
                 entry[g] = value
         data["components"] += parse_components(body)
+    effects = parse_effects(text)
+    if effects:
+        data["effects"] = effects
     for name, chain in RE_ABILITY.findall(text):   # the spell's IsCardDescription tooltip (card hint variables)
         data.setdefault("abilities", []).append(name)
         data.setdefault("ability_details", []).append(parse_ability_chain(name, chain))

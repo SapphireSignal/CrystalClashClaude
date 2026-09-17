@@ -2,7 +2,7 @@
 
 Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
 
-## State (2026-09-17, checkpoint 33)
+## State (2026-09-17, checkpoint 34)
 - Phases 1-3 done, 799 tests pass. Sandbox `game/main.tscn`: blue deck on keys 1-9,0,-,= or by clicking a card
   (drops/spells then need a left click on the ground, spawners go to the next free field); red AI plays Black.
 - **Phase 4 (HUD): step 1 done.** `game/ui/` holds the code-built HUD from `docs/hud.md`: top bar (clock, nexus
@@ -63,8 +63,23 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
 - **Checkpoint 33:** water shader port (`game/maps/water.gdshader`, parameters from the `.wat` via `map.json`,
   `TextureNormalization = GeometrySize / 2000`, wave texture copied next to the map).
 
+- **Checkpoint 34: particle effects.** `tools/convert_particles.py` (366 .pfx -> json, textures),
+  `game/effects/particle_effect.gd` (emitters, triggers instant/interval/distance, path nodes with the engine's
+  random rules, Hermite, billboard modes, atlas cells, blend modes), extractor `effects` per script
+  (`TParticleEffectComponent` chains), `main.gd` plays them on create (attached to the model), fire/prefire,
+  die/free, projectile impact (firewarhead); scale = scale_with(collision radius / wela range) x model size /
+  size normalization. Verified with `.tmp/effect_view.gd` (not committed) and Light Pulse in the sandbox
+  (`tools/screenshot.gd -- 15 16 zoom=nexus play=8`).
+
 ## Next step (in order, one at a time, run the game after each)
-1. Map polish: (b) shadows look weak: check the DirectionalLight shadow settings and
+1. Particles polish: (a) `VisibleWithWelaReady` (shield block ring while the ability is ready) and
+   `AtFireTarget` / `ClonesToTarget` effects; (b) bind zones: place attached effects at the bone of the
+   `bind_zone` (units.json `visuals.bind_zones`, Skeleton3D bone global pose); (c) light particles as
+   OmniLight3D (100 emitters), `ptTrace` ribbons, nested `ptEffect`; (d) deactivation (`DeactivateOn*`,
+   `stop_on_free`) and interval emitters that should stop when the wela ends; (e) the rotation sign convention
+   (`Basis.from_euler(-rot)`) is a guess: compare an effect with a mean rotation against the original if one
+   looks mirrored; (f) the light_pulse_cast flash appears off-centre in the debug view: check emitter FPosition.
+2. Map polish: (b) shadows look weak: check the DirectionalLight shadow settings and
    the original's shadow strength; (c) terrain `Material.png` (specular) later; (d) verify the Delphi `Random`
    replica against the original (palm variants/rotations) if a screenshot shows a mismatch; (e) grass wind
    animation (`Custom` vertex data = time offset) as a shader.
