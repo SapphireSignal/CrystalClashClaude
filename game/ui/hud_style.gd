@@ -24,6 +24,7 @@ const TEAM_COLORS := [Color("404040"), Color("0090FF"), Color("FF0000")]
 const COLOR_ORDER := ["Colorless", "Black", "Green", "Red", "Blue", "White"]   # EnumEntityColor order
 
 static var _cache: Dictionary = {}
+static var _blur_material: ShaderMaterial
 
 
 ## Texture by path under assets/ui (e.g. "HUD/DeckPanel/lock_icon.png"), null when the file is missing.
@@ -193,6 +194,20 @@ static func picture(texture: Texture2D, rect: Rect2) -> TextureRect:
 	r.size = rect.size
 	r.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return r
+
+
+## `Blur : True` area: the scene behind it blurred and tinted (game/ui/blur_backdrop.gdshader), drawn behind
+## the panel art (ZOffset -1), so translucent panel images show a soft teal version of the world.
+static func blur(r: Rect2) -> ColorRect:
+	if _blur_material == null:
+		_blur_material = ShaderMaterial.new()
+		_blur_material.shader = preload("res://game/ui/blur_backdrop.gdshader")
+	var c := ColorRect.new()
+	c.material = _blur_material
+	c.position = r.position
+	c.size = r.size
+	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return c
 
 
 static func rect(color: Color, r: Rect2) -> ColorRect:

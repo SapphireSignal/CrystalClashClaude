@@ -33,6 +33,7 @@ func _ready() -> void:
 	size = Vector2(WIDTH, HEIGHT)
 	mouse_filter = MOUSE_FILTER_STOP
 	visible = false
+	add_child(HudStyle.blur(Rect2(WIDTH * 0.01, HEIGHT * 0.105 + HEIGHT * 0.06, WIDTH * 0.99, HEIGHT * 0.79)))   # .content Blur : True (99 % x 79 %, y 6 %)
 	add_child(HudStyle.picture(HudStyle.tex("HUD/InfoPanel/info_panel_background.png"), Rect2(0, 0, WIDTH, HEIGHT)))
 	_content = Control.new()
 	_content.mouse_filter = MOUSE_FILTER_IGNORE

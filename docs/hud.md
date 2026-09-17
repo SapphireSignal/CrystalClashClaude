@@ -11,6 +11,13 @@ drawn in absolute pixels at every resolution like the original (project stretch 
 `assets/ui/<same path as under Graphics/GUI>`; fonts (Proza Libre) into `assets/fonts/`.
 Text: `tools/extract_lang.py` -> `game/data/lang/en.json` (keys lowercased, `§key` references resolved, HTML stripped).
 
+## Blur backdrops
+`Blur : True` (`.game-info`, `.resources .content`, `.minimap .content`, `.tooltip .content`, all ZOffset -1 =
+behind the panel art): the engine blurs the scene (`TTextureBlur`, kernel 4) and GUIBlur.fx recolours it to
+`BlurColor` ($blur-color `$FFAFFFFF`): hue/saturation of the colour, value = (0.5 x blurred value + 0.2) x
+colour value. Port: `HudStyle.blur(rect)` with `game/ui/blur_backdrop.gdshader`. Without it the half-transparent
+panel and map images show the sharp world (the owner saw tree shadows through the minimap).
+
 ## Units and colours
 - Design space 1920x1080, panels are drawn at their texture's native size (`Size : 100bw auto`).
 - scss `ch` unit is tiny (`230ch` moves the lock icon ~23 px): treat `ch` as 0.1 px and tune by eye.

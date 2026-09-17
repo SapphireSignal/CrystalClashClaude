@@ -25,6 +25,7 @@ var _tech_timer: Label
 func _ready() -> void:
 	size = Vector2(SIZE, SIZE)
 	mouse_filter = MOUSE_FILTER_STOP
+	add_child(HudStyle.blur(Rect2(0, CONTENT_Y, CONTENT, CONTENT)))   # .content Blur : True
 	add_child(HudStyle.picture(HudStyle.tex("HUD/RessourcePanel/ressource_panel.png"), Rect2(0, 0, SIZE, SIZE)))
 	var content := Control.new()
 	HudStyle.place(content, Rect2(0, CONTENT_Y, CONTENT, CONTENT))

@@ -18,6 +18,7 @@ var _right_caption: Label
 func _ready() -> void:
 	size = Vector2(WIDTH, HEIGHT)
 	mouse_filter = MOUSE_FILTER_STOP
+	add_child(HudStyle.blur(Rect2(0, 0, WIDTH, HEIGHT)))   # .game-info Blur : True
 	var bar_y := (HEIGHT - BAR_H) / 2.0
 	# left bar: right edge at 37.5 %, shrinks leftwards; right bar starts at 62.5 %
 	_left_clip = Control.new()

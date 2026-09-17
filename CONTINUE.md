@@ -123,6 +123,10 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
   1679x1079 against the game-start reference (`.tmp/hud_cmp.png`). Small-layout details not done: locked deck
   groups shift 38 % (ours 55 %), spawner margin 48, jump button position, hint text 12 px.
 
+- **Checkpoint 46: HUD blur backdrops.** `Blur : True` panels (top bar, resources, minimap, info panel) draw the
+  scene blurred + recoloured to `$blur-color` behind their art (`HudStyle.blur`, `blur_backdrop.gdshader`); the
+  minimap no longer shows the sharp world through its translucent water (`docs/hud.md`).
+
 ## FIX FIRST (owner's request, before anything else)
 1. **Done (checkpoint 37): lane node capture circle verified.** The ring renders (mesh, y 0.01, orientation:
    start +Z about +Y, gaps across the lane, arcs along it, exactly `DrawCircle` Up=UNITZ Left=UNITX); it was
