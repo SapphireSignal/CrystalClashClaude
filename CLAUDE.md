@@ -128,6 +128,9 @@ Act as two people at once:
   1710x816 (`core_game_scaling.scss`: resources/minimap/top bar 80 %, deck slots 66x64, card hint 267 wide). **Sides**: the live client has Blue at +x (own base top-right, lane
   leaving to the bottom-left, blue top-right on the minimap): `SimMap.side()`; tests run with
   `SimMap.legacy_sides = true` (2022 layout, blue at -x) so their coordinates stay the scripts'.
+- 2026-09-17 The developers may hand over the live **Crystal Clash** files (owner, 2026-09-17). When they arrive,
+  put them read-only in `reference/crystal-clash/` (gitignored, `.gdignore`), point the extractors/converters at
+  it (scripts, maps, graphics, GUI, settings) and drop the Steam patch-notes audit. Until then the 2022 repo rules.
 - 2026-09-17 **No camera zoom**: the live client has no mouse-wheel zoom (owner). The camera stays at zoom 3.8
   (distance 38 along CAMERAOFFSET); `tools/screenshot.gd zoom=` close-ups are for detail checks only.
 - 2026-09-16 `reference/media/` is filled by the owner only (lobby/ and ingame/ screenshots). Never read or
