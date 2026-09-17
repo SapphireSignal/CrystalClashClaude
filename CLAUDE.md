@@ -167,4 +167,7 @@ skins are cosmetic. Phase 3 done (deck presets/persistence wait for the lobby). 
 `docs/reference-material.md` lists the owner's live-client screenshots and the balance deltas seen so far
 (towers/nexus reworked after 2022). `game/main.tscn` is a sandbox with capsule
 units on the Compatibility renderer: keys 1-9,0,-,= play the 12 deck slots, a simple red AI plays back.
+Phase 4 (HUD) started: `docs/hud.md` holds the pixel spec from the original `.dui`/`.scss`; original HUD images
+and fonts are copied 1:1 by `tools/copy_ui_assets.py` into `assets/ui/` and `assets/fonts/`; text tables via
+`tools/extract_lang.py` -> `game/data/lang/en.json`; `units.json` carries ability names. No HUD code yet.
 See `CONTINUE.md`.

@@ -2,56 +2,37 @@
 
 Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
 
-## State (2026-09-17, checkpoint 24)
-- Phase 3 card league/level: per research of the original (`BaseConflict.Api.Cards.pas` TCardInstance,
-  `RGameCard`, `CardTemplate.dws`), in-match a card's league/level change ONLY charge count (league-indexed
-  table) and recharge time (5x5 matrix, 37000 -> 22000 ms); card cost is league-independent and no player
-  unit `.ets` scales stats by league in the 2022 snapshot (only neutral towers/nexus scale, by game league).
-  Skins are cosmetic. Implemented: `Commander.DeckSlot.league/level`, `Commander.set_deck_from(deck)`
-  (each slot keeps its card's own league/level), `Deck.from_scripts` defaults 4/5 (DEFAULT_LEAGUE/LEVEL),
-  sandbox uses `set_deck_from`. Phase 3 is done; deck presets + persistence wait for the lobby (phase 7).
+## State (2026-09-17, checkpoint 25)
+- Phases 1-3 done, 799 tests pass. All five factions, deck rules and per-card league/level are complete
+  (see CLAUDE.md Status). Sandbox `game/main.tscn` plays capsules; blue deck on keys 1-9,0,-,= ; red AI plays Black.
+- **Phase 4 (HUD) started: research done, no HUD code yet.** `docs/hud.md` is the complete pixel spec read from the
+  original `.dui` / `.scss` / view-model (top bar, resource panel, deck panel with tier-locked groups, minimap
+  projection, unit info panel, tech panel, announcements). Read it instead of the original again.
+- Done this checkpoint:
+  - `tools/copy_ui_assets.py`: copies the original HUD images 1:1 into `assets/ui/<path under Graphics/GUI>` (254 files:
+    HUD panels, card icons, league/faction icons, selection decals) and Proza Libre fonts into `assets/fonts/`.
+    Card icon `.tga`s are 512x256 mip atlases: use an `AtlasTexture` region (0,0,256,256).
+  - `tools/extract_lang.py`: `Lang/*.csv` -> `game/data/lang/en.json` (keys lowercased, `§key` refs resolved, HTML
+    stripped). Keys: `card_name_<ident>[_drop|_spawner]`, `unitability_name_<ability>`, `armortype_<atx>_caption`,
+    `core_*` HUD strings, `card_description_<spell>`.
+  - `tools/extract_units.py` now records `abilities` per script (names of `TTooltipUnitAbilityComponent`s, inherited),
+    e.g. Footman `["ShieldBlock"]`, for the unit panel's keyword line.
+  - `docs/assets.md` rows GUI / Fonts / Lang updated.
 
-- Phase 2 core sim works and is tested (757 tests). **All five factions are complete**: White, Black, Green, Blue and
-  Golems / Crystal Legion (`docs/factions/*.md` are the specs; Golems: `docs/factions/golems.md`).
-- Golems done this checkpoint: BigMeleeGolem Splinter (`checks_damage_threshold` on on-hit chains, `chain_to_ground` +
-  `ground_jitter` from `RedirectToGround.RandomizeGroundtarget`, `SimMap.clamp_to_zone`, `Projectile.spawn_pattern` /
-  `produced_scripts`: a projectile aimed at a point (`target_id = -1`) spawns its factory unit on landing),
-  SmallCasterGolem Crystal Speed (`build_check_group`: one new link per 3 s, `max_new_targets`, link entities carrying
-  `TWarheadLinkApplyScriptComponent` payloads), BigCasterGolem beam (`Buff.link_charge*`: +1 per 3 s to 3, damage
-  x `link_damage_mult` x charge), SiegeGolem (`fire_at_self` = ChangeTargetToMyself, `preemptive` fight groups stop
-  the think chain while waiting, non-blocking plain self-target brains fire and let the chain go on, `ready_cost`:
-  a cost without `TWelaReadyCostComponent` is only paid, `charge_consumes_all` on the main weapon / entity pool,
-  `reWelaCharge` spotty gain, `CheckNotFull(reWelaCharge)`).
-- Golem spells: Petrify (`Buff.hot_type` carries dtOverheal), StoneCircle (`_remove_silently` breaks auras and
-  `_think_passives` skips dead entities: a field that dies resolving its fire must not re-link), Earthquake
-  (`timer_ready` = `TimerIsReady`: first timer think at creation), Cataclysm (`CardDef.epic`: ready at the gold cap,
-  pays all gold as wood, no charges, `_in_nexus_zone` = Drop polygon within the nexus' eiWelaRange[3];
-  `SimEntity.stage` + `range_scales_with_stage`: 6 + 0.5 x first commander's tier), EchoesOfTheFuture
-  (`override_target_to_owner`: spell applies to the Commander: `properties` with expiry block the recast,
-  `start_income_loan` / `pay_income(now)` = x2 for 30 s then x0 for 30 s; `CardDef.charge_cooldown_mult` x3).
-- `game/sim/`: `simulation.gd` (loop, think chain over welas, chained fire groups, auras/links, splash, spells,
-  combat hooks, projectiles incl. reflection and ground landings, buffs, economy, movement, spawners, card play, ammo,
-  tech-ups, lane nodes, charms), `wela.gd`, `buff.gd`, `commander.gd`, `cards.gd`, `projectile.gd`, `pathfinding.gd`,
-  `lanes.gd`, `sim_map.gd`, `build_zone.gd`, `sim_entity.gd`, `blackboard.gd`, `unit_db.gd`, `sim_constants.gd`.
-  Data: `game/data/units.json`, `cards.json`, `modifiers.json`, `maps/*.json` from `tools/extract_units.py` and
-  `tools/extract_maps.py`.
-- Sandbox `game/main.tscn`: capsules, 12-slot white deck on keys 1-9,0,-,= , red AI plays Black; right-drag pans,
-  arrows nudge, wheel zooms; label shows Mana / Essence / tier like the live client. Renderer: Compatibility.
-- `docs/reference-material.md`: live-client screenshots, UI captures, trailer, patch-note archive for phases 3-5.
-- `reference/media/` (local, gitignored): the owner's live-client screenshots, `lobby/` (36) and `ingame/` (21).
-  Only the owner adds files there; never copy from their Pictures folders.
-
-- Sandbox (`game/main.gd`) now plays spells: blue deck = 8 White units + LightPulse, ShieldsUp, SolarFlare (unit under
-  the mouse), HailOfArrows on keys 9, 0, -, =; red AI rotates through a Black deck incl. Frenzy, Freeze, Shatter Ice
-  (spells target a random unit of the side the card is for, epics the own nexus, two-point spells press the key twice).
-
-## Next step (in order, one at a time, test after each)
-1. Phase 4 HUD (card bar, resources, tier button, minimap) replicating the live-client screenshots in `reference/media/`.
-3. Late phase: audit Crystal Clash Steam patch notes newer than the repo snapshot (2022-01-19) and apply
-   balance changes via the extractor (see CLAUDE.md Decisions).
+## Next step (in order, one at a time, run the game after each)
+1. Build the HUD from `docs/hud.md` in `game/ui/` (pure code Controls on the `HUD` CanvasLayer of `main.tscn`,
+   `project.godot` stretch `canvas_items` at 1920x1080): `lang.gd` (key lookup + card name rule), `hud_style.gd`
+   (fonts, textures, card icon/frame atlases, team colours, `IntToTime`, roman numerals), `game_info_bar.gd`,
+   `resource_panel.gd`, `deck_panel.gd` (slot views, tier plates, click -> play, spawner jump), `minimap.gd`
+   (`WorldToMiniMap` port, entity icons, camera view quad, menu button), `info_panel.gd` (click-select a unit,
+   `Selection.png` ground decal), `hud.gd` (owner of all panels, updates from the sim each frame). Replace the
+   sandbox label in `main.gd`. Then compare against `reference/media/ingame/*.webp` with a screenshot and tune.
+2. Card hint on hover (`MainMenu/Shared/Card/CardHUD.dui` + `shared_card.scss`), announcements (warm-up
+   countdown), in-world health bars, floating combat text.
+3. Later: audit the Steam patch notes newer than 2022-01-19 (CLAUDE.md Decisions) and apply via the extractor.
 
 ## Rules that bit us
-- Run `--import` before `-s tests/run_tests.gd` when new class_name scripts were added.
+- Run `--import` before `-s tests/run_tests.gd` when new class_name scripts or assets were added.
 - Lambdas connected to sim signals must be disconnected in tests; lambdas capture ints by value (use Arrays).
 - `alive_entities(-1)` = all teams; team 0 is the neutral team (lane nodes).
 - Spell cards are keyed with their `.sps` suffix (`Spells/White/LightPulse.sps`), effects without it.
@@ -73,3 +54,5 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
 - The `_golems_spell_sim()` deck: Cataclysm 0, EchoesOfTheFuture 1, Petrify 2, StoneCircle 3, Earthquake 4
   (free cards, tier 3); `_blue_spell_sim()`: AmmoRefill 0, EnergyRift 1, Relocate 2, FactoryReset 3, FluxField 4,
   InverseGravity 5, OrbitalStrike 6.
+- The owner's in-game screenshots use the client's *small* HUD layout (window < 1710 px wide); our 1920x1080
+  uses the normal sizes in `docs/hud.md`. Lang keys are case-insensitive (stored lowercase).

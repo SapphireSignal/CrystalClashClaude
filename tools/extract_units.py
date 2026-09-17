@@ -21,6 +21,7 @@ RE_SET = re.compile(
     r"Entity\.Blackboard\.Set(Indexed)?Value\(\s*(\w+)\s*,\s*\[([^\]]*)\]\s*,\s*(?:(\w+)\s*,\s*)?(.+?)\);\s*(?://.*)?$"
 )
 RE_RADIUS = re.compile(r"Entity\.CollisionRadius\s*:=\s*([0-9.]+)")
+RE_ABILITY = re.compile(r"TTooltipUnitAbilityComponent\.Create(?:Grouped)?\(Entity,\s*(?:\[[^\]]*\],\s*)?'(\w+)'")
 RE_INIT_CARD = re.compile(r"Init(Drop|Spawner|BuildingCard)Data\(Entity,\s*(True|False)\s*,\s*(?:\{@\w+\})?(\d)")
 RE_LEAGUE_ARR = re.compile(r"^(?:([0-9.]+)\s*\*\s*)?[fi]\(\s*\[([^\]]*)\]\s*,\s*Entity\.CardLeague(?:\([^)]*\))?\s*\)$")
 RE_INHERITS = re.compile(r"InheritsFrom(?:Preceding)?\s*:\s*string\s*=\s*'([^']+)'")
@@ -394,6 +395,11 @@ def parse_script(path: Path) -> dict:
         for event, by_group in parent["values"].items():
             data["values"][event] = dict(by_group)
         data["components"] = parent["components"]
+        data["abilities"] = list(parent.get("abilities", []))
+    # TTooltipUnitAbilityComponent names (client side): the unit panel lists them via unitability_name_<name>
+    for name in RE_ABILITY.findall(text):
+        if name not in data.setdefault("abilities", []):
+            data["abilities"].append(name)
     m = RE_RADIUS.search(body)
     if m:
         data["collision_radius"] = float(m.group(1))
