@@ -13,8 +13,9 @@ var _finish := false
 var _zoom := ""
 var _at := ""
 var _screen := Vector2(-1, -1)   # screen=X,Y: put the at= target on this pixel (matches a reference shot's framing)
-var size := "1920x1080"   # the reference/rolmedia screenshots' size (normal HUD layout); size=1680x1050 for the small one      # at=node: look at the first lane node at the default zoom
+var size := ""   # default: the primary monitor's size (fits the owner's screen); size=1920x1080 for reference comparisons      # at=node: look at the first lane node at the default zoom
 var _play := -1
+var _arm := -1
 var _menu := false        # menu: open the game menu (Escape) at the first shot
 var _settings := ""       # settings=<gameplay|sound|graphics|keybinding>: open the settings dialog on that category
 
@@ -33,6 +34,8 @@ func _initialize() -> void:
 			_zoom = arg.trim_prefix("zoom=")
 		elif arg.begins_with("play="):
 			_play = int(arg.trim_prefix("play="))
+		elif arg.begins_with("arm="):
+			_arm = int(arg.trim_prefix("arm="))
 		elif arg == "menu":
 			_menu = true
 		elif arg.begins_with("settings="):
@@ -44,12 +47,15 @@ func _initialize() -> void:
 			_screen = Vector2(float(xy[0]), float(xy[1]))
 		elif arg.begins_with("size="):   # size=WxH overrides the default reference window size
 			size = arg.trim_prefix("size=")
-	var parts := size.split("x")
 	DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_BORDERLESS, true)   # else the taskbar clamps the height
 	# On the primary screen, not the desktop origin (that is whichever monitor sits at 0,0). The capture comes from
 	# the viewport texture, so the shot is the full requested size even when the window overhangs a smaller screen.
 	DisplayServer.window_set_position(DisplayServer.screen_get_position(DisplayServer.SCREEN_PRIMARY))
-	DisplayServer.window_set_size(Vector2i(int(parts[0]), int(parts[1])))
+	if size == "":   # default: fill the primary monitor so test runs do not overhang the owner's screen
+		DisplayServer.window_set_size(DisplayServer.screen_get_size(DisplayServer.SCREEN_PRIMARY))
+	else:
+		var parts := size.split("x")
+		DisplayServer.window_set_size(Vector2i(int(parts[0]), int(parts[1])))
 	if _targets.is_empty():
 		_targets = [3.0]
 	_targets.sort()
@@ -92,6 +98,10 @@ func _process(delta: float) -> bool:
 				if _main._play(_main.HUMAN_TEAM, _play, at) == Simulation.PlayResult.OK:
 					break
 			_play = -1
+		if _arm >= 0:   # arm=N: arm the blue deck slot N (ghost preview at the mouse position)
+			_main.sim.commanders[_main.HUMAN_TEAM].free_cards = true
+			_main._arm(_arm)
+			_arm = -1
 		if _menu:   # the game menu, with the settings dialog on top when settings= is given
 			_main._toggle_menu()
 			_menu = false

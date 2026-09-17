@@ -207,6 +207,43 @@ checkpoint give the run command and a short list of things to check, and fix wha
    material (roughness, Material.png) with a side-by-side crop.
 Then checkpoint (tests, Status, CONTINUE.md, commit + push, give the new-chat prompt and STOP).
 
+## Owner playtest fixes (2026-09-17, checkpoint 68) — from the owner's first playtest
+Done this checkpoint:
+- **Card arming** (TClientInputComponent port): keys/deck clicks ARM the card; translucent ghost units
+  (squad pattern) / spawner ghost snapped to a free grid cell / Spelltarget ground-or-entity reticle with the
+  `Invalid` texture variant follow the cursor; LMB plays (invalid click keeps it armed), RMB/Escape cancel.
+  `tools/copy_ui_assets.py` copies `Spelltarget/`. Full research spec (zone renderer overlay, grid occupation
+  tints, endless build, drag mode, error sound) is in this file's history via the subagent report — still to
+  build: deck-slot armed glow, drop-zone overlay, grid red/green occupation tints, entity hover outline.
+- **Render interpolation**: views lerp from the pre-step sim state (`_capture_prev`/`_lerp_pos`, alpha =
+  accumulator/TICK_MS) — units no longer step at 31 Hz ("glitchy walk").
+- **Shield ring gate**: VisibleWithWelaReady includes `w.cooldown_ready_at` (ring hides 5 s after a block).
+  Sim itself was correct (absorb -> cooldown; ShieldsUp buff absorbs one 10+ hit then is spent).
+- **White ground square** = VoidSkeleton attack slash with no texture: pfx texture names differ in case from
+  disk (`Slice.png` vs `slice.png`); `convert_particles.py` now records the disk case (also ShockWave,
+  Stones_Inflamed). Missing texture = opaque white quad (blend_mix, no alpha).
+- **Terrain chunk textures** clamp to edge (glTF sampler 33071; default REPEAT bled the opposite edge).
+- **Card hint font error** (alt-tab glitch): font sizes clamped to >= 1 (`card_hint.gd`), was 44+ red errors/session.
+- **Projectiles**: effect-only projectiles (magic shots) now spawn their create-effects on a holder instead of
+  the yellow fallback sphere; mesh projectiles also play their create-effects (trails).
+- **The dark "line across the lane"** = the neutral lane node capture ring (2022-faithful, r 16.5 grey 404040
+  at 13 % alpha). Not a bug; the live client's bright ring comes with the Crystal Clash refresh.
+- `tools/screenshot.gd`: default window = primary monitor size (owner's screen), `size=WxH` for reference shots;
+  `arm=N`; `play=N` falls back to nexus +-8; `main._play` returns the PlayResult.
+
+Still open from the owner's report (next, in order):
+1. **Buff/modifier visuals**: extractor must record `{$IFDEF CLIENT}` TParticleEffectComponent chains in
+   `Scripts/Modifiers/*.dws` + `Links/*.dws` (currently dropped, so ShieldsUp/Frenzy/etc. show nothing);
+   sim needs buff_applied/buff_removed signals; main.gd attaches the effects to the unit view while the buff
+   lasts (ActivateNow/OnCreate) and on fire (shield_block_trigger on block).
+2. **Window state bug**: after leaving a match the main menu came back fullscreen-sized with the bottom cut off
+   (owner screenshot); also PrtSc reportedly stopped working while in the borderless fullscreen game window.
+   Reproduce via `.tmp/exit_flow.gd`-style probe; check `ClientSettings.menu_window_size` on re-enter.
+3. Anchor warnings ("non-equal opposite anchors") from menu `_layout` functions: use `set_deferred` or set
+   size before anchors; purely cosmetic but the owner sees yellow spam.
+4. Deck-slot armed glow + drop-zone overlay + grid occupation tints + entity hover outline (arming polish).
+5. Owner re-test, then the remaining FIX FIRST item 3 (lane stones brightness) and the particle/model polish lists.
+
 ## Done from `reference/rolmedia/` (2026-09-17)
 - Hotkey badges hidden by default (`coGameplayShowDeckHotkeys` = false; `DeckPanel.show_hotkeys` for the settings menu).
 - Top bar: left = team 1, right = team 2, bar colour by displayed team (own blue): a Red player sees red left.

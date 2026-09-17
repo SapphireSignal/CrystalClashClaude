@@ -24,6 +24,7 @@ FOLDERS = [
     "MainMenu/Navbar", "MainMenu/Dashboard", "Shared/CurrencyIcons", "MainMenu/Teambuilding",
     "MainMenu/SystemPanel",
     "LoadingScreen", "Shared/Tutorial",
+    "Spelltarget",
 ]
 FILES = ["Shared/Spinner.png", "HUD/Selection.png", "HUD/SelectionBuilding.png", "Shared/button_xl.tga", "Shared/button_xl_hover.tga",
          "Shared/Lock.png", "Shared/Icons/UnknownPlayer.png", "MainMenu/Deckbuilding/new_flag.png",

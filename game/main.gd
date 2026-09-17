@@ -20,6 +20,7 @@ const SLOT_KEYS := [KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7, KEY_8, KEY_
 var sim: Simulation
 var _accumulator_ms: float = 0.0
 var _views: Dictionary = {}   # entity id -> Node3D (UnitModel or placeholder mesh)
+var _prev_pos: Dictionary = {}   # entity id -> Vector2 position before the last sim step (render interpolation)
 var _last_fire: Dictionary = {}   # entity id -> fire_at last seen (attack animation trigger)
 var _ready_effects: Dictionary = {}   # entity id -> [[ParticleEffect, wela group]] shown while that wela is ready
 var _hud: Hud
@@ -27,7 +28,10 @@ var _menu: IngameMenu = null          # hud.IsMenuOpen
 var _settings: SettingsMenu = null    # diSettings
 var _exit_dialog: ExitDialog = null   # ExitDialog.dui
 var _selection_decal: MeshInstance3D
-var _armed_slot: int = -1      # card clicked in the deck panel, played at the next left click on the ground
+var _armed_slot: int = -1      # armed card (TClientInputComponent.FPreparedSpell): key/click arms, ground click plays
+var _preview_root: Node3D = null       # ghost unit models while a card is armed (TProductionPreviewComponent)
+var _reticle: MeshInstance3D = null    # ground target decal (TSpelltargetVisualizerShowTextureComponent)
+var _armed_cell: Variant = null        # [zone_id, Vector2i] under the cursor while a spawner card is armed
 var _jump_return: Variant = null   # camera look-at to return to after a spawner jump
 var _red_next_play_at: int = 15000
 var _red_cursor: int = 0
@@ -131,11 +135,13 @@ func _process(delta: float) -> void:
 	_accumulator_ms += delta * 1000.0
 	while _accumulator_ms >= SimConstants.TICK_MS:
 		_accumulator_ms -= SimConstants.TICK_MS
+		_capture_prev()
 		sim.step()
 		_red_ai()
 	_sync_views()
 	_hud.refresh()
 	_sync_selection()
+	_update_preview()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -143,11 +149,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		if event.button_index == MOUSE_BUTTON_RIGHT:
 			_drag_anchor = _mouse_world_2d() if event.pressed else null
 			if event.pressed:
-				_armed_slot = -1
+				_disarm()   # kbSecondaryAction: right click cancels the armed card
 		elif event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 			if _armed_slot >= 0:
-				_play(HUMAN_TEAM, _armed_slot, _mouse_world_2d())
-				_armed_slot = -1
+				_confirm_armed()
 			else:
 				_hud.select(_unit_at(_mouse_world_2d(), true))
 		elif event.pressed and event.button_index == MOUSE_BUTTON_WHEEL_UP:
@@ -178,6 +183,8 @@ func _unhandled_key_input(event: InputEvent) -> void:
 			_exit_dialog.close()
 		elif _settings != null:
 			_settings.discard()
+		elif _armed_slot >= 0:   # kbMainCancel: Escape unarms the card before it opens the menu
+			_disarm()
 		else:
 			_toggle_menu()
 		return
@@ -185,19 +192,19 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		return
 	var slot := SLOT_KEYS.find(event.keycode)
 	if slot >= 0 and slot < sim.commanders[HUMAN_TEAM].slots.size():
-		_play(HUMAN_TEAM, slot, _mouse_world_2d())
+		_arm(slot)
 
 
 var _pending_slot: int = -1        # multi-point spell (Relocate): press the key once per point
 var _pending_points: Array = []
 
 
-func _play(team: int, slot: int, where: Vector2) -> int:
+func _play(team: int, slot: int, where: Vector2, spawner_cell: Variant = null) -> int:
 	var c: Commander = sim.commanders[team]
 	var card := c.slots[slot].card
 	var target: Variant = where
 	if card.is_spawner():
-		target = _next_free_field(team)
+		target = spawner_cell if spawner_cell != null else _next_free_field(team)
 		if target == null:
 			return Simulation.PlayResult.BAD_TARGET
 	elif card.is_spell():
@@ -233,14 +240,116 @@ func _spell_props(card: Cards.CardDef) -> Array:
 	return UnitDb.raw(card.unit_id)["values"].get("eiUnitProperties", {}).get("SpellGroup", [])
 
 
-## Card clicked in the deck panel: spawners go to the next free field at once, everything else waits
-## for a left click on the ground.
 func _on_slot_clicked(slot: int) -> void:
+	_arm(slot)
+
+
+# ---------------------------------------------------------------- card arming (TClientInputComponent.PrepareAction)
+
+## Arm a deck slot: ghost preview at the cursor (TProductionPreviewComponent) + ground reticle; a left
+## click plays the card, right click / Escape cancels, an invalid click keeps the card armed.
+func _arm(slot: int) -> void:
+	_disarm()
+	_armed_slot = slot
 	var card: Cards.CardDef = sim.commanders[HUMAN_TEAM].slots[slot].card
+	_reticle = _make_decal()
+	_reticle.visible = true
+	var s := 3.0
+	_reticle.scale = Vector3(s, 1, s)
+	_preview_root = Node3D.new()
+	_world.add_child(_preview_root)
+	if not card.is_spell():
+		var unit_data := UnitDb.raw(card.unit_id)
+		var ghost_ids: Array = []
+		if card.is_spawner():
+			ghost_ids = [card.unit_id]
+		else:
+			var pattern: String = str(unit_data["values"].get("eiWelaUnitPattern", {}).get("0", "")).replace("\\", "/")
+			var count := 1 if card.is_building() else int(unit_data["values"].get("eiWelaCount", {}).get("0", 1))
+			for i in count:
+				ghost_ids.append(pattern)
+		for i in ghost_ids.size():
+			var ghost := UnitModel.create(ghost_ids[i], HudStyle.displayed_team(HUMAN_TEAM, HUMAN_TEAM))
+			if ghost == null:
+				continue
+			for mi: MeshInstance3D in ghost.find_children("*", "MeshInstance3D", true, false):
+				mi.transparency = 0.55   # the original tints previews via ColorAdjustment; translucent ghosts here
+			_preview_root.add_child(ghost)
+	_update_preview()
+
+
+func _disarm() -> void:
+	_armed_slot = -1
+	_armed_cell = null
+	if _preview_root != null:
+		_preview_root.queue_free()
+		_preview_root = null
+	if _reticle != null:
+		_reticle.queue_free()
+		_reticle = null
+
+
+## Every frame while armed: place the ghosts/reticle at the cursor and colour by validity.
+func _update_preview() -> void:
+	if _armed_slot < 0 or _reticle == null:
+		return
+	var card: Cards.CardDef = sim.commanders[HUMAN_TEAM].slots[_armed_slot].card
+	var where := _mouse_world_2d()
+	var valid := false
+	var at := where
+	_armed_cell = null
 	if card.is_spawner():
-		_play(HUMAN_TEAM, slot, Vector2.ZERO)
+		for zone_id in sim.build_zones:
+			var zone: BuildZone = sim.build_zones[zone_id]
+			if zone.team != HUMAN_TEAM:
+				continue
+			var coord := zone.position_to_coord(where)
+			if zone.in_range(coord) and zone.is_free(coord):
+				_armed_cell = [zone_id, coord]
+				at = zone.center_of_field(coord)
+				valid = true
+				break
+	elif card.is_spell():
+		if card.target_type == "ctEntity":
+			var unit := _unit_at(where)
+			valid = unit != null
+			if unit != null:
+				at = unit.position
+		elif card.epic:
+			valid = sim._in_nexus_zone(HUMAN_TEAM, where)
+		else:
+			valid = sim.map.in_zone_padded("Walkzone", where, 0.0)
 	else:
-		_armed_slot = slot
+		valid = sim._in_drop_zone(HUMAN_TEAM, where)
+	var tex := "Spelltarget/SpelltargetEntity%s.png" if card.is_spell() and card.target_type == "ctEntity" \
+		else "Spelltarget/SpelltargetGround%s.png"
+	var mat: StandardMaterial3D = _reticle.material_override
+	mat.albedo_texture = HudStyle.tex(tex % ("" if valid else "Invalid"))
+	_reticle.position = Vector3(at.x, 0.06, at.y)
+	if _preview_root != null:
+		var front: Vector2 = (sim.entities[sim.nexus_ids[AI_TEAM]].position - at).normalized()
+		var ghosts := _preview_root.get_children()
+		for i in ghosts.size():
+			var p := Simulation.spawning_pattern(at, front, card.is_spawner(), i, ghosts.size())
+			ghosts[i].position = Vector3(p.x, 0.0, p.y)
+			ghosts[i].rotation.y = atan2(front.x, front.y)
+
+
+## Left click while armed: play the card; BAD_TARGET keeps it armed (PlayCardError), OK unarms
+## (multi-point spells stay armed until the last point is set).
+func _confirm_armed() -> void:
+	var slot := _armed_slot
+	var card: Cards.CardDef = sim.commanders[HUMAN_TEAM].slots[slot].card
+	var target := _mouse_world_2d()
+	var result: int
+	if card.is_spawner():
+		if _armed_cell == null:
+			return   # no free field under the cursor: stays armed
+		result = _play(HUMAN_TEAM, slot, target, _armed_cell)
+	else:
+		result = _play(HUMAN_TEAM, slot, target)
+	if result == Simulation.PlayResult.OK and _pending_slot != slot:
+		_disarm()
 
 
 ## TIngameHUD.SpawnerJump: camera to the own base (nexus + 10.5 towards the lane) and back.
@@ -429,6 +538,14 @@ func _on_projectile_spawned(p: Projectile) -> void:
 		model.position = Vector3(p.position.x, 1.2, p.position.y)
 		_units_root.add_child(model)
 		_views[p.id] = model
+		_spawn_effects(p, "create", model)
+		return
+	if UnitDb.has_unit(p.unit_id) and not UnitDb.raw(p.unit_id).get("effects", []).is_empty():
+		var holder := Node3D.new()   # effect-only projectiles (magic shots): their particle effects are the visual
+		holder.position = Vector3(p.position.x, 1.2, p.position.y)
+		_units_root.add_child(holder)
+		_views[p.id] = holder
+		_spawn_effects(p, "create", holder)
 		return
 	var mesh := MeshInstance3D.new()
 	var sphere := SphereMesh.new()
@@ -515,13 +632,36 @@ func _spawn_effects(e, activation: String, parent: Node3D) -> void:
 			fx.position = Vector3(e.position.x, 0.0, e.position.y) + offset
 
 
+## The sim ticks at 31 Hz: views interpolate from the pre-step state so movement stays smooth at any frame rate
+## (player-invisible engineering; the original client also rendered decoupled from the game tick).
+func _capture_prev() -> void:
+	_prev_pos.clear()
+	for id in _views:
+		var p: Projectile = sim.projectiles.get(id)
+		if p != null:
+			_prev_pos[id] = p.position
+			continue
+		var e: SimEntity = sim.entities.get(id)
+		if e != null:
+			_prev_pos[id] = e.position
+
+
+func _lerp_pos(id: int, current: Vector2, alpha: float) -> Vector2:
+	var prev: Variant = _prev_pos.get(id)
+	if prev == null:
+		return current
+	return (prev as Vector2).lerp(current, alpha)
+
+
 func _sync_views() -> void:
+	var alpha := clampf(_accumulator_ms / SimConstants.TICK_MS, 0.0, 1.0)
 	for id in _views:
 		var view: Node3D = _views[id]
 		var p: Projectile = sim.projectiles.get(id)
 		if p != null:
-			var flight := Vector3(p.position.x, 1.2, p.position.y) - view.position   # face the flight direction
-			view.position = Vector3(p.position.x, 1.2, p.position.y)
+			var pp := _lerp_pos(id, p.position, alpha)
+			var flight := Vector3(pp.x, 1.2, pp.y) - view.position   # face the flight direction
+			view.position = Vector3(pp.x, 1.2, pp.y)
 			if view is UnitModel and flight.length_squared() > 0.0001:
 				view.rotation.y = atan2(flight.x, flight.z)
 			continue
@@ -534,11 +674,12 @@ func _sync_views() -> void:
 					child.set_color(HudStyle.team_color(e.team, HUMAN_TEAM))
 			continue
 		if view is UnitModel:
-			view.position = Vector3(e.position.x, 0.0, e.position.y)
+			var ep := _lerp_pos(id, e.position, alpha)
+			view.position = Vector3(ep.x, 0.0, ep.y)
 			view.set_moving(e.moving, e.speed())
-			for pair in _ready_effects.get(id, []):   # VisibleWithWelaReady
+			for pair in _ready_effects.get(id, []):   # VisibleWithWelaReady (eiIsReady includes the cooldown)
 				var w := e.wela(pair[1])
-				pair[0].visible = w != null and sim._wela_ready(e, w)
+				pair[0].visible = w != null and sim.time_ms >= w.cooldown_ready_at and sim._wela_ready(e, w)
 			if e.fire_at >= 0 and _last_fire.get(id, -1) != e.fire_at:   # a new attack started
 				_last_fire[id] = e.fire_at
 				view.play_attack()
@@ -546,9 +687,10 @@ func _sync_views() -> void:
 				_spawn_effects(e, "prefire", view)
 		else:
 			var y := 0.2 if e.is_spawner() else (2.0 if e.is_building() else 0.9)
-			view.position = Vector3(e.position.x, y, e.position.y)
+			var ep2 := _lerp_pos(id, e.position, alpha)
+			view.position = Vector3(ep2.x, y, ep2.y)
 		if e.front.length_squared() > 0.0:
 			if view is UnitModel:   # the models face their local +Z
-				view.rotation.y = atan2(e.front.x, e.front.y)
+				view.rotation.y = lerp_angle(view.rotation.y, atan2(e.front.x, e.front.y), alpha)
 			else:
 				view.rotation.y = atan2(-e.front.y, e.front.x) + PI / 2

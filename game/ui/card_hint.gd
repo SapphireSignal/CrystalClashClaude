@@ -245,12 +245,12 @@ func show_slot(slot: Commander.DeckSlot, commander: Commander, now: int = 0) -> 
 	_stats.visible = not card.is_spell()
 	if card.is_spell():
 		_description.text = spell_text(card, slot.league)
-		_description.add_theme_font_size_override("font_size", int(_description.size.y * 0.175))
+		_description.add_theme_font_size_override("font_size", maxi(1, int(_description.size.y * 0.175)))
 		_description.position.y = _stats.position.y
 	else:
 		var unit_id := unit_script(card)
 		_description.text = skill_list(unit_id, slot.league)
-		_description.add_theme_font_size_override("font_size", int(_description.size.y * 0.175))   # live client: same size as spell text
+		_description.add_theme_font_size_override("font_size", maxi(1, int(_description.size.y * 0.175)))   # live client: same size as spell text
 		_description.position.y = _stats.position.y + _description.size.y * 0.30   # .skills padding-top
 		var stats := HudStyle.unit_stats(unit_id, slot.league, slot.level)
 		var squad := squad_size(card)

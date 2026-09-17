@@ -154,6 +154,11 @@ Act as two people at once:
   filled by the owner only. Never read or
   copy from the owner's personal Pictures / OneDrive folders.
 
+- 2026-09-17 Owner's main monitor is **1920x1080** now (was 1680x1080); desktop origin (0,0) can be another monitor,
+  so windows always open via `screen_get_position(SCREEN_PRIMARY)`, never at (0,0). **Full multi-resolution support
+  (1680 and others) is a committed later goal** — keep layouts resolution-driven; `tools/screenshot.gd` defaults to
+  the primary monitor size, `size=WxH` for reference comparisons and other-resolution tests.
+
 ## Status
 Phase 1 done (docs written). Phase 2 in progress: `game/sim/` has fixed-tick Simulation, Blackboard stats from
 `units.json` (233 unit scripts, league arrays, inheritance), armor formula, attack timing, nearest-target

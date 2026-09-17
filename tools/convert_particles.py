@@ -20,6 +20,7 @@ SRC = ROOT / "reference" / "rise-of-legions" / "Graphics" / "Effects" / "Particl
 EFFECT_TEXTURES = ROOT / "reference" / "rise-of-legions" / "Graphics" / "Effects" / "Textures"   # only RangeLine*: names collide with particle textures (Trace.tga)
 OUT = ROOT / "assets" / "effects"
 TEXTURES_OUT = OUT / "textures"
+TEXTURE_CASE: dict[str, str] = {}   # lowercase name -> actual disk name (pfx references vary in case)
 
 
 def num(text: str | None, default: float = 0.0) -> float:
@@ -167,6 +168,10 @@ def convert_file(src: Path, dst: Path) -> dict:
         else:
             trigger["type"] = "instant"
         triggers.append(trigger)
+    for e in emitters:   # pfx texture references may differ in case from the file on disk (Slice.png vs slice.png)
+        name = e.get("texture", {}).get("file", "")
+        if name:
+            e["texture"]["file"] = TEXTURE_CASE.get(name.lower(), name)
     data = {"emitters": emitters, "triggers": triggers}
     dst.parent.mkdir(parents=True, exist_ok=True)
     dst.write_text(json.dumps(data, separators=(",", ":")), encoding="utf-8")
@@ -184,6 +189,7 @@ def main(filters: list[str]) -> int:
             dst = TEXTURES_OUT / src.name
             if not dst.exists() or dst.stat().st_mtime < src.stat().st_mtime:
                 shutil.copy2(src, dst)
+            TEXTURE_CASE[src.name.lower()] = src.name
             textures += 1
     count = failed = 0
     for src in sorted(SRC.rglob("*.pfx")):

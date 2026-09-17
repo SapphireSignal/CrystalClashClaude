@@ -139,11 +139,11 @@ def write_terrain_glb(name: str, heights: np.ndarray, scale: list[float], positi
                 if src.exists():
                     shutil.copy2(src, out_dir / src.name)
             images.append({"uri": f"{name}{chunk_id}Diffuse.png"})
-            textures.append({"source": len(images) - 1})
+            textures.append({"source": len(images) - 1, "sampler": 0})
             material = {"name": f"chunk{chunk_id}", "pbrMetallicRoughness": {"baseColorTexture": {"index": len(textures) - 1}, "metallicFactor": 0.0, "roughnessFactor": 1.0}}
             if (MAPS / name / f"{name}{chunk_id}Normal.png").exists():
                 images.append({"uri": f"{name}{chunk_id}Normal.png"})
-                textures.append({"source": len(images) - 1})
+                textures.append({"source": len(images) - 1, "sampler": 0})
                 material["normalTexture"] = {"index": len(textures) - 1}
             materials.append(material)
             primitives.append({
@@ -156,7 +156,9 @@ def write_terrain_glb(name: str, heights: np.ndarray, scale: list[float], positi
         "scene": 0, "scenes": [{"nodes": [0]}], "nodes": [{"name": "Terrain", "mesh": 0}],
         "meshes": [{"name": "Terrain", "primitives": primitives}],
         "materials": materials, "images": images, "textures": textures,
-        "samplers": [], "buffers": [{"byteLength": len(blob)}], "bufferViews": views, "accessors": accessors,
+        # 33071 = CLAMP_TO_EDGE: the default REPEAT bleeds the opposite chunk edge into the border (dark seam lines)
+        "samplers": [{"wrapS": 33071, "wrapT": 33071}], "buffers": [{"byteLength": len(blob)}],
+        "bufferViews": views, "accessors": accessors,
     }
     json_bytes = json.dumps(gltf, separators=(",", ":")).encode()
     json_bytes += b" " * (-len(json_bytes) % 4)
