@@ -11,6 +11,7 @@ var _clock: Label
 var _left_clip: Control
 var _left_bar: TextureRect
 var _right_clip: Control
+var _right_bar: TextureRect
 var _left_caption: Label
 var _right_caption: Label
 
@@ -30,7 +31,8 @@ func _ready() -> void:
 	_right_clip = Control.new()
 	_right_clip.clip_contents = true
 	HudStyle.place(_right_clip, Rect2(WIDTH * 0.625, bar_y, BAR_W, BAR_H))
-	_right_clip.add_child(HudStyle.picture(HudStyle.tex("HUD/GameStatePanel/red_shield_hp.png"), Rect2(0, 0, BAR_W, BAR_H)))
+	_right_bar = HudStyle.picture(HudStyle.tex("HUD/GameStatePanel/red_shield_hp.png"), Rect2(0, 0, BAR_W, BAR_H))
+	_right_clip.add_child(_right_bar)
 	add_child(_right_clip)
 	add_child(HudStyle.picture(HudStyle.tex("HUD/GameStatePanel/top_panel.png"), Rect2(0, 0, WIDTH, HEIGHT)))
 	var clock_w := WIDTH * 0.193
@@ -47,10 +49,16 @@ func _ready() -> void:
 
 func refresh(sim: Simulation, own_team: int) -> void:
 	_clock.text = spawn_timer(sim)
-	var left_team := own_team
-	var right_team := Simulation.TEAM_RED if own_team == Simulation.TEAM_BLUE else Simulation.TEAM_BLUE
-	_set_bar(_left_clip, _left_caption, sim, left_team, true)
-	_set_bar(_right_clip, _right_caption, sim, right_team, false)
+	# GameInfoBar.dui / TClientGUIComponent: left = team 1, right = team 2 (fixed), each bar coloured by its
+	# displayed team (own = blue, enemy = red), so a Red player sees red left and their own blue bar right.
+	_left_bar.texture = HudStyle.tex("HUD/GameStatePanel/%s_shield_hp.png" % _bar_color(Simulation.TEAM_BLUE, own_team))
+	_right_bar.texture = HudStyle.tex("HUD/GameStatePanel/%s_shield_hp.png" % _bar_color(Simulation.TEAM_RED, own_team))
+	_set_bar(_left_clip, _left_caption, sim, Simulation.TEAM_BLUE, true)
+	_set_bar(_right_clip, _right_caption, sim, Simulation.TEAM_RED, false)
+
+
+static func _bar_color(team: int, own_team: int) -> String:
+	return "blue" if HudStyle.displayed_team(team, own_team) == 1 else "red"
 
 
 ## Before the first game tick: tenths of a second ("0.x" up to 0.9, else whole seconds); after: mm:ss.

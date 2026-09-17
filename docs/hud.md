@@ -35,6 +35,9 @@ panel and map images show the sharp world (the owner saw tree shadows through th
   Health % = `ceil(hp / max * 100)` but 99 if damaged and the ceil says 100. Captions `NN%` 111x20 bold with a
   1 px border sit 16 px above the bottom, left and right. `top_panel.png` is drawn again on top as overlay.
 
+- Nexus bars: left = team 1, right = team 2 (fixed, `GameInfoBar.dui` `hud.LeftTeamID`), each coloured by its
+  displayed team (own blue / enemy red), health % ceil with 99 for any damage.
+
 ## RessourcePanel (bottom left, `ressource_panel.png` 302x302)
 Content 281x281 bottom-left aligned (y offset 21). Rows x 49, width 214, height 31, y 38 / 83 / 128
 (the art already has the three dark rows with the icon square at the right and the book for the tier):
@@ -66,7 +69,7 @@ with `Margin-left 80`. Height 75, slots (`build-slot-wrapper`) 85x90 with 1 px p
 - Cooldown: radial fill (`ProgressMask*.tga` circle) covering `1 - ChargeProgress` while charges < cap;
   numeric seconds (`FloatToCooldown`) centred when charges < 1 (not for epics), font 50 %.
 - Small layout (verified on the owner's screenshots, 2026-09-17): slot pitch 66, frame 66 at the wrapper top (2 px below
-  the window edge), badges anchored to the 64 px wrapper bottom. The live client draws no hotkey badge (delta; we keep the .dui's).
+  the window edge), badges anchored to the 64 px wrapper bottom. The hotkey badge is hidden unless `coGameplayShowDeckHotkeys` (default false, `DeckCard.dui` `hud.ShowCardHotkeys`): `DeckPanel.show_hotkeys`.
 - `charge-text` bottom-left (-2,-2) 22 % high on `charge_background.png` (22x22); `hotkey` bottom centre 20 %
   high on `hotkey_background.png` (46x41), text = the user's binding for slot N (defaults `1`..`9`, `0`, `-`, `=`
   on a US layout; German `ß` / `´` in the source), alt bindings Shift+1..6 for slots 7-12.
