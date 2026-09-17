@@ -294,11 +294,11 @@ func _place_camera(look_at_2d: Vector2) -> void:
 	# Original camera offset direction (Constants.Client.pas:34), scaled to see the lane.
 	_look_at = look_at_2d
 	_camera.fov = rad_to_deg(CAMERA_FOV)
-	# Live-client camera (docs/reference-material.md): a rendered sweep matched against the game-start reference
-	# gives pitch 48.4 deg, yaw 47.9 deg, distance 33.5 at the start zoom, same FOV. That is the 2022 CAMERAOFFSET
-	# (-0.3947, 0.8121, 0.4297; pitch 54.3, yaw 47.4, distance 38) with its height lowered to 0.67 and NOT
-	# renormalised (pitch 48.9, distance 33.8): the same yaw, flatter and closer. Blue sits at +x (SimMap).
-	var offset := Vector3(-0.394721269607544, 0.67, 0.429695725440979) * _zoom * 10.0
+	# CAMERAOFFSET (Constants.Client.pas:34, z sign flipped for Godot) = the live client's camera: rendered sweeps
+	# at the reference window size scored by per-block alignment with the game-start screenshot put this vector
+	# (pitch 54.3, yaw 47.4, distance 38 at zoom 3.8, original FOV) at ~6 px mean block error, better than any
+	# flatter / closer / narrower variant (docs/reference-material.md). Blue sits at +x (SimMap).
+	var offset := Vector3(-0.394721269607544, 0.812130928039551, 0.429695725440979) * _zoom * 10.0
 	var target := Vector3(look_at_2d.x, 0, look_at_2d.y)
 	_camera.position = target + offset
 	_camera.look_at(target, Vector3.UP)

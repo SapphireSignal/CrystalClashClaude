@@ -110,8 +110,10 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
   game-start reference within ~5 levels. The terrain and vegetation heights were already right (the jungle ring
   rises up to 18 units); the "flat" look was the light balance. Fix-list item 3 (lane brightness) is thereby done.
 
-- **Checkpoint 43: camera finally matched by render sweeps.** Pitch 48.4 / yaw 47.9 / distance 33.5 (2022 vector
-  with Y 0.67 unnormalised, `main.gd`); FOV unchanged. Window stretch `expand` + `Hud._layout()` from the viewport
+- **Checkpoint 43/44: camera settled = the 2022 constant.** Checkpoint 43's flatter camera (pitch 48, distance
+  33.5) came from a whole-frame correlation with the frame bottom masked and was wrong (lower-left ground 15 %
+  off); checkpoint 44 re-scored with per-block alignment: pitch 54 / yaw 47 / distance 38 / original FOV wins
+  (4.8 px). `main.gd` uses `CAMERAOFFSET` verbatim. Window stretch `expand` + `Hud._layout()` from the viewport
   rect (panels pinned to edges at any resolution; `FinalScreen` centred). `tools/screenshot.gd -- ... size=WxH`
   renders at the reference window size (1679x1079) for honest comparisons. The owner's monitor is 1680x1050-ish:
   their screenshots are 1679x1079 and use the client's *small* HUD layout (todo: port the small layout below

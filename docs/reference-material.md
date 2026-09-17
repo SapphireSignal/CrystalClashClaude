@@ -112,12 +112,13 @@ These are current and take precedence over Codex's older captures. Facts read fr
   6-18 ammo and a single target. Nexus live: 8000 HP, 25 ammo, 96 damage (source: 110-120 damage, 8-20 ammo).
   Towers and bases were reworked after the repo snapshot; the patch-notes audit must cover them first.
 - Camera (2026-09-17, final): our scene was rendered at the reference's 1679x1079 window for grids of pitch /
-  yaw / distance / FOV around the blue nexus and each frame's edge map was cross-correlated with
-  `image-1789614749130.webp` (game start). Best: pitch 48.4, yaw 47.9, distance 33.5, zero image shift (the
-  client starts looking at the own nexus), original FOV (FOV trades off against distance, so the 2022 value is
-  kept). The 2022 constant (54.3 / 47.4 / 38) scores clearly lower; a tile-corner fit alone could not tell the
-  pitch. Model used: CAMERAOFFSET with Y = 0.67, not renormalised (pitch 48.9, distance 33.8 at zoom 3.8).
-  The reference HUD is the client's *small* layout (window < 1710 wide); ours draws the normal layout.
+  yaw / distance / FOV around the blue nexus and scored against `image-1789614749130.webp` (game start) by
+  *per-block* alignment (6x4 blocks, each block's own best shift, HUD rectangles masked). Best of 180:
+  pitch 54 / yaw 47 / distance 38 / original FOV = the 2022 `CAMERAOFFSET` (4.8 px mean block error; weighted
+  top-15 54.2 / 47.5 / 37.7). Narrower FOV + farther, or flatter + closer variants score 5.6-12 px. A whole-frame
+  correlation with the frame bottom masked had wrongly preferred pitch 48 / distance 34 (the lower-left
+  ground then sat 15 % too far from the centre: the owner's "left side lifted" remark). The client starts
+  looking at the own nexus. The reference HUD is the client's *small* layout (window < 1710 wide).
   The minimap keeps the 2022 angle: its painted image is not rotated in the live client (whale shadow
   middle-left, trees top-right / left match the unrotated `map_minimap_single.png`).
   The game-start shot (blue nexus, "Game is about to begin") shows the own base

@@ -113,11 +113,11 @@ Act as two people at once:
   translation column (transpose the 3x3), hierarchy `Parent * Child`, skinning `Combined * Offset * v`, pivots
   collapsed into their bone, triangle winding reversed back for glTF. Model front axis is +Z, frames at 30 fps.
   Blender is only a probe tool.
-- 2026-09-17 Camera = the live client's, found by rendering sweeps at the reference window size and
-  edge-correlating them with the game-start screenshot (`docs/reference-material.md`): pitch 48.4, yaw 47.9,
-  distance 33.5, original FOV = the 2022 `CAMERAOFFSET` with Y lowered to 0.67 and not renormalised
-  (`main.gd`: (-0.3947, 0.67, 0.4297) x zoom x 10). The minimap keeps the 2022 XZ angle (painted image).
-  Single-feature fits (sand strips, one tile) were misleading; use the sweep (`.tmp/cam_sweep.gd` pattern).
+- 2026-09-17 Camera: the 2022 `CAMERAOFFSET` **is** the live client's camera, settled by rendering sweeps at
+  the reference window size and scoring per-block alignment with the game-start screenshot (best of 180:
+  pitch 54 / yaw 47 / distance 38 / original FOV, 4.8 px mean block error; `docs/reference-material.md`).
+  `main.gd` and `minimap.gd` use the constant verbatim. Do not re-measure it from single features (sand
+  strips, one tile) or with whole-frame correlation that masks the frame bottom: both misled us twice.
   Window: stretch `canvas_items` + `expand`; the HUD lays out from the viewport rect (`Hud._layout`) so any
   resolution/aspect keeps the panels pinned to the edges. **Sides**: the live client has Blue at +x (own base top-right, lane
   leaving to the bottom-left, blue top-right on the minimap): `SimMap.side()`; tests run with
