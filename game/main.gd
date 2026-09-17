@@ -1,12 +1,17 @@
 extends Node3D
 ## Sandbox: runs the Simulation at a fixed tick and renders entities with placeholder meshes.
 ## Blue (you) plays deck slots with keys 1-9, 0, -, = at the mouse position (drops) or on the next free
-## build field (spawners). Red plays the same deck automatically. Real assets replace the capsules in phase 5.
+## build field (spawners). Red plays a Black deck automatically. Real assets replace the capsules in phase 5.
 
 const BLUE_DECK := [
 	"Units/White/FootmanDrop", "Units/White/ArcherDrop", "Units/White/FootmanSpawner", "Units/White/ArcherSpawner",
 	"Units/White/BallistaDrop", "Units/White/PriestDrop", "Units/White/MonkDrop", "Units/White/MarksmanDrop",
 	"Units/White/HeavyGunnerDrop", "Units/White/SuntowerBuilding", "Units/White/AvengerDrop", "Units/White/DefenderDrop",
+]
+const RED_DECK := [
+	"Units/Black/VoidSkeletonDrop", "Units/Black/VoidBowmanDrop", "Units/Black/VoidSkeletonSpawner", "Units/Black/VoidBowmanSpawner",
+	"Units/Black/VoidWormDrop", "Units/Black/VoidBaneDrop", "Units/Black/VoidCauldronDrop", "Units/Black/VoidSlimeDrop",
+	"Units/Black/FrostgoyleFountainBuilding", "Units/Black/VoidWraithDrop", "Units/Black/VoidAltarBuilding", "Units/Black/TyrusDrop",
 ]
 const SLOT_KEYS := [KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7, KEY_8, KEY_9, KEY_0, KEY_MINUS, KEY_EQUAL]
 
@@ -28,8 +33,8 @@ func _ready() -> void:
 	sim.projectile_removed.connect(func(p, _hit): _on_died(p))
 	sim.team_lost.connect(func(t): print("team %d lost" % t))
 	sim.spawn_bases()
-	for team in [Simulation.TEAM_BLUE, Simulation.TEAM_RED]:
-		sim.commanders[team].set_deck(BLUE_DECK)
+	sim.commanders[Simulation.TEAM_BLUE].set_deck(BLUE_DECK)
+	sim.commanders[Simulation.TEAM_RED].set_deck(RED_DECK)   # red plays Black so both factions show in the sandbox
 	_label = $HUD/Label
 	_place_camera(Vector2(-40, -23))
 
