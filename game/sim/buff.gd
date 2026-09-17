@@ -15,6 +15,8 @@ var name: String
 var source_id: int = 0
 var buff_types: Array = []          # btPositive, btNegative, btState, btSummoningSickness ...
 var properties: Array = []          # unit properties granted while active
+var late_properties: Array = []     # a second property group with its own longer cooldown (Frozen -> upImmuneToFrozen)
+var late_expires_at: int = -1
 var expires_at: int = -1
 var values: Dictionary = {}         # "eiWelaModifier" -> {group_id: value}
 var damage_mods: Array = []         # {groups, value_group, multiply, must_have, factor}
@@ -77,6 +79,11 @@ static func load_db() -> void:
 	_db = JSON.parse_string(file.get_as_text())
 
 
+static func params_of(script_name: String) -> Array:
+	load_db()
+	return _db.get(script_name, {}).get("params", [])
+
+
 static func exists(script_name: String) -> bool:
 	load_db()
 	return _db.has(script_name)
@@ -107,6 +114,7 @@ static func create(script_name: String, now: int, params: Dictionary = {}) -> Bu
 	var duration_group := -1
 	var has_remove := false
 	var tick_group := -1
+	var prop_groups: Array = []   # [group, props]
 	for comp in data["components"]:
 		var groups: Array = comp["groups"].map(func(s): return gid.call(s))
 		var g: int = groups[0] if not groups.is_empty() else -1
@@ -115,7 +123,7 @@ static func create(script_name: String, now: int, params: Dictionary = {}) -> Bu
 			"TAutoBrainBuffComponent":
 				b.buff_types = comp.get("args", [[]])[0]
 			"TUnitPropertyComponent":
-				b.properties.append_array(comp.get("args", [[]])[0])
+				prop_groups.append([g, comp.get("args", [[]])[0]])
 			"TWelaReadyCooldownComponent":
 				if b.prevents_death:
 					continue
@@ -241,6 +249,13 @@ static func create(script_name: String, now: int, params: Dictionary = {}) -> Bu
 				for call in calls:
 					if call[0] == "Times":
 						b.tick_times = int(call[1][0])
+	for item in prop_groups:
+		var own := int(b._value("eiCooldown", item[0], -1.0))
+		if item[0] != duration_group and own > int(b._value("eiCooldown", duration_group, 0)) and has_remove and not b.prevents_death:
+			b.late_properties.append_array(item[1])
+			b.late_expires_at = now + own
+		else:
+			b.properties.append_array(item[1])
 	if duration_group >= 0 and has_remove and not b.prevents_death:
 		b.duration_ms = int(b._value("eiCooldown", duration_group, 0))
 		b.expires_at = now + b.duration_ms

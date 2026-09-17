@@ -26,6 +26,7 @@ var charges: Dictionary = {}         # group -> reWelaCharge balance kept per gr
 var thinks_once: bool = false        # TThinkImpulseOnceComponent: spell effect acts once on creation
 var thought_once: bool = false
 var think_once_waits: bool = false   # TThinkImpulseOnceComponent.WaitOneFrame: acts on the next tick instead
+var lifetime_ms: int = 0             # BuildingTemplate GROUP_BUILDING_LIFETIME: the building dies after this
 
 # Main weapon state (group 1)
 var target_id: int = 0
@@ -103,6 +104,8 @@ func setup(p_unit_id: String, p_league: int) -> void:
 	for g in bb.groups_of("eiResourceBalance.reWelaCharge"):
 		if g != Blackboard.ANY_GROUP:
 			charges[g] = bb.get_int("eiResourceBalance.reWelaCharge", g)
+	if is_building():
+		lifetime_ms = bb.get_int("eiCooldown", 10, 0)
 	for comp in data.get("components", []):
 		if comp["class"] == "TThinkImpulseOnceComponent":
 			thinks_once = true
@@ -136,7 +139,7 @@ func has(prop: String) -> bool:
 	if prop == "upInjured":
 		return max_health > 0.0 and health < max_health
 	for b in buffs:
-		if b.properties.has(prop):
+		if b.properties.has(prop) or b.late_properties.has(prop):
 			return true
 	return false
 
@@ -145,6 +148,8 @@ func all_properties() -> Dictionary:
 	var out := properties.duplicate()
 	for b in buffs:
 		for p in b.properties:
+			out[p] = true
+		for p in b.late_properties:
 			out[p] = true
 	return out
 

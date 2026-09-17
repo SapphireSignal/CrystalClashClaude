@@ -6,7 +6,7 @@ class_name Wela
 ## (Monument of Light), on-healed triggers and cooldown resets (Defender).
 
 enum Kind { FIGHT, SUB, ON_TAKE_DAMAGE, DEALT_DAMAGE_MULT, RESOURCE_REGEN, ON_DEATH, LINK, ON_HEALED, SELF_GROUND, ON_PROPERTY,
-	PREVENT_DEATH, ON_RESOURCE }
+	PREVENT_DEATH, ON_RESOURCE, SELF_PASSIVE }
 
 var group: int
 var kind: Kind
@@ -47,6 +47,9 @@ var exiles: bool = false
 var projectile: String = ""
 var apply_script: String = ""      # TWarheadApplyScriptComponent on targets
 var chain_groups: Array = []       # TWelaEffectFireComponent MultiTargetGroup / TargetGroup
+var chain_first: bool = false      # the fire component precedes the warhead: chains run before damage (Frostgoyle fury)
+var produced_scripts: Array = []   # TWarheadApplyScriptComponent.ApplyToProducedUnits: [script, [int values]]
+var ready_not_empty: bool = false  # TWelaReadyResourceCompareComponent.CheckNotEmpty
 var chain_to_self: bool = false
 var reset_cooldown_groups: Array = []   # TWelaEffectResetCooldownComponent
 var instant_target_groups: Array = []   # TWelaEffectInstantComponent.TargetGroup (splash warheads)
@@ -124,6 +127,7 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 			by_group[g] = w
 		return by_group[g]
 	var later: Array = []   # [groups, callable] applied after all groups exist
+	var warhead_seen := {}   # group -> true once its instant/projectile effect component appeared
 	for comp in components:
 		order += 1
 		var groups: Array = comp["groups"].map(func(s): return UnitDb.group_id(s, map))
@@ -229,11 +233,14 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 				w.projectile = bb.get_value("eiWelaUnitPattern", g, "").replace("\\", "/")
 			"TWelaEffectInstantComponent":
 				var w: Wela = get.call(g, Kind.SUB)
+				warhead_seen[g] = true
 				for c in calls:
 					if c[0] == "TargetGroup":
 						w.instant_target_groups = c[1][0].map(func(s): return UnitDb.group_id(s, map))
 			"TWelaEffectFireComponent":
 				var w: Wela = get.call(g, Kind.SUB)
+				if not warhead_seen.has(g):
+					w.chain_first = true
 				for c in calls:
 					if c[0] == "MultiTargetGroup" or c[0] == "TargetGroup":
 						w.chain_groups.append(UnitDb.group_id(c[1][0][0], map))
@@ -247,10 +254,23 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 			"TWarheadApplyScriptComponent":
 				if not args.is_empty():
 					var w: Wela = get.call(g, Kind.SUB)
-					w.apply_script = script_key(str(args[0]))
+					var produced := false
+					var passed: Array = []
 					for c in calls:
 						if c[0] == "ApplyToSelfAtCreate":
 							w.apply_script_to_self_at_create = true
+						elif c[0] == "ApplyToProducedUnits":
+							produced = true
+						elif c[0] == "PassIntValue":
+							passed.append(int(c[1][0]))
+					if produced:
+						w.produced_scripts.append([script_key(str(args[0])), passed])
+					else:
+						w.apply_script = script_key(str(args[0]))
+			"TBrainWelaSelftargetComponent":
+				var w: Wela = get.call(g, Kind.SELF_PASSIVE)
+				if w.kind == Kind.SUB:
+					w.kind = Kind.SELF_PASSIVE
 			"TWelaEffectRemoveAfterUseComponent":
 				var w: Wela = get.call(g, Kind.SUB)
 				for c in calls:
@@ -286,6 +306,7 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 						"ReferenceValue": w.ready_reference = float(c[1][0])
 						"ReferenceIsAbsolute": w.ready_absolute = true
 						"CheckEmpty": w.suicide_when_empty = true
+						"CheckNotEmpty": w.ready_not_empty = true
 			"TModifierWelaDamageComponent":
 				var w: Wela = get.call(g, Kind.SUB)
 				var scales := false
@@ -369,12 +390,14 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 						target_group = UnitDb.group_id(c[1][0][0], map)
 					elif c[0] == "ChangesMax":
 						get.call(g, Kind.SUB).changes_max = true
+				if res == "reWelaCharge" and by_group.has(g) and by_group[g].kind == Kind.SELF_PASSIVE:
+					by_group[g].kind = Kind.SUB   # ammo recharge groups are handled by _recharge_ammo
 				if res == "reWelaCharge" and target_group >= 0:
 					get.call(g, Kind.SUB).charge_gain_group = target_group
 				else:
 					var w: Wela = get.call(g, Kind.RESOURCE_REGEN)
 					w.resource = res
-					if w.kind == Kind.SUB:
+					if (w.kind == Kind.SUB or w.kind == Kind.SELF_PASSIVE) and res == "reMana" and not w.changes_max:
 						w.kind = Kind.RESOURCE_REGEN
 			"TAutoBrainOnHealedComponent":
 				var w: Wela = get.call(g, Kind.ON_HEALED)
@@ -458,6 +481,8 @@ func owner_ready(owner: SimEntity) -> bool:
 		var value := owner.health if ready_absolute else (owner.health / owner.max_health if owner.max_health > 0.0 else 0.0)
 		if not _compare(value, ready_op, ready_reference):
 			return false
+	if ready_resource == "reMana" and ready_not_empty and owner.mana <= 0:
+		return false
 	return true
 
 

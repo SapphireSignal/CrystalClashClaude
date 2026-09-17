@@ -23,6 +23,7 @@ func _run_script(path: String) -> void:
 	suite.runner = self
 	for m in script.get_script_method_list():
 		if m.name.begins_with("test_"):
+			print("running " + m.name)   # visible in the log when a test hangs
 			suite.call(m.name)
 	suite.runner = null
 

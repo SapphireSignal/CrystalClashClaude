@@ -178,6 +178,16 @@ def parse_modifier(path: Path) -> dict:
         return {}
     params = [p.split(":")[0].strip() for p in m.group(1).split(";")[1:] if ":" in p]
     body = m.group(2)
+    delegate = re.search(r"(Apply\w+)\(Entity\s*,\s*([^)]*)\)", body)
+    if delegate and "Create" not in body:  # Frozen.dws: Apply just calls ApplyWithDuration(Entity, DEFAULT_DURATION)
+        target = re.search(rf"procedure {delegate.group(1)}\((.*?)\);(.*?)^end;", text, re.S | re.M)
+        if target:
+            names = [p.split(":")[0].strip() for p in target.group(1).split(";")[1:] if ":" in p]
+            args = [a.strip() for a in delegate.group(2).split(",")]
+            defines = dict(re.findall(r"^#define\s+(\w+)\s+([0-9.]+)", text, re.M))
+            body = target.group(2)
+            for name, arg in zip(names, args):
+                body = re.sub(rf"\b{name}\b", defines.get(arg, arg), body)
     raw = re.search(r"function Apply(?:Raw|Effect)\(.*?\)\s*:\s*\w+;(.*?)^end;", text, re.S | re.M)
     if raw:  # some scripts split the server part into ApplyRaw/ApplyEffect (Invincibility, BlessingGrievousWounds)
         body = raw.group(1) + "\n" + body
@@ -228,7 +238,10 @@ def parse_script(path: Path) -> dict:
     inc = RE_INCLUDE.search(text)
     if inc:
         data["template"] = inc.group(1)
+        limited_life = re.search(r"InitBuildingData\(\s*Entity\s*,\s*True\s*\)", text) is not None
         for event, by_group in template_values(inc.group(1)).items():
+            if event == "eiCooldown" and not limited_life:
+                by_group = {g: v for g, v in by_group.items() if g != "10"}  # GROUP_BUILDING_LIFETIME only if LimitedLifeTime
             data["values"][event] = dict(by_group)
     m = RE_INHERITS.search(text)
     if m:
@@ -321,9 +334,24 @@ def extract_cards() -> list:
     return cards
 
 
+def fix_pattern_case(units: dict) -> None:
+    """Scripts name patterns with sloppy case (VoidWorm.ets: 'VoidwormProjectile'); the original file system
+    was case-insensitive, so map every pattern to the real script key."""
+    lower = {k.lower(): k for k in units}
+    for data in units.values():
+        for event in ("eiWelaUnitPattern", "eiLinkPattern"):
+            by_group = data.get("values", {}).get(event, {})
+            for g, v in list(by_group.items()):
+                if isinstance(v, str):
+                    key = v.replace("\\", "/")
+                    if key not in units and key.lower() in lower:
+                        by_group[g] = lower[key.lower()].replace("/", "\\")
+
+
 def main() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
     units = extract_units()
+    fix_pattern_case(units)
     cards = extract_cards()
     modifiers = extract_modifiers()
     (OUT / "units.json").write_text(json.dumps(units, separators=(",", ":")), encoding="utf-8")

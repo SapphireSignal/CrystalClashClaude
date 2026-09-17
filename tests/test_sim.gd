@@ -895,3 +895,93 @@ func test_void_bowman_grievous_wounds() -> void:
 		sim.step()
 	runner.check_eq(bleeding.charges, 2, "further hits stack bleeding")
 	runner.check(bleeding.expires_at > sim.time_ms + 9000, "stacking refreshes the 10 s duration")
+
+
+func test_void_worm_frost_shot_and_immunity() -> void:
+	var sim := Simulation.new(3, 4)
+	var worm := sim.spawn("Units/Black/VoidWorm", Simulation.TEAM_BLUE, Vector2(0, -23))
+	var monk := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(4, -23))
+	monk.locked_until = 1 << 30
+	while not monk.has("upFrozen") and sim.time_ms < 5000:
+		sim.step()
+	runner.check(monk.has("upFrozen"), "frost shot freezes the target")
+	runner.check(monk.has("upImmuneToFrozen"), "frozen units are immune to a re-freeze")
+	worm.locked_until = 1 << 30   # stop shooting so the timers can be measured
+	var frozen_at := sim.time_ms
+	while monk.has("upFrozen") and sim.time_ms < frozen_at + 12000:
+		sim.step()
+	runner.check(sim.time_ms - frozen_at >= 9000 and sim.time_ms - frozen_at < 9100, "frozen lasts 9 s (got %d)" % (sim.time_ms - frozen_at))
+	runner.check(monk.has("upImmuneToFrozen"), "immunity outlives the freeze")
+	while monk.has("upImmuneToFrozen") and sim.time_ms < frozen_at + 25000:
+		sim.step()
+	runner.check(sim.time_ms - frozen_at >= 19000 and sim.time_ms - frozen_at < 19100, "immunity lasts 19 s (got %d)" % (sim.time_ms - frozen_at))
+	var near := sim.spawn("Units/White/Footman", Simulation.TEAM_RED, Vector2(worm.position.x + 1.5, worm.position.y))
+	sim._kill(worm)
+	runner.check(near.has("upFrozen"), "death rattle freezes enemies within 2")
+
+
+func test_frostgoyle_fury() -> void:
+	var sim := Simulation.new(3, 4)
+	var goyle := sim.spawn("Units/Black/Frostgoyle", Simulation.TEAM_BLUE, Vector2(0, -23))
+	var monk := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(1.3, -23))
+	monk.locked_until = 1 << 30
+	var hits: Array = []
+	var on_hit := func(a, _t, _d): if a == goyle: hits.append(sim.time_ms)
+	sim.attack_fired.connect(on_hit)
+	while hits.size() < 3 and sim.time_ms < 12000:
+		sim.step()
+	sim.attack_fired.disconnect(on_hit)
+	runner.check_eq(hits.size(), 3, "three hits")
+	if hits.size() == 3:
+		runner.check(hits[1] - hits[0] < 1000, "fury: hitting a full-health unit resets the 3.6 s cooldown (got %d)" % (hits[1] - hits[0]))
+		runner.check(hits[2] - hits[1] >= 3600, "no reset against an injured unit (got %d)" % (hits[2] - hits[1]))
+
+
+func test_void_cauldron_blast() -> void:
+	var sim := Simulation.new(3, 4)
+	var cauldron := sim.spawn("Units/Black/VoidCauldron", Simulation.TEAM_BLUE, Vector2(0, -23))
+	var tower := sim.spawn("Units/Neutral/LanetowerLevel1", Simulation.TEAM_RED, Vector2(10, -23))
+	var shots: Array = []
+	var on_proj := func(p): if not p.gives_mana: shots.append(p)
+	sim.projectile_spawned.connect(on_proj)
+	sim._kill(cauldron)
+	runner.check_eq(shots.size(), 0, "no souls, no blast")
+	cauldron = sim.spawn("Units/Black/VoidCauldron", Simulation.TEAM_BLUE, Vector2(0, -23))
+	sim.gain_mana(cauldron, 3)
+	sim._kill(cauldron)
+	sim.projectile_spawned.disconnect(on_proj)
+	runner.check_eq(shots.size(), 3, "one blast projectile per stored soul")
+	for p in shots:
+		runner.check_eq(p.target_id, tower.id, "aimed at enemy buildings")
+		runner.check_near(p.damage, 15.0, "blast damage 15")
+
+
+func test_frostgoyle_fountain() -> void:
+	var sim := Simulation.new(3, 4)
+	var fountain := sim.spawn("Units/Black/FrostgoyleFountain", Simulation.TEAM_BLUE, Vector2(-60, -23))
+	runner.check_eq(fountain.lifetime_ms, 90000, "building lives 90 s")
+	sim.gain_mana(fountain, 3)
+	sim.step()
+	runner.check_eq(sim.alive_entities().size(), 1, "3 souls are not enough")
+	sim.gain_mana(fountain, 1)
+	sim.step()
+	var goyles: Array = []
+	for e in sim.alive_entities():
+		if e.unit_id == "Units/Black/Frostgoyle":
+			goyles.append(e)
+	runner.check_eq(goyles.size(), 1, "4 souls spawn a frostgoyle")
+	runner.check_eq(fountain.mana, 0, "souls paid")
+	if goyles.is_empty():
+		return
+	var goyle: SimEntity = goyles[0]
+	runner.check(goyle.has("upSummoningSickness"), "legendary spawn lockout")
+	var born := sim.time_ms
+	while goyle.has("upSummoningSickness") and sim.time_ms < born + 2000:
+		sim.step()
+	runner.check(sim.time_ms - born >= 660 and sim.time_ms - born < 700, "lockout 660 ms (got %d)" % (sim.time_ms - born))
+	while goyle.alive and sim.time_ms < born + 20000:
+		sim.step()
+	runner.check(sim.time_ms - born >= 17000 and sim.time_ms - born < 17100, "timed life 17 s (got %d)" % (sim.time_ms - born))
+	while fountain.alive and sim.time_ms < 95000:
+		sim.step()
+	runner.check(sim.time_ms >= 90000 and sim.time_ms < 90100, "fountain dies after 90 s (got %d)" % sim.time_ms)

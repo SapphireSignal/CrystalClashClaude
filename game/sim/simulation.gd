@@ -199,10 +199,23 @@ func _update_buffs(e: SimEntity) -> void:
 			if b.mana_per_tick > 0:
 				e.mana = mini(e.mana_cap, e.mana + b.mana_per_tick)
 		if b.is_expired(time_ms) and e.alive:
+			if not b.late_properties.is_empty():   # Frozen ends, the immunity group keeps running
+				b.properties = b.late_properties
+				b.late_properties = []
+				b.expires_at = b.late_expires_at
+				b.stops_movement = false
+				continue
 			e.remove_buff(b)
 			if b.kills_on_expiry:   # Undying runs out
 				_kill(e)
 				return
+
+
+func _has_all(e: SimEntity, props: Array) -> bool:
+	for p in props:
+		if not e.has(p):
+			return false
+	return true
 
 
 func _has_any(e: SimEntity, props: Array) -> bool:
@@ -508,6 +521,9 @@ func step() -> void:
 		if e.think_once_waits and not e.thought_once:   # TThinkImpulseOnceComponent.WaitOneFrame
 			_think_once(e)
 			continue
+		if e.lifetime_ms > 0 and time_ms >= e.created_at + e.lifetime_ms:   # GROUP_BUILDING_LIFETIME suicide
+			_kill(e)
+			continue
 		_update_buffs(e)
 		if not e.alive:
 			continue
@@ -576,6 +592,8 @@ func _think(e: SimEntity) -> void:
 			_think_link(e, w)
 		elif w.kind == Wela.Kind.FIGHT and w.passive:
 			_think_passive(e, w)
+		elif w.kind == Wela.Kind.SELF_PASSIVE:
+			_think_self_passive(e, w)
 	if time_ms < e.locked_until:
 		return
 	for w in e.welas:
@@ -627,6 +645,17 @@ func _think_passive(e: SimEntity, w: Wela) -> void:
 		return
 	w.cooldown_ready_at = time_ms + e.cooldown(w.group)
 	_fire_group(e, w.group, target)
+
+
+## TBrainWelaSelftargetComponent.ThinksPassively: fires on the owner whenever ready (Frostgoyle Fountain
+## spawning a Frostgoyle for 4 souls every 3 s). TWelaReadyCooldownComponent(false) starts on cooldown.
+func _think_self_passive(e: SimEntity, w: Wela) -> void:
+	if w.next_at < 0:
+		w.next_at = e.created_at if w.ready_at_start else e.created_at + e.cooldown(w.group)
+	if time_ms < w.next_at or not _wela_ready(e, w):
+		return
+	w.next_at = time_ms + e.cooldown(w.group)
+	_fire_group(e, w.group, e)
 
 
 ## TBrainWelaLinkComponent + TWelaLinkEffectComponent: an aura. After the activation delay, every ally in
@@ -728,6 +757,8 @@ func _fire_group(e: SimEntity, group: int, target: SimEntity) -> void:
 	var dtype := e.damage_type(group)
 	if group == e.fire_group or w.kind == Wela.Kind.FIGHT:
 		attack_fired.emit(e, target, amount)
+	if w.chain_first:
+		_fire_chains(e, w, target)
 	if w.projectile != "":
 		_launch_projectile(w.projectile, e, target, amount, dtype, group)
 	elif w.changes_max and w.resource == "reHealth":   # eiResourceCapTransaction: raise the cap and fill it
@@ -750,15 +781,36 @@ func _fire_group(e: SimEntity, group: int, target: SimEntity) -> void:
 		var count := e.bb.get_int("eiWelaCount", group, 1)
 		if pattern != "" and UnitDb.has_unit(pattern):
 			var team := e.team if w.spawn_team < 0 else w.spawn_team
+			var produced: Array[SimEntity] = []
 			if w.spawn_spread and count > 1:
-				spawn_squad(pattern, team, target.position, count, false)
+				produced = spawn_squad(pattern, team, target.position, count, false)
 			else:
 				for i in count:
-					spawn(pattern, team, target.position)
+					produced.append(spawn(pattern, team, target.position))
+			for unit in produced:
+				for item in w.produced_scripts:   # ApplyToProducedUnits (LegendarySpawn 660 ms, TimedLife 17 s)
+					var params := {}
+					var names := Buff.params_of(item[0])
+					for i in mini(names.size(), item[1].size()):
+						params[names[i]] = item[1][i]
+					if Buff.exists(item[0]):
+						apply_buff(unit, item[0], params, e)
 	if w.charge_gain_group >= 0 and w.kind != Wela.Kind.FIGHT or (w.charge_gain_group >= 0 and w.commander_cast):
 		e.charges[w.charge_gain_group] = e.charges_of(w.charge_gain_group) + 1
 	for sg in w.instant_target_groups:   # splash warheads around the target position
 		_fire_splash(e, sg, target.position)
+	if not w.chain_first:
+		_fire_chains(e, w, target)
+	for rg in w.reset_cooldown_groups:   # TWelaEffectResetCooldownComponent.Expire
+		var rw := e.wela(rg)
+		if rw != null:
+			rw.cooldown_ready_at = time_ms
+			if rg == SimConstants.GROUP_MAINWEAPON:
+				e.cooldown_ready_at = time_ms
+
+
+## TWelaEffectFireComponent: fire the chained groups at the target (or the owner) when they are ready.
+func _fire_chains(e: SimEntity, w: Wela, target: SimEntity) -> void:
 	for cg in w.chain_groups:
 		var cw := e.wela(cg)
 		if cw == null or time_ms < cw.cooldown_ready_at or not _wela_ready(e, cw):
@@ -766,12 +818,6 @@ func _fire_group(e: SimEntity, group: int, target: SimEntity) -> void:
 		var chain_target := e if w.chain_to_self else target
 		if chain_target.alive and (w.chain_to_self or cw.target_allowed(chain_target, e)):
 			_fire_group(e, cg, chain_target)
-	for rg in w.reset_cooldown_groups:   # TWelaEffectResetCooldownComponent.Expire
-		var rw := e.wela(rg)
-		if rw != null:
-			rw.cooldown_ready_at = time_ms
-			if rg == SimConstants.GROUP_MAINWEAPON:
-				e.cooldown_ready_at = time_ms
 
 
 ## TWarheadSplash*Component: every valid entity within eiWelaAreaOfEffect of the point.
@@ -996,26 +1042,37 @@ func gain_mana(e: SimEntity, amount: int) -> void:
 ## random enemy in range when the wela picks random targets.
 func _on_before_death(e: SimEntity, _killer: SimEntity) -> void:
 	for w in e.welas:
-		if w.kind != Wela.Kind.ON_DEATH or w.projectile == "" or not w.owner_ready(e):
+		if w.kind != Wela.Kind.ON_DEATH or not w.owner_ready(e):
 			continue
+		if w.projectile == "" and not (w.damages or w.heals or w.apply_script != "" or w.splash):
+			continue   # FireAtSelf groups carry only client effects
 		var count := e.target_count(w.group)
-		var target: SimEntity = entities.get(e.target_id)
-		if w.picks_random_targets or target == null or not target.alive:
-			var candidates: Array[SimEntity] = []
-			for other: SimEntity in entities.values():
-				if other.alive and other.team != 0 and w.target_allies == (other.team == e.team) and other.is_targetable() \
-					and w.target_allowed(other, e) \
-					and other.position.distance_to(e.position) - other.collision_radius - e.collision_radius <= e.range_of(w.group):
-					candidates.append(other)
+		var candidates: Array[SimEntity] = []
+		for other: SimEntity in entities.values():
+			if other.alive and other.team != 0 and w.target_allies == (other.team == e.team) and other.is_targetable() \
+				and w.target_allowed(other, e) \
+				and other.position.distance_to(e.position) - other.collision_radius - e.collision_radius <= e.range_of(w.group):
+				candidates.append(other)
+		var chosen: Array[SimEntity] = []
+		var current: SimEntity = entities.get(e.target_id)
+		if w.picks_random_targets:
 			for i in count:
 				if candidates.is_empty():
 					break
 				var index := rng.randi_range(0, candidates.size() - 1)
-				_launch_projectile(w.projectile, e, candidates[index], e.damage(w.group), e.damage_type(w.group), w.group)
+				chosen.append(candidates[index])
 				if not w.picks_with_repetition:
 					candidates.remove_at(index)
-		elif count > 0:
-			_launch_projectile(w.projectile, e, target, e.damage(w.group), e.damage_type(w.group), w.group)
+		elif count == 1 and current != null and candidates.has(current):
+			chosen.append(current)   # FireAtTarget: the unit's current target when it qualifies
+		else:
+			candidates.sort_custom(func(a, b): return a.position.distance_squared_to(e.position) < b.position.distance_squared_to(e.position))
+			chosen = candidates.slice(0, count)
+		for target in chosen:
+			if w.projectile != "":
+				_launch_projectile(w.projectile, e, target, e.damage(w.group), e.damage_type(w.group), w.group)
+			else:
+				_fire_group(e, w.group, target)
 
 
 ## Targeting (Server.Welas.pas:1740-1790): efficiency first (missing health for heals), then upLowPrio last,
@@ -1126,7 +1183,10 @@ func _move_projectiles() -> void:
 				elif p.aoe > 0.0:
 					_projectile_splash(p, target)
 				else:
-					deal_damage(target, p.damage, p.damage_type, entities.get(p.source_id))
+					var dealt := deal_damage(target, p.damage, p.damage_type, entities.get(p.source_id))
+					if dealt > 0.0 and p.on_hit_script != "" and target.alive and Buff.exists(p.on_hit_script) \
+						and not _has_any(target, p.on_hit_must_not_have) and _has_all(target, p.on_hit_must_have):
+						apply_buff(target, p.on_hit_script, {}, entities.get(p.source_id))
 			projectiles.erase(id)
 			projectile_removed.emit(p, hit)
 		else:
