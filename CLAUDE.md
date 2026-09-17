@@ -124,7 +124,7 @@ and `Scripts/Links/*.dws` aura payloads into buffs (stun/root/blessings, stat mo
 ticks, taken-damage multipliers, prevent-death rescues like Homeland and Guarded). Spells: `.sps` cards
 are extracted with symbolic groups; coordinate spells spawn their effect entity (LightPulse, ShieldsUp,
 HailOfArrows field), entity spells fire the card's group at the unit (SolarFlare, SurgeOfLight multi-mode
-with stored charges). All 12 White units and 5 of 6 White spells work (PromiseOfLife charm pending).
-235 tests pass. `game/main.tscn` is a sandbox with capsule
+with stored charges, PromiseOfLife charm field with guard charges and the 3-charm cap). All 12 White
+units and all 6 White spells work. 249 tests pass. `game/main.tscn` is a sandbox with capsule
 units on the Compatibility renderer: keys 1-9,0,-,= play the 12 deck slots, a simple red AI plays back.
 See `CONTINUE.md`.

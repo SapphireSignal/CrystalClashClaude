@@ -62,7 +62,18 @@ var current_tile: int = -1
 var standing_on_tile: int = -1       # tile currently counted as blocked by this entity
 var stand_since: int = -1            # time the unit last came to a stand (Marksman range ramp)
 var exiled: bool = false             # killed by exile: no death effects, no soul
-var link_buffs: Dictionary = {}      # aura owner id -> Buff granted by that aura
+var link_buffs: Dictionary = {}      # "<owner id>:<group>" -> Buff granted by that aura group
+
+
+static func link_key(source_id: int, group: int) -> String:
+	return "%d:%d" % [source_id, group]
+
+
+func linked_from(source_id: int) -> bool:
+	for key in link_buffs:
+		if key.begins_with("%d:" % source_id):
+			return true
+	return false
 
 
 func setup(p_unit_id: String, p_league: int) -> void:
@@ -252,7 +263,7 @@ func can_attack() -> bool:
 
 
 func can_move() -> bool:
-	if is_building() or is_lane_node() or speed() <= 0.0:
+	if is_building() or is_lane_node() or is_spell_effect() or has("upCharm") or speed() <= 0.0:
 		return false
 	for p in ["upRooted", "upGrounded", "upLifted", "upImmobilized"]:
 		if has(p):

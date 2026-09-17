@@ -174,9 +174,15 @@ def parse_modifier(path: Path) -> dict:
     if not m:
         return {}
     params = [p.split(":")[0].strip() for p in m.group(1).split(";")[1:] if ":" in p]
-    body = strip_comments(m.group(2))
+    body = m.group(2)
+    raw = re.search(r"function ApplyRaw\(.*?\)\s*:\s*\w+;(.*?)^end;", text, re.S | re.M)
+    if raw:  # some scripts split the server part into ApplyRaw (Invincibility.dws)
+        body = raw.group(1) + "\n" + body
+    body = strip_comments(body)
     body = re.sub(r"\{\$IFDEF CLIENT\}.*?\{\$ENDIF\}", "", body, flags=re.S)
     consts = {k: float(v) if "." in v else int(v) for k, v in RE_CONST.findall(body)}
+    for k, v in re.findall(r"^#define\s+(\w+)\s+([0-9.]+)", text, re.M):
+        consts[k] = float(v) if "." in v else int(v)
     values: dict = {}
     for line in body.splitlines():
         line = line.strip()

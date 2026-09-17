@@ -30,6 +30,8 @@ const INCOME_UPGRADE_CAP: int = 10
 const INCOME_UPGRADE_COST: float = 1500.0
 const INCOME_UPGRADE_COST_STEP: float = 250.0
 const WAVE_EVERY_N_TICKS: int = 2
+const CHARM_COUNT_CAP: int = 3       # reCharmCount cap per commander
+const GADGET_COUNT_CAP: int = 5      # reGadgetCount cap per commander
 
 # Game events by league index 0..4 (Scripts/Scenarios/Game.dws:36-39), in seconds
 const TECH_LEVEL_2_SECONDS := [180, 180, 180, 240, 240]

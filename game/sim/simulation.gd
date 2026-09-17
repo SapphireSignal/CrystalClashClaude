@@ -71,11 +71,33 @@ func spawn(unit_id: String, team: int, pos: Vector2, front: Vector2 = Vector2.ZE
 		nexus_ids[team] = e.id
 	if e.is_building():
 		map.pathfinding.block_permanent_area(pos, e.collision_radius)
-	elif not e.is_spawner() and not e.is_lane_node():
+	elif not e.is_spawner() and not e.is_lane_node() and not e.has("upCharm"):
 		_enter_tile(e)
 		_stand(e)
+	if e.has("upCharm") and commanders.has(team):
+		_register_charm(e)
 	entity_spawned.emit(e)
 	return e
+
+
+## PromiseOfLifeSpell.ets groups 5-7: a new charm takes a commander charm slot; when the cap (3) is
+## reached the oldest own charm is removed first (TWelaEfficiencyCreatedComponent + Kill.Remove).
+func _register_charm(e: SimEntity) -> void:
+	var c: Commander = commanders[e.team]
+	if c.charm_count >= SimConstants.CHARM_COUNT_CAP:
+		var oldest: SimEntity = null
+		for other: SimEntity in entities.values():
+			if other != e and other.alive and other.team == e.team and other.has("upCharm"):
+				if oldest == null or other.created_at < oldest.created_at or (other.created_at == oldest.created_at and other.id < oldest.id):
+					oldest = other
+		if oldest != null:
+			_remove_silently(oldest)
+	c.charm_count += 1
+
+
+func _release_charm(e: SimEntity) -> void:
+	if e.has("upCharm") and commanders.has(e.team):
+		commanders[e.team].charm_count = maxi(0, commanders[e.team].charm_count - 1)
 
 
 ## TWelaEffectReplaceComponent.KeepTakenDamage().KeepResource(reWelaCharge): the tech-up of a nexus or
@@ -96,6 +118,10 @@ func _remove_silently(e: SimEntity) -> void:
 	e.died_at = time_ms
 	_leave_tile(e)
 	map.pathfinding.cancel_path(e.id)
+	_release_charm(e)
+	for other: SimEntity in entities.values():   # break auras this entity provided
+		if other.linked_from(e.id):
+			_break_link(e, other)
 	entity_died.emit(e)
 
 
@@ -201,10 +227,27 @@ func _try_prevent_death(e: SimEntity) -> bool:
 			if nexus != null:
 				var toward := Vector2(1.0 if e.team == TEAM_BLUE else -1.0, 0.0)
 				_teleport(e, nexus.position + toward * (nexus.collision_radius + e.collision_radius + 1.0))
-		e.link_buffs.erase(b.source_id)
+		for key in e.link_buffs.keys():
+			if e.link_buffs[key] == b:
+				e.link_buffs.erase(key)
 		e.remove_buff(b)
+		_charge_creator_for_rescue(b)
 		return true
 	return false
+
+
+## Guarded payload: TWelaEffectFireComponent.FireInCreator -> creator group 2 pays one charge and, when the
+## charges are gone, group 3 removes the creator (Promise of Life field).
+func _charge_creator_for_rescue(b: Buff) -> void:
+	var creator: SimEntity = entities.get(b.source_id)
+	if creator == null or not creator.alive or creator.ammo_cap <= 0:
+		return
+	creator.ammo -= 1
+	if creator.ammo <= 0:
+		for w in creator.welas:
+			if w.suicide_when_empty:
+				_remove_silently(creator)
+				return
 
 
 func _teleport(e: SimEntity, pos: Vector2) -> void:
@@ -548,13 +591,16 @@ func _think_passive(e: SimEntity, w: Wela) -> void:
 func _think_link(e: SimEntity, w: Wela) -> void:
 	if time_ms < e.created_at + w.link_delay:
 		return
+	if w.charge_cost > 0 and e.ammo < w.charge_cost:   # Promise of Life: no charges, no new guards
+		return
 	var range := e.range_of(w.group)
+	var key := SimEntity.link_key(e.id, w.group)
 	for other: SimEntity in entities.values():
-		var linked: bool = other.link_buffs.has(e.id)
+		var linked: bool = other.link_buffs.has(key)
 		var in_range := other.alive and other.team == e.team and other != e \
 			and other.position.distance_to(e.position) - other.collision_radius <= range
 		if linked and not in_range:
-			_break_link(e, other)
+			_break_link_key(other, key)
 		elif not linked and in_range and other.is_targetable() and w.target_allowed(other, e):
 			var payload := "Links/" + w.link_pattern.get_file().replace("Aura", "")
 			var b: Buff
@@ -566,14 +612,21 @@ func _think_link(e: SimEntity, w: Wela) -> void:
 				other.add_buff(b)
 			if w.link_property != "":
 				b.properties.append(w.link_property)
-			other.link_buffs[e.id] = b
+			other.link_buffs[key] = b
 
 
+## Break every aura link `source` provides to `target`.
 func _break_link(source: SimEntity, target: SimEntity) -> void:
-	var b: Buff = target.link_buffs.get(source.id)
+	for key in target.link_buffs.keys():
+		if key.begins_with("%d:" % source.id):
+			_break_link_key(target, key)
+
+
+func _break_link_key(target: SimEntity, key: String) -> void:
+	var b: Buff = target.link_buffs.get(key)
 	if b != null:
 		target.remove_buff(b)
-		target.link_buffs.erase(source.id)
+		target.link_buffs.erase(key)
 
 
 ## TBrainFollowLaneComponent.ThinkChain: walk to the nearest enemy nexus using lane waypoints.
@@ -791,8 +844,9 @@ func _kill(e: SimEntity, killer: SimEntity = null) -> void:
 	map.pathfinding.cancel_path(e.id)
 	if e.is_spawner() and build_zones.has(e.build_zone_id):
 		build_zones[e.build_zone_id].release(e.build_field)
+	_release_charm(e)
 	for other: SimEntity in entities.values():   # break auras this entity provided
-		if other.link_buffs.has(e.id):
+		if other.linked_from(e.id):
 			_break_link(e, other)
 	entity_died.emit(e)
 	if e.has("upNexus") and not finished:

@@ -2,8 +2,8 @@
 
 Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
 
-## State (2026-09-16, checkpoint 10)
-- Phase 2 core sim works and is tested (235 tests). `game/sim/`: `simulation.gd` (loop, think chain over
+## State (2026-09-16, checkpoint 11)
+- Phase 2 core sim works and is tested (249 tests). All 12 White units and 6 White spells work. `game/sim/`: `simulation.gd` (loop, think chain over
   welas, chained fire groups, auras, splash, spells, combat hooks, projectiles, buffs, economy, movement,
   spawners, card play, ammo, tech-ups, lane nodes), `wela.gd` (weapon/ability groups parsed from unit and
   spell components; header lists covered classes), `buff.gd` (modifier + link payload scripts),
@@ -15,18 +15,14 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
 - Sandbox `game/main.tscn`: capsules, 12-slot white deck on keys 1-9,0,-,=, simple red AI. Renderer: Compatibility.
 
 ## Next step (in order, one at a time, test after each)
-1. **PromiseOfLife charm** (`Spells/White/PromiseOfLifeSpell.ets`): a placed field entity with 10 charges,
-   Guarded aura (5 range) costing a charge per guard, ImmuneToStateEffects aura, commander charm count cap 3
-   (`reCharmCount`), dies when charges are gone. Needs `TAutoBrainOnCreateComponent.FireAtCommander` and
-   charm-count bookkeeping on `Commander`.
-2. **Overheal** (`reOverheal`, `OVERHEAL_LIMIT_FACTOR 2.0`, `dtOverheal` heals above max, decays?) in `heal()`.
-3. **Splash on projectiles** (`eiWelaAreaOfEffect` on HeavyGunner infused shot, PatronSaint, lanetower
+1. **Overheal** (`reOverheal`, `OVERHEAL_LIMIT_FACTOR 2.0`, `dtOverheal` heals above max, decays?) in `heal()`.
+2. **Splash on projectiles** (`eiWelaAreaOfEffect` on HeavyGunner infused shot, PatronSaint, lanetower
    projectiles): pass the projectile script's AoE + `eiWelaSplashfactor` into `Projectile` and splash on impact.
-4. **Dynamic drop zone** (`dzNexus`/`dzDrop`, radius 31.5 around own nexus and own lanetowers) replacing the
+3. **Dynamic drop zone** (`dzNexus`/`dzDrop`, radius 31.5 around own nexus and own lanetowers) replacing the
    static `Drop` polygon check in `play_card`.
-5. Then Black, Green, Blue, Golems: run the component coverage audit (see git history for the Python
+4. Then Black, Green, Blue, Golems: run the component coverage audit (see git history for the Python
    snippet), implement missing component classes faction by faction, with tests per unit.
-6. Then the sandbox should show the whole White deck including spells (main.gd: `ctEntity` spells need a
+5. Then the sandbox should show the whole White deck including spells (main.gd: `ctEntity` spells need a
    unit under the mouse).
 
 ## Rules that bit us

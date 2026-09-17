@@ -522,10 +522,10 @@ func test_suntower_homeland_aura_links_allies() -> void:
 	near.base_speed = 0.0
 	far.base_speed = 0.0
 	sim.step()
-	runner.check(near.link_buffs.has(tower.id), "ally within 5.5 is linked")
-	runner.check(not far.link_buffs.has(tower.id), "ally out of range is not linked")
+	runner.check(near.linked_from(tower.id), "ally within 5.5 is linked")
+	runner.check(not far.linked_from(tower.id), "ally out of range is not linked")
 	sim._kill(tower)
-	runner.check(not near.link_buffs.has(tower.id), "links break when the tower dies")
+	runner.check(not near.linked_from(tower.id), "links break when the tower dies")
 	var defender := sim.spawn("Units/White/Defender", Simulation.TEAM_BLUE, Vector2(10, -23))
 	var friend := sim.spawn("Units/White/Footman", Simulation.TEAM_BLUE, Vector2(12, -23))
 	friend.base_speed = 0.0
@@ -567,7 +567,7 @@ func test_homeland_rescue() -> void:
 	runner.check(not footman.has("upStunned"), "state effects stripped")
 	runner.check(footman.has("upImmuneToRescued"), "immune to a second rescue")
 	runner.check(footman.position.distance_to(Vector2(-96, -23)) < 6.0, "teleported next to the own nexus")
-	runner.check(not footman.link_buffs.has(tower.id), "link consumed")
+	runner.check(not footman.linked_from(tower.id), "link consumed")
 	sim._kill(footman)
 	runner.check(not footman.alive, "second death is final")
 
@@ -665,6 +665,36 @@ func test_hail_of_arrows_field() -> void:
 	# 4 charges = 4 ticks of 16 spell damage every 0.5 s, then the field is gone
 	runner.check_near(enemy.health, 265.0 - 4 * 16.0, "four ticks of 16")
 	runner.check_eq(sim.alive_entities(Simulation.TEAM_BLUE).filter(func(e): return e.is_spell_effect()).size(), 0, "field expired")
+
+
+func test_promise_of_life_charm() -> void:
+	var sim := _spell_sim()
+	var c: Commander = sim.commanders[Simulation.TEAM_BLUE]
+	c.set_deck(["Spells/White/PromiseOfLife.sps"])
+	c.raise_tier(3)
+	c.gold = 5000.0
+	c.slots[0].charges = 5
+	runner.check_near(c.slots[0].cost, 130.0 + 40.0, "tier 2 spell 130 + 40")
+	var monk := sim.spawn("Units/White/Monk", Simulation.TEAM_BLUE, Vector2(2, -23))
+	monk.base_speed = 0.0
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 0, Vector2(0, -23)), Simulation.PlayResult.OK, "charm placed")
+	runner.check_eq(c.charm_count, 1, "one charm counted")
+	var charm: SimEntity = sim.alive_entities(Simulation.TEAM_BLUE).filter(func(e): return e.has("upCharm"))[0]
+	runner.check_eq(charm.ammo, 10, "charm has 10 charges")
+	sim.step()
+	runner.check(monk.has("upGuarded"), "ally in 5 is guarded")
+	runner.check(monk.has("upImmuneToStateEffects"), "ally is immune to state effects")
+	runner.check(not charm.moving, "charm stays put")
+	sim._kill(monk)
+	runner.check(monk.alive, "guarded ally survives")
+	runner.check_near(monk.health, 1.0, "with 1 health")
+	runner.check_eq(charm.ammo, 9, "one charge spent on the rescue")
+	runner.check(monk.has("upImmuneToGuarded") and monk.has("upInvincible"), "immune to guarded, briefly invincible")
+	for i in 3:
+		sim.play_card(Simulation.TEAM_BLUE, 0, Vector2(-20 + i * 3, -23))
+	runner.check_eq(c.charm_count, 3, "charm count capped at 3")
+	runner.check(not charm.alive, "oldest charm removed when the fourth was placed")
+	runner.check_eq(sim.alive_entities(Simulation.TEAM_BLUE).filter(func(e): return e.has("upCharm")).size(), 3, "three charms alive")
 
 
 func test_drop_formation() -> void:
