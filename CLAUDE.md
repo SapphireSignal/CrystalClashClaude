@@ -146,6 +146,11 @@ Vecra (group-bound properties, group removal, activation, link entity aura), Voi
 All 7 Black spells work (Frenzy, Frostspear with ice shards and 5 s base freeze, Freeze, On the Edge charm
 field with Befogged links, PermaFrost, Rip Out Soul, Shatter Ice); modifier scripts may be parametric
 (`defaults`, expressions), conditional on melee/ranged, and CreateMeta constraints are extracted.
-The Black faction is complete. 416 tests pass. Green, Blue and Golems are next. `game/main.tscn` is a sandbox with capsule
+The Black faction is complete. Green is complete too (13 units incl. Saplings with timed life and flourish,
+Rootling beam links, Heart of the Forest ally approach and wait brain, Spore field, Woodwalker/Sapling Farm
+summons, Rootdude, Forest Guardian shared cooldown, Groundbreaker burrow, Oracle feast, Brratu straight-line
+siege; 6 spells incl. Saplingcharge's timer waves). Blue and Golems (Crystal Legion) are next. 509 tests pass.
+`docs/reference-material.md` lists the owner's live-client screenshots and the balance deltas seen so far
+(towers/nexus reworked after 2022). `game/main.tscn` is a sandbox with capsule
 units on the Compatibility renderer: keys 1-9,0,-,= play the 12 deck slots, a simple red AI plays back.
 See `CONTINUE.md`.

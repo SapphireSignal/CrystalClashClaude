@@ -1670,10 +1670,11 @@ func test_saplingcharge() -> void:
 	var t := sim.time_ms
 	while sim.time_ms < t + 3300:
 		sim.step()
-	runner.check_eq(count.call(), 15, "first wave: 15 saplings by ~3.1 s")
+	# both timers fire on the 1 s tick in component order: the first wave activates the second one at once
+	runner.check_eq(count.call(), 25, "first tick: 15 + 10 saplings by ~3.1 s")
 	while sim.time_ms < t + 14500:
 		sim.step()
-	runner.check_eq(count.call(), 115, "15 + 10 x 10 saplings in total")
+	runner.check_eq(count.call(), 125, "15 + 11 ticks x 10 saplings in total (the 11th tick spawns before the removal)")
 	runner.check_eq(sim.alive_entities(Simulation.TEAM_BLUE).filter(func(e): return e.unit_id == "Spells/Green/Saplingcharge").size(), 1, "the field is still there before 15 s")
 	while sim.time_ms < t + 15100:
 		sim.step()

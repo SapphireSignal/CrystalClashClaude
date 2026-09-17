@@ -2,8 +2,12 @@
 
 Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
 
-## State (2026-09-16, checkpoint 16)
-- Phase 2 core sim works and is tested (416 tests). Black faction complete (12 units, 7 spells). All 12 White units and 6 White spells work, plus
+## State (2026-09-16, checkpoint 17)
+- Phase 2 core sim works and is tested (509 tests). Black and Green factions complete.
+- Green added: approach/wait brains per group, link entities with chained groups (`_fire_link_group`), timer
+  groups (`_think_timers`, `Wela.timer_period`, `nth`), companion/shared-cooldown groups, `no_pathfinding`,
+  `charge_capacity`, bouncing/depleting projectiles, dodge, buff `removed_properties`/`on_expire_script`/
+  cap-scaled health, duration = cooldown group that removes/suicides. No implicit cooldown (missing = 0). All 12 White units and 6 White spells work, plus
   overheal, projectile splash and the dynamic drop zone.
 - Black steps 1a+1b done: souls (`_release_soul`, `gain_mana`, `Wela.Kind.ON_RESOURCE`), VoidSkeleton
   Undying (`Wela.Kind.PREVENT_DEATH`, buff `instant_heal`/`kills_on_expiry`), VoidBane cone cleave
@@ -36,8 +40,8 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
   and for the patch-notes audit.
 
 ## Next step (in order, one at a time, test after each)
-1. Green, Blue, Golems the same way as Black: `docs/factions/<x>.md` (research agents write them, same
-   structure as black.md), then units then spells, each with a test against the doc's numbers.
+1. Blue (`docs/factions/blue.md`), then Golems / Crystal Legion (`docs/factions/golems.md`): units then spells,
+   each with a test against the doc's numbers. Read `docs/reference-material.md` for live-client facts.
 2. Then the sandbox should show a full deck including spells (main.gd: `ctEntity` spells need a unit under
    the mouse), then phase 3 deck rules (12 slots, 2 colors, 1 epic) and phase 4 HUD.
 3. Late phase: audit Crystal Clash Steam patch notes newer than the repo snapshot (2022-01-19) and apply

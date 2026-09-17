@@ -103,3 +103,9 @@ These are current and take precedence over Codex's older captures. Facts read fr
 - Clicking the nexus (stage II, card level 5): panel "Nexus", health "8000 / 8000", ammo "25 / 25", attack "96.0",
   armor "0%", keywords "Primary Target, Monumental, Spell Immune, Crystal Ammunition Refill, Crystal Ammunition,
   Doubleshot, Radiating Shot, Upgrade"; a white range circle is drawn on the ground while selected.
+- **Balance warning for the audit:** live Guard Tower (stage II) panel: "862 / 2800", ammo "9 / 23", attack "80.0",
+  keywords "Monumental, Crystal Ammunition Refill, Crystal Ammunition, Doubleshot, Radiating Shot, Nexusbuster,
+  Upgrade"; it fires two shots at two enemies. The 2022 source lanetower has 800-1400 HP by league/level, 100 damage,
+  6-18 ammo and a single target. Nexus live: 8000 HP, 25 ammo, 96 damage (source: 110-120 damage, 8-20 ammo).
+  Towers and bases were reworked after the repo snapshot; the patch-notes audit must cover them first.
+- Capture point (lane node): a white disc on the lane with a blue progress ring while a team captures it.

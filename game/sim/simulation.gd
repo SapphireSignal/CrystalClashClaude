@@ -1002,12 +1002,6 @@ func _fire_group(e: SimEntity, group: int, target: SimEntity) -> void:
 	for item in w.extra_apply_scripts:
 		if target.alive and Buff.exists(item[0]):
 			_apply_scripted(target, item[0], item[1], item[2], e)
-	if w.suicide and e.alive and w.kind != Wela.Kind.FIGHT and not _in_think_once:   # TWelaEffectSuicideComponent
-		if e.is_targetable():
-			_kill(e)   # a real unit dies (Sapling timed life)
-		else:
-			_remove_silently(e)   # a field vanishes (SporeField after 10 s)
-		return
 	for ag in w.activates_groups:   # TWelaEffectActivationAbilityComponent.SetsActive
 		var aw := e.wela(ag)
 		if aw != null:
@@ -1061,6 +1055,11 @@ func _fire_group(e: SimEntity, group: int, target: SimEntity) -> void:
 			rw.cooldown_ready_at = time_ms
 			if rg == SimConstants.GROUP_MAINWEAPON:
 				e.cooldown_ready_at = time_ms
+	if w.suicide and e.alive and w.kind != Wela.Kind.FIGHT and not _in_think_once:   # TWelaEffectSuicideComponent
+		if e.is_targetable():
+			_kill(e)   # a real unit dies (Sapling timed life)
+		else:
+			_remove_silently(e)   # a field vanishes (SporeField after 10 s)
 
 
 ## TWelaEffectFireComponent: fire the chained groups at the target (or the owner) when they are ready.
