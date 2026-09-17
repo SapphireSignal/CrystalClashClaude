@@ -48,6 +48,7 @@ func _ready() -> void:
 	_hud.setup(sim, Simulation.TEAM_BLUE, _camera)
 	_hud.slot_clicked.connect(_on_slot_clicked)
 	_hud.spawner_jump.connect(_spawner_jump)
+	_hud.match_left.connect(func(): get_tree().reload_current_scene())   # sandbox: Continue restarts the match
 	_selection_decal = _make_decal()
 	_place_camera(Vector2(-40, -23))
 

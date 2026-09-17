@@ -1,7 +1,7 @@
 extends SceneTree
 ## Runs game/main.tscn for a while and saves screenshots of the HUD for comparison with
 ## reference/media/ingame. Usage (windowed, not headless):
-##   godot --path <proj> -s tools/screenshot.gd --log-file <proj>/.tmp/godot.log -- <seconds> [<seconds> ...] [select] [hover=<slot>]
+##   godot --path <proj> -s tools/screenshot.gd --log-file <proj>/.tmp/godot.log -- <seconds> [<seconds> ...] [select] [hover=<slot>] [finish]
 ## Writes .tmp/shot_<seconds>.png for each requested time; "select" selects a unit (or the blue nexus), "hover=N" shows deck slot N's card hint.
 
 var _targets: Array = []
@@ -9,6 +9,7 @@ var _elapsed := 0.0
 var _main: Node
 var _select := false
 var _hover := -1
+var _finish := false
 
 
 func _initialize() -> void:
@@ -19,6 +20,8 @@ func _initialize() -> void:
 			_select = true
 		elif arg.begins_with("hover="):
 			_hover = int(arg.trim_prefix("hover="))
+		elif arg == "finish":
+			_finish = true
 	if _targets.is_empty():
 		_targets = [3.0]
 	_targets.sort()
@@ -39,6 +42,9 @@ func _process(delta: float) -> bool:
 			var c: Commander = _main.sim.commanders[Simulation.TEAM_BLUE]
 			_main._hud.card_hint.show_slot(c.slots[_hover], c, _main.sim.time_ms)
 			_hover = -1
+		if _finish:   # kill the red nexus at the first shot: later shots show the victory screen
+			_main.sim._kill(_main.sim.entities[_main.sim.nexus_ids[Simulation.TEAM_RED]])
+			_finish = false
 		var path := "res://.tmp/shot_%d.png" % int(seconds)
 		var err := root.get_viewport().get_texture().get_image().save_png(path)
 		print("screenshot %s: %s" % [path, error_string(err)])

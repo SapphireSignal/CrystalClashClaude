@@ -174,6 +174,7 @@ code-built HUD (`hud.gd` owner; `game_info_bar.gd` clock + nexus bars, `resource
 tier-locked groups, cooldown fill, charge/hotkey badges, click-to-arm cards and the spawner jump, `minimap.gd`
 with the WorldToMiniMap port, icons and camera quad, `info_panel.gd` for the clicked unit with a ground decal,
 `lang.gd`, `hud_style.gd`, `card_hint.gd` hover card with the delayed ability box, `announcements.gd`,
-`unit_bars.gd` health/mana/ammo bars projected over units). The extractor records `ability_details`
+`unit_bars.gd` health/mana/ammo bars projected over units, `final_screen.gd` victory/defeat banner with the
+original 4 s / 11 s timers). The extractor records `ability_details`
 (tooltip variables/keywords) and `unit_bars` per script. `tools/screenshot.gd` captures the running game for
 comparison with `reference/media`. See `CONTINUE.md`.

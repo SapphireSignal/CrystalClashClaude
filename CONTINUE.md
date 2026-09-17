@@ -2,7 +2,7 @@
 
 Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
 
-## State (2026-09-17, checkpoint 27)
+## State (2026-09-17, checkpoint 28)
 - Phases 1-3 done, 799 tests pass. Sandbox `game/main.tscn`: blue deck on keys 1-9,0,-,= or by clicking a card
   (drops/spells then need a left click on the ground, spawners go to the next free field); red AI plays Black.
 - **Phase 4 (HUD): step 1 done.** `game/ui/` holds the code-built HUD from `docs/hud.md`: top bar (clock, nexus
@@ -18,19 +18,22 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
   1 s), `announcements.gd` (warm-up countdown, stage 1/2/3, showdown), `unit_bars.gd` (health bars while damaged
   or Alt, overheal, integer chunk bars for mana/ammo, progress bars). The extractor now records `ability_details`
   and `unit_bars`. The original has no floating combat text (not built). `docs/hud.md` updated.
+- **Final screen done (checkpoint 28):** `final_screen.gd` shows Victory/Defeat on `banner.png` 4 s after
+  `team_lost` (TIME_OFFSET_ENDSCREEN), Continue or 11 s (TIME_TO_FINISH_GAME) emits `Hud.match_left`; the
+  sandbox reloads the scene. Timers use the wall clock because the sim stops stepping once finished.
+  `tools/screenshot.gd -- 3 9 finish` kills the red nexus at the first shot. Phase 4 (HUD) is complete except
+  the settings menu (blocked, see below), chat, scoreboard and pings (multiplayer).
 - Verified by screenshot against `reference/media/ingame/*.webp` (those use the client's small layout; ours is
   the normal 1920x1080 layout, so sizes differ but the structure matches).
 
 ## Next step (in order, one at a time, run the game after each)
-1. Final screen: `team_lost` -> `HUD/FinalScreen/Victory.png` / `Defeat.png` on `banner.png` (read the
-   FinalScreen `.dui` + `core_game.scss` first), then freeze input. Small step.
-2. **Phase 5 (assets)**: research first. Find the original mesh/animation formats under `reference/rise-of-legions/`
+1. **Phase 5 (assets)**: research first. Find the original mesh/animation formats under `reference/rise-of-legions/`
    and the loaders in `reference/delphi3d-engine/`, textures (`.tga`/`.dds`), particles `.pfx`, FMOD sound banks.
    Write `docs/assets.md` rows per format with a conversion plan, then `tools/convert_*.py` for meshes first
    (Footman), swap the capsule in `main.gd` for the real model, then the maps.
-3. **Settings menu (the gear button on the minimap): do NOT build it yet.** The owner will add screenshots of the
+2. **Settings menu (the gear button on the minimap): do NOT build it yet.** The owner will add screenshots of the
    live client's settings screens to `reference/media/` first; build it only after they exist.
-4. Later: audit the Steam patch notes newer than 2022-01-19 (CLAUDE.md Decisions) and apply via the extractor.
+3. Later: audit the Steam patch notes newer than 2022-01-19 (CLAUDE.md Decisions) and apply via the extractor.
 
 ## Rules that bit us
 - Run `--import` before `-s tests/run_tests.gd` when new class_name scripts or assets were added.

@@ -5,6 +5,7 @@ extends Control
 
 signal slot_clicked(slot_index: int)
 signal spawner_jump
+signal match_left      # the final screen's Continue button (or its timeout)
 
 const TECH_W := 158.0
 const TECH_H := 34.0
@@ -17,6 +18,7 @@ var info: InfoPanel
 var card_hint: CardHint
 var announcements: Announcements
 var unit_bars: UnitBars
+var final_screen: FinalScreen
 
 var _sim: Simulation
 var _own_team: int
@@ -53,6 +55,9 @@ func _ready() -> void:
 	announcements = Announcements.new()
 	announcements.position = Vector2((1920 - Announcements.WIDTH) / 2.0, Announcements.TOP)
 	add_child(announcements)
+	final_screen = FinalScreen.new()
+	final_screen.continue_pressed.connect(func(): match_left.emit())
+	add_child(final_screen)
 	# TechnicalPanel: fps, ping icon, latency
 	var tech := Control.new()
 	tech.mouse_filter = MOUSE_FILTER_IGNORE
@@ -76,6 +81,7 @@ func setup(sim: Simulation, own_team: int, camera: Camera3D) -> void:
 	unit_bars.setup(sim, own_team, camera)
 	info.setup(own_team)
 	sim.game_event.connect(_on_game_event)
+	sim.team_lost.connect(func(team): final_screen.game_over(team, _own_team))
 	sim.game_tick.connect(_on_game_tick)
 
 
@@ -101,6 +107,7 @@ func refresh() -> void:
 		var seconds := ceili((_sim.next_game_tick_at - _sim.time_ms) / 1000.0)
 		announcements.show_text(str(maxi(seconds, 1)), Lang.t("core_game_countdown"), _sim.time_ms)
 	announcements.refresh(_sim.time_ms)
+	final_screen.refresh()
 	_fps.text = "%d FPS" % Engine.get_frames_per_second()
 
 
