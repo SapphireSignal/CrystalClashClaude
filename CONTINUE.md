@@ -89,12 +89,11 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
   top-right, lane to the bottom-left, blue top-right on the minimap) at yaw 55.5 deg instead of 47.4 (lane at
   29.2 deg on screen). `main.gd` + `minimap.gd` offset (0.3305, 0.8121, -0.4809); CLAUDE.md decision recorded.
   Noted for later: the live top bar is red-left / blue-right for both players (ours: own blue left).
-  **Seen while verifying (`tools/screenshot.gd -- 12 zoom=nexus` vs reference `image-1789614749130.webp`):**
-  the base area differs a lot: the reference nexus is a big round stone base with the crystal in a round sand
-  clearing ringed by jungle, drop tiles up-right; ours shows a small dark tower without crystal on a bridge-like
-  stone pattern with sand strips and almost no vegetation. Check (a) `UnitModel` for NexusLevel1 (crystal pivot
-  mesh, scale), (b) `MapView` vegetation/decoration placement near (-96,-23) (Delphi `Random` replica, `.veg`
-  instance transforms), (c) whether the 2022 Single map terrain textures really differ from the live map.
+  Verified with `tools/screenshot.gd -- 12 13 zoom=nexus` (second shot: the first shows the frame before the
+  camera moved!) against `image-1789614749130.webp`: clearing, jungle, stone ring, nexus and lane direction now
+  match. Differences seen: the reference draws the own build zone as teal drop tiles up-right of the nexus at
+  game start (we draw nothing until a spawner is placed: check `TBuildZone`/`ShowSpawnZone` visuals), and the
+  live nexus crystal glows bright cyan (ours is the plain textured crystal: glow/emission).
 
 ## FIX FIRST (owner's request, before anything else)
 1. **Done (checkpoint 37): lane node capture circle verified.** The ring renders (mesh, y 0.01, orientation:
