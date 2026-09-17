@@ -94,9 +94,14 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
   Noted for later: the live top bar is red-left / blue-right for both players (ours: own blue left).
   Verified with `tools/screenshot.gd -- 12 13 zoom=nexus` (second shot: the first shows the frame before the
   camera moved!) against `image-1789614749130.webp`: clearing, jungle, stone ring, nexus and lane direction now
-  match. Differences seen: the reference draws the own build zone as teal drop tiles up-right of the nexus at
-  game start (we draw nothing until a spawner is placed: check `TBuildZone`/`ShowSpawnZone` visuals), and the
-  live nexus crystal glows bright cyan (ours is the plain textured crystal: glow/emission).
+  match. Difference left: the live nexus crystal glows bright cyan (ours is the plain textured crystal).
+- **Checkpoint 40: spawner tiles.** `game/maps/build_grid.gd` ports `TBuildGridManagerComponent`: one
+  `Gameplay/Buildgrid/Buildgrid<1-4>` tile per free field (random variant / 90 deg rotation, scale 2/1.84+0.08,
+  sunk 0.04), GlowOvershoot lerp to cyan by 0.4 while the field is in the wave rotation, dims over 1 s on
+  `Simulation.wave_spawned`, all relight over 0.5 s after a full rotation. Assets via
+  `tools/msh_to_gltf.py --gameplay` + `tools/copy_unit_assets.py --gameplay` -> `assets/gameplay/`. Not built:
+  the red/green occupation colouring while placing a spawner (`ShowOccupation`/`ShowInvalid` ColorAdjustment)
+  and the `buildgrid_activate.pfx` burst on spawn. Reference tiles look a bit brighter (post-effect glow).
 
 ## FIX FIRST (owner's request, before anything else)
 1. **Done (checkpoint 37): lane node capture circle verified.** The ring renders (mesh, y 0.01, orientation:

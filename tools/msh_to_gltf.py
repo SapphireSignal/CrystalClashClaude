@@ -27,7 +27,8 @@ from msh import Msh, load  # noqa: E402
 ROOT = Path(__file__).resolve().parent.parent
 GRAPHICS = ROOT / "reference" / "rise-of-legions" / "Graphics"
 TREES = {"--all": (GRAPHICS / "Units", ROOT / "assets" / "units"),
-         "--environment": (GRAPHICS / "Environment", ROOT / "assets" / "environment")}
+         "--environment": (GRAPHICS / "Environment", ROOT / "assets" / "environment"),
+         "--gameplay": (GRAPHICS / "Gameplay", ROOT / "assets" / "gameplay")}
 
 FLOAT = 5126
 UINT16 = 5123

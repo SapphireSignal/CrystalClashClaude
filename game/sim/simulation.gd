@@ -9,6 +9,7 @@ signal projectile_spawned(projectile: Projectile)
 signal projectile_removed(projectile: Projectile, hit: bool)
 signal buff_applied(entity: SimEntity, buff: Buff)
 signal game_tick(counter: int)
+signal wave_spawned(zone_id: int, field: Vector2i)
 signal game_event(name: String)
 signal team_lost(team: int)
 
@@ -665,6 +666,7 @@ func _wave_spawn() -> void:
 			rotation.assign(build_zones[zone_id].spawn_slots())
 		var field: Vector2i = rotation[rng.randi_range(0, rotation.size() - 1)]
 		rotation.erase(field)
+		wave_spawned.emit(zone_id, field)   # eiWaveSpawn: the client dims the field's tile
 		var owner_id: int = build_zones[zone_id].entity_at(field)
 		var spawner: SimEntity = entities.get(owner_id) if owner_id >= 0 else null
 		if spawner != null and spawner.alive:

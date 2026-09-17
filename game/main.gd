@@ -51,6 +51,9 @@ func _ready() -> void:
 	_map = MapView.new()   # the original map: terrain, water, lights, vegetation, decorations
 	add_child(_map)
 	_map.load_map(sim.map.name)
+	var grid := BuildGrid.new()   # the spawner tiles of both build zones
+	add_child(grid)
+	grid.setup(sim)
 	_environment.environment.ambient_light_color = _map.ambient_color
 	_environment.environment.ambient_light_energy = _map.ambient_energy
 	# Decks go through the Deck rules (validates them) and its slot sort, like the real card bar.

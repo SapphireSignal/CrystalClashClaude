@@ -17,6 +17,11 @@ EXTENSIONS = {".tga", ".png", ".xml"}
 
 
 def main(filters: list[str]) -> int:
+    global SRC, OUT
+    if "--gameplay" in filters:   # Graphics/Gameplay (build grid tiles) -> assets/gameplay
+        filters = [f for f in filters if f != "--gameplay"]
+        SRC = ROOT / "reference" / "rise-of-legions" / "Graphics" / "Gameplay"
+        OUT = ROOT / "assets" / "gameplay"
     if not SRC.is_dir():
         print(f"missing {SRC}", file=sys.stderr)
         return 1
