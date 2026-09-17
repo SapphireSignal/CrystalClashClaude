@@ -3,6 +3,8 @@ extends Node3D
 ## Blue (you) plays deck slots with keys 1-9, 0, -, = at the mouse position (drops) or on the next free
 ## build field (spawners). Red plays a Black deck automatically. Real assets replace the capsules in phase 5.
 
+signal match_left   # the final screen's Continue: the client state machine returns to the main menu
+
 const HUMAN_DECK := [
 	"Units/White/FootmanDrop", "Units/White/ArcherDrop", "Units/White/FootmanSpawner", "Units/White/ArcherSpawner",
 	"Units/White/BallistaDrop", "Units/White/PriestDrop", "Units/White/MonkDrop", "Units/White/SuntowerBuilding",
@@ -74,10 +76,19 @@ func _ready() -> void:
 	_hud.setup(sim, HUMAN_TEAM, _camera)
 	_hud.slot_clicked.connect(_on_slot_clicked)
 	_hud.spawner_jump.connect(_spawner_jump)
-	_hud.match_left.connect(func(): get_tree().reload_current_scene())   # sandbox: Continue restarts the match
+	_hud.match_left.connect(_on_match_left)
 	_selection_decal = _make_decal()
 	_look_at = sim.map.base_layout(HUMAN_TEAM)["nexus"]
 	_place_camera(_look_at)
+
+
+## The final screen's Continue (or its timeout): TGameStateCoreGame.EnterMainMenu hands over to the client state
+## machine (app.gd); run stand-alone (no listener) the sandbox simply restarts the match.
+func _on_match_left() -> void:
+	if match_left.get_connections().is_empty():
+		get_tree().reload_current_scene()
+	else:
+		match_left.emit()
 
 
 func _process(delta: float) -> void:

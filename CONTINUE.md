@@ -2,7 +2,7 @@
 
 Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
 
-## State (2026-09-17, checkpoint 63)
+## State (2026-09-17, checkpoint 64)
 - Phases 1-3 done, 799 tests pass. Sandbox `game/main.tscn`: blue deck on keys 1-9,0,-,= or by clicking a card
   (drops/spells then need a left click on the ground, spawners go to the next free field); red AI plays Black.
 - **Phase 4 (HUD): step 1 done.** `game/ui/` holds the code-built HUD from `docs/hud.md`: top bar (clock, nexus
@@ -253,8 +253,13 @@ Then checkpoint (tests, Status, CONTINUE.md, commit + push, give the new-chat pr
    `tools/copy_ui_assets.py` copies `LoadingScreen/` (now incl. jpg) and `Shared/Tutorial/`. Verified with
    `.tmp/app_flow.gd` (shots at 4/9 s) and `.tmp/loading_shot.gd` (tutorial stage; both not committed). Not built:
    loading music, the game-server connection/abort paths.
-   Next: (6) Final screen's
-   Continue back to the dashboard, (7) SettingsMenu tabs. New scene `game/ui/menu/` + a `game/app.tscn` state
+   **(6) done (checkpoint 64):** `main.gd` has `signal match_left` (forwarded from the HUD's final screen; stand-alone
+   it still restarts the match); `app.gd` connects it to a deferred `change_game_state(MAINMENU)`, so Continue (or the
+   11 s timeout) frees the game and re-enters MainMenu like `TGameStateCoreGame.EnterMainMenu` (`Gamestates.pas:2468`):
+   the preload page shows again briefly (the original re-runs `InitAssetLoader` with its cache) and lands on mtStart
+   (`Idle` `:2971-3010`: without ServerGameData -> mtStart; the mtGameRewards statistics screen of server matches is
+   not built). Verified with `.tmp/exit_flow.gd` (kills the human nexus at 14 s, shots at 17/30.5 s; not committed).
+   Next: (7) SettingsMenu tabs. New scene `game/ui/menu/` + a `game/app.tscn` state
    machine (GAMESTATE_* from `Constants.Client.pas:51-58`); the sandbox `main.tscn` becomes the ingame state.
    Note `docs/lobby.md` section 3: `ch` = % of container height (re-derive the `ch` uses in `docs/hud.md`).
 1. Particles polish: (a) `AtFireTarget` / `ClonesToTarget` effects; (c) light particles as

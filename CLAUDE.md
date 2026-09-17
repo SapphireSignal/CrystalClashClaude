@@ -230,4 +230,5 @@ level locks and player/currency panel; `dashboard.gd` with header, announcement,
 profile/server values are local stubs; `teambuilding.gd` = the Play screen with the scenario sub-navbar, tier hint,
 team row with the deck banner and the Start button, which begins the sandbox match); `loading_screen.gd` = the
 in-match LoadingScreen (background, progress bar, state texts, match display with the VS icon for 10 s then the
-tutorial slides every 5 s, 10 s minimum loading time, first-time hint), shown by `app.gd`'s LoadGame state. See `CONTINUE.md`.
+tutorial slides every 5 s, 10 s minimum loading time, first-time hint), shown by `app.gd`'s LoadGame state; the final
+screen's Continue returns to MainMenu (preload page, then the dashboard) like `TGameStateCoreGame.EnterMainMenu`. See `CONTINUE.md`.

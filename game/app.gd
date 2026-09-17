@@ -83,4 +83,9 @@ func change_game_state(id: String) -> void:
 			layer.add_child(_match_loading)
 		GAMESTATE_INGAME:
 			var scene: PackedScene = _preloaded if _preloaded != null else load(MAIN_SCENE)
-			_state_root.add_child(scene.instantiate())
+			var game := scene.instantiate()
+			# TGameStateCoreGame.EnterMainMenu: leaving the match re-enters MainMenu, which preloads again (its
+			# loading page, quick from the cache) and lands on the dashboard (mtStart; the rewards/statistics
+			# screen of a server match is not built). Deferred: the game frees itself from inside its own signal.
+			game.match_left.connect(func(): change_game_state.call_deferred(GAMESTATE_MAINMENU))
+			_state_root.add_child(game)
