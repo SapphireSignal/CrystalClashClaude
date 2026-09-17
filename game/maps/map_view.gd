@@ -11,6 +11,9 @@ const ENV_DIR := "res://assets/environment/"
 ## the lit sand / platform at the reference's brightness (patch medians, docs/reference-material.md).
 const AMBIENT_SCALE := 0.35
 const SUN_SCALE := 1.06
+const LIVE_WATER_COLOR := Color(0.0, 0.33, 0.48)   # see _add_water
+const LIVE_WATER_TRANSPARENCY := 0.0
+const LIVE_WATER_FRESNEL := 0.1
 
 static var _material_cache: Dictionary = {}
 
@@ -25,7 +28,7 @@ func load_map(map_name: String) -> void:
 	var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(dir + "map.json"))
 	_add_terrain(dir + str(data["terrain"]["file"]))
 	for water in data.get("water", []):
-		_add_water(water, dir, data.get("lights", {}))
+		_add_water(water, dir, data.get("lights", {}), data["terrain"])
 	_add_lights(data.get("lights", {}))
 	_add_vegetation(data.get("vegetation", []))
 	for deco in data.get("decorations", []):
@@ -45,13 +48,28 @@ func _add_terrain(path: String) -> void:
 
 ## TWaterSurface: a plane of GeometrySize at Position drawn with the water shader port (game/maps/water.gdshader)
 ## fed with the .wat parameters (TextureNormalization = GeometrySize / 2000, Engine.Water.pas:366).
-func _add_water(water: Dictionary, dir: String, lights: Dictionary) -> void:
+func _add_water(water: Dictionary, dir: String, lights: Dictionary, terrain: Dictionary) -> void:
 	var mesh := MeshInstance3D.new()
 	var plane := PlaneMesh.new()
 	plane.size = Vector2(water["size"][0], water["size"][1])
 	mesh.mesh = plane
 	var mat := ShaderMaterial.new()
 	mat.shader = load("res://game/maps/water.gdshader")
+	# depth from the terrain heightmap (no depth texture on the Compatibility renderer)
+	var ts: Array = terrain["scale"]
+	var tp: Array = terrain["position"]
+	var heights := Image.load_from_file(ProjectSettings.globalize_path(dir + str(terrain.get("heightmap", "heightmap.png"))))   # raw data, not colour: bypass the importer
+	mat.set_shader_parameter("terrain_heights", ImageTexture.create_from_image(heights))
+	mat.set_shader_parameter("terrain_scale", Vector3(ts[0], ts[1], ts[2]))
+	mat.set_shader_parameter("terrain_position", Vector3(tp[0], tp[1], tp[2]))
+	mat.set_shader_parameter("water_height", float(water["position"][1]))
+	# Live-client water (docs/reference-material.md): the 2022 .wat colour (45,93,113) with 33 % see-through gives
+	# a pale grey-green; the reference's deep water is opaque saturated blue (0,95,134). The live .wat is not in
+	# the repo, so these three values are set to reproduce the measured reference patches.
+	water = water.duplicate()
+	water["color"] = [LIVE_WATER_COLOR.r, LIVE_WATER_COLOR.g, LIVE_WATER_COLOR.b, 0.0]
+	water["transparency"] = LIVE_WATER_TRANSPARENCY
+	water["fresnel_offset"] = LIVE_WATER_FRESNEL
 	var c: Array = water["color"]
 	var sky: Array = water.get("sky_color", [0.63, 0.73, 0.92, 0])
 	mat.set_shader_parameter("water_color", Vector3(c[0], c[1], c[2]))

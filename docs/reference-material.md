@@ -129,6 +129,15 @@ These are current and take precedence over Codex's older captures. Facts read fr
   the other side made the symmetric shapes match but left shadows (rock wall shadow on the wrong lane side),
   texture details (the arrow marking's line) and wall pieces mirrored. Fix: mirror the world (`Main/World`
   scale z -1) and keep the camera mirrored; verified at the lane node and the base (`.tmp/mirror_fixed.png`).
+- Water (2026-09-17, lane node shot): deep water (0,95,134) / (0,106,137), beach at (1500,1000) = (215,211,160).
+  The 2022 `.wat` colour (45,93,113) with 33 % see-through renders pale grey-green; `MapView.LIVE_WATER_*`
+  (colour (0,0.33,0.48), opaque, fresnel 0.1) reproduces the deep water. The beaches outside the lane walls
+  do not exist in the 2022 heightmap (12 units under water there): live map delta.
+- Spawner tiles: reference teal (120,206,204) from diffuse ~(101,114,113): 0.6 x diffuse + cyan/white
+  emission (0.27,0.60,0.60) (`BuildGrid._apply_glow`), i.e. the post-effect glow adds a white bloom.
+- Nexus crystal: reference (203,234,237) top / (54,100,105) shadowed; its diffuse at the crystal UVs is
+  (193,222,250) and the glow alpha only ~0.13, so the whiteness comes from the gamma-space lighting
+  saturation (not ported yet: units use Godot's PBR with the scaled lights).
 - Lighting (2026-09-17, game-start shot): patch medians ref vs ours after `MapView` ambient x0.35 / sun x1.06:
   sand SW 157/159, sand W 228/219, shadowed jungle 65/58, platform 174/172. The original's gamma-space
   `colour * (NdotL * sun + ambient)` makes shadow 63 % of lit on screen; the linear scales reproduce that.

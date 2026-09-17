@@ -10,6 +10,10 @@ const SIZE_FACTOR_3DSMAX := 2.0 / 125.0     # Visuals.pas:873, applied by ApplyL
 const FRAME_MS := 1000.0 / 30.0             # Engine.Mesh.pas:2697 (frames -> ms)
 const DEFAULT_SKIN := "_Default"
 const UNITS_DIR := "res://assets/units/"
+## The engine's glow stage writes glow.rgb * glow.a and the glow post-effect blurs and adds it on top of the
+## already lit surface; the baked png alone (alpha ~0.13 on the nexus crystal) is far too weak, this gain
+## brings the nexus crystal towards the reference's white-cyan (docs/reference-material.md).
+const GLOW_GAIN := 4.0
 
 static var _scene_cache: Dictionary = {}     # glb path -> PackedScene
 static var _material_cache: Dictionary = {}  # xml path + team -> StandardMaterial3D
@@ -237,7 +241,7 @@ static func _material(xml_path: String, descriptor: Dictionary, team_textures: D
 			mat.emission_enabled = true
 			mat.emission_texture = load(glow_path)
 			mat.emission = Color.BLACK   # emission_operator ADD: colour + texture, so only the texture counts
-			mat.emission_energy_multiplier = 1.0
+			mat.emission_energy_multiplier = GLOW_GAIN
 	if str(descriptor.get("Cullmode", "cmCCW")) == "cmNone":
 		mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 	if str(descriptor.get("TextureSemiTransparency", "False")) == "True":

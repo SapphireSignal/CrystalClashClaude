@@ -141,6 +141,19 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
   reflection/extinction path of `Water.fx` (reference/delphi3d-engine) or tune sky_color/fresnel against the
   node reference patch (ref water ~ (30,110,150) at the top-left of `image-1789614715701.webp`).
 
+- **Checkpoint 49: detail pass (owner: "every little thing like the reference").** Water: the Compatibility
+  renderer has no depth texture, so the water depth now comes from `heightmap.png` (convert_map writes it;
+  `water.gdshader` samples it in sim coords); live-client water colour/transparency/fresnel overrides in
+  `MapView` (`LIVE_WATER_*`, deep water now (15,96,136) vs ref (0,95,134)). Spawner tiles fitted to the
+  reference teal ((117,204,204) vs (120,206,204)). Resource panel rows: caption font 0.57 x row, pad 36, icon
+  16 px inside the row end (matches the 1679 shots). Nexus textures were missing from `assets/units`
+  (copy tool re-run for `Neutral/Nexus`); unit glow emission gets `UnitModel.GLOW_GAIN` 4.
+  **Open**: (a) nexus crystal still dark blue (ref near-white cyan (203,234,237)): the original's gamma-space
+  `colour * (NdotL * sun + ambient)` saturates the light-blue crystal texture; needs a unit shader port of
+  Standardshader.fx lighting (also lifts all units); (b) the live map has sand beaches outside both lane
+  walls (ref pixel (1500,1000) = sand where our 2022 heightmap is 12 units under water): live map data, not
+  reproducible from the repo (note as delta); (c) top bar red-left/blue-right; (d) rock wall pieces check.
+
 ## FIX FIRST (owner's request, before anything else)
 1. **Done (checkpoint 37): lane node capture circle verified.** The ring renders (mesh, y 0.01, orientation:
    start +Z about +Y, gaps across the lane, arcs along it, exactly `DrawCircle` Up=UNITZ Left=UNITX); it was

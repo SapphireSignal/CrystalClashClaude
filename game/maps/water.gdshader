@@ -7,7 +7,12 @@ render_mode unshaded, cull_disabled, depth_draw_never, blend_mix;
 
 uniform sampler2D wave_texture : filter_linear_mipmap, repeat_enable;
 uniform sampler2D screen_texture : hint_screen_texture, filter_linear, repeat_disable;
-uniform sampler2D depth_texture : hint_depth_texture, filter_nearest, repeat_disable;
+// The Compatibility renderer exposes no depth texture: the water depth comes from the terrain heightmap
+// (tools/convert_map.py heightmap.png: rows = x, columns = z, value = (h + 0.5) * 65535).
+uniform sampler2D terrain_heights : hint_default_black, filter_linear, repeat_disable;
+uniform vec3 terrain_scale = vec3(300.0, 50.0, 300.0);
+uniform vec3 terrain_position = vec3(0.0);
+uniform float water_height = 0.0;
 uniform vec3 water_color = vec3(0.177, 0.365, 0.443);
 uniform vec3 sky_color = vec3(0.63, 0.73, 0.92);
 uniform float roughness = 0.9;
@@ -45,13 +50,11 @@ void fragment() {
 	vec3 view = normalize(world_pos - CAMERA_POSITION_WORLD);
 	float fresnel = clamp(mix(pow(1.0 - dot(n, -view), 5.0), 1.0, fresnel_offset), 0.0, 1.0);
 
-	// distance between the surface and the scene behind it along the view ray
-	float scene_depth = texture(depth_texture, SCREEN_UV).r;
-	vec4 scene_view = INV_PROJECTION_MATRIX * vec4(SCREEN_UV * 2.0 - 1.0, scene_depth * 2.0 - 1.0, 1.0);
-	scene_view.xyz /= scene_view.w;
-	float surface_z = -(VIEW_MATRIX * vec4(world_pos, 1.0)).z;
-	vec3 cam_forward = -normalize(vec3(INV_VIEW_MATRIX[2].xyz));
-	float depth = max(-scene_view.z - surface_z, 0.0) / max(dot(view, cam_forward), 0.2);
+	// distance between the surface and the terrain below along the view ray: vertical depth from the
+	// heightmap (sim coordinates: x, z_sim = -z_world because the World node is mirrored on Z)
+	vec2 height_uv = vec2((-world_pos.z - terrain_position.z) / terrain_scale.z + 0.5, (world_pos.x - terrain_position.x) / terrain_scale.x + 0.5);
+	float terrain_y = (texture(terrain_heights, height_uv).r - 0.5) * terrain_scale.y + terrain_position.y;
+	float depth = max(water_height - terrain_y, 0.0) / max(-view.y, 0.2);
 
 	float transparency = mix(0.0, 1.0 - water_transparency, clamp((depth - 0.1) / depth_transparency_range, 0.0, 1.0));
 	vec3 scene_color = texture(screen_texture, SCREEN_UV).rgb;

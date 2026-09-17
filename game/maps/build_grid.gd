@@ -100,6 +100,9 @@ func _process(delta: float) -> void:
 
 
 static func _apply_glow(mat: StandardMaterial3D, glow: float) -> void:
+	# Fitted to the live client's tile colour (ref (120,205,204) from diffuse ~(101,114,113)): 0.6 x diffuse +
+	# 0.30 x cyan overshoot + 0.23 x white bloom (the post-effect glow the original adds on top).
 	var overshoot := GLOW_COLOR_INTENSITY * glow
 	mat.albedo_color = Color(1.0 - overshoot, 1.0 - overshoot, 1.0 - overshoot)
-	mat.emission_energy_multiplier = overshoot
+	mat.emission = Color(0.27, 0.60, 0.60)
+	mat.emission_energy_multiplier = glow

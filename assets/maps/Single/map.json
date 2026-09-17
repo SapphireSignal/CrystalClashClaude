@@ -12,7 +12,8 @@
    0.0,
    0.0
   ],
-  "size": 513
+  "size": 513,
+  "heightmap": "heightmap.png"
  },
  "water": [
   {

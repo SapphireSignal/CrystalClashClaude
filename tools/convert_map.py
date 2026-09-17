@@ -24,6 +24,7 @@ from pathlib import Path
 from xml.etree import ElementTree
 
 import numpy as np
+from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from msh import load as load_msh  # noqa: E402
@@ -456,9 +457,12 @@ def convert(name: str) -> None:
     index = env_folder_index()
     heights, scale, position = read_heights(map_dir / f"{name}.ter")
     write_terrain_glb(name, heights, scale, position, out_dir)
+    # heightmap.png (16 bit, rows = x, columns = z, value = (h + 0.5) * 65535): the water shader computes its
+    # depth from it because the Compatibility renderer has no depth texture
+    Image.fromarray(((heights + 0.5) * 65535.0).clip(0, 65535).astype(np.uint16)).save(out_dir / "heightmap.png")
     data = {
         "name": name,
-        "terrain": {"file": "terrain.glb", "scale": scale, "position": position, "size": int(heights.shape[0])},
+        "terrain": {"file": "terrain.glb", "scale": scale, "position": position, "size": int(heights.shape[0]), "heightmap": "heightmap.png"},
         "water": read_water(map_dir / f"{name}.wat"),
         "lights": read_lights(map_dir / f"{name}.lig"),
         "vegetation": read_vegetation(map_dir / f"{name}.veg", index),
