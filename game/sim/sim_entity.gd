@@ -57,6 +57,9 @@ var move_use_waypoints: bool = false
 var path: Array = []                 # tile indices, walked from the back (path.back() is next)
 var current_tile: int = -1
 var standing_on_tile: int = -1       # tile currently counted as blocked by this entity
+var stand_since: int = -1            # time the unit last came to a stand (Marksman range ramp)
+var exiled: bool = false             # killed by exile: no death effects, no soul
+var link_buffs: Dictionary = {}      # aura owner id -> Buff granted by that aura
 
 
 func setup(p_unit_id: String, p_league: int) -> void:
@@ -166,8 +169,24 @@ func cooldown(group: int = SimConstants.GROUP_MAINWEAPON) -> int:
 	return int(c)
 
 
-func range_of(group: int = SimConstants.GROUP_MAINWEAPON) -> float:
-	return bb.get_float("eiWelaRange", group, 0.0)
+## eiWelaRange with TModifierWelaRangeComponent (AddModifier): Marksman gains range while standing
+## (ScaleWithTime over the value group's cooldown), Ballista while its ready group holds (upFlying).
+func range_of(group: int = SimConstants.GROUP_MAINWEAPON, now: int = -1) -> float:
+	var r := bb.get_float("eiWelaRange", group, 0.0)
+	var w := wela(group)
+	if w == null or w.range_modifier_group < 0:
+		return r
+	var bonus := bb.get_float("eiWelaModifier", w.range_modifier_group, 0.0)
+	if w.range_ready_group >= 0:
+		var ready := wela(w.range_ready_group)
+		if ready == null or not ready.owner_ready(self):
+			return r
+	if w.range_scales_with_time:
+		if moving or stand_since < 0 or now < 0:
+			return r
+		var ramp := float(bb.get_int("eiCooldown", w.range_modifier_group, 1))
+		bonus *= clampf(float(now - stand_since) / ramp, 0.0, 1.0)
+	return r + bonus
 
 
 func damage_type(group: int = SimConstants.GROUP_MAINWEAPON) -> int:

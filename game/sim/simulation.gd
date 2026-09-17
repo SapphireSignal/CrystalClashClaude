@@ -320,16 +320,23 @@ func _fire_scheduled_events() -> void:
 ## Think chain in component order: each FIGHT wela (heal, main attack...) may claim the unit; the first
 ## that has a target in range fires. Otherwise approach the nearest enemy in attention range or follow the lane.
 func _think(e: SimEntity) -> void:
+	for w in e.welas:
+		if w.kind == Wela.Kind.LINK:
+			_think_link(e, w)
+		elif w.kind == Wela.Kind.FIGHT and w.passive:
+			_think_passive(e, w)
 	if time_ms < e.locked_until:
 		return
 	for w in e.welas:
-		if w.kind != Wela.Kind.FIGHT or e.has("upNoAutoAttack") and w.group == SimConstants.GROUP_MAINWEAPON:
+		if w.passive or not _wela_ready(e, w):
 			continue
-		if w.group == SimConstants.GROUP_MAINWEAPON and not e.has_ammo():
+		if w.kind == Wela.Kind.SELF_GROUND:
+			if time_ms >= w.cooldown_ready_at and e.fire_at < 0:
+				_prefire(e, w, e)
+			return
+		if w.kind != Wela.Kind.FIGHT:
 			continue
-		if w.mana_cost > 0 and e.mana < w.mana_cost:
-			continue
-		var target := _pick_target(e, w, e.range_of(w.group))
+		var target := _pick_target(e, w, e.range_of(w.group, time_ms))
 		if target == null:
 			continue
 		e.target_id = target.id
@@ -337,7 +344,7 @@ func _think(e: SimEntity) -> void:
 		if e.moving:
 			_stand(e)
 		if time_ms >= w.cooldown_ready_at and e.fire_at < 0:
-			_prefire(e, w)
+			_prefire(e, w, target)
 		return
 	if e.can_move():
 		var main := e.wela(SimConstants.GROUP_MAINWEAPON)
@@ -352,6 +359,59 @@ func _think(e: SimEntity) -> void:
 		_follow_lane(e)
 
 
+func _wela_ready(e: SimEntity, w: Wela) -> bool:
+	if w.group == SimConstants.GROUP_MAINWEAPON and (not e.has_ammo() or e.has("upNoAutoAttack")):
+		return false
+	if w.mana_cost > 0 and e.mana < w.mana_cost:
+		return false
+	return w.owner_ready(e)
+
+
+## ThinksPassively fight groups fire on their own cooldown without claiming the unit (Defender group 5).
+func _think_passive(e: SimEntity, w: Wela) -> void:
+	if time_ms < w.cooldown_ready_at or not _wela_ready(e, w):
+		return
+	var target := _pick_target(e, w, e.range_of(w.group, time_ms))
+	if target == null:
+		return
+	w.cooldown_ready_at = time_ms + e.cooldown(w.group)
+	_fire_group(e, w.group, target)
+
+
+## TBrainWelaLinkComponent + TWelaLinkEffectComponent: an aura. After the activation delay, every ally in
+## range that passes the constraints gets the link (a property and, when a payload script exists, its buff);
+## links break when the target leaves the range or either side dies.
+func _think_link(e: SimEntity, w: Wela) -> void:
+	if time_ms < e.created_at + w.link_delay:
+		return
+	var range := e.range_of(w.group)
+	for other: SimEntity in entities.values():
+		var linked: bool = other.link_buffs.has(e.id)
+		var in_range := other.alive and other.team == e.team and other != e \
+			and other.position.distance_to(e.position) - other.collision_radius <= range
+		if linked and not in_range:
+			_break_link(e, other)
+		elif not linked and in_range and other.is_targetable() and w.target_allowed(other, e):
+			var payload := "Links/" + w.link_pattern.get_file().replace("Aura", "")
+			var b: Buff
+			if Buff.exists(payload):
+				b = apply_buff(other, payload, {}, e)
+			else:
+				b = Buff.new()
+				b.name = w.link_pattern
+				other.add_buff(b)
+			if w.link_property != "":
+				b.properties.append(w.link_property)
+			other.link_buffs[e.id] = b
+
+
+func _break_link(source: SimEntity, target: SimEntity) -> void:
+	var b: Buff = target.link_buffs.get(source.id)
+	if b != null:
+		target.remove_buff(b)
+		target.link_buffs.erase(source.id)
+
+
 ## TBrainFollowLaneComponent.ThinkChain: walk to the nearest enemy nexus using lane waypoints.
 func _follow_lane(e: SimEntity) -> void:
 	if e.moving:
@@ -363,8 +423,9 @@ func _follow_lane(e: SimEntity) -> void:
 
 
 ## TBrainActionComponent.OnPreFire: hit lands after actionpoint, unit locked for max(actionpoint, actionduration).
-func _prefire(e: SimEntity, w: Wela) -> void:
+func _prefire(e: SimEntity, w: Wela, target: SimEntity) -> void:
 	e.fire_group = w.group
+	e.target_id = target.id
 	e.fire_at = time_ms + e.actionpoint(w.group)
 	e.locked_until = time_ms + maxi(e.actionpoint(w.group), e.actionduration(w.group))
 	w.cooldown_ready_at = e.fire_at + e.cooldown(w.group)
@@ -379,26 +440,72 @@ func _resolve_pending_fire(e: SimEntity) -> void:
 	var target: SimEntity = entities.get(e.target_id)
 	if target == null or not target.alive:
 		return
-	var w := e.wela(e.fire_group)
-	_fire_wela(e, w, target)
+	_fire_group(e, e.fire_group, target)
 
 
-## eiFire for a wela at a target: pay costs, then heal / projectile / instant damage, then apply scripts.
-func _fire_wela(e: SimEntity, w: Wela, target: SimEntity) -> void:
-	var group := w.group
+## eiFire for a wela group at a target: pay costs, run its warheads (heal / damage / kill / projectile /
+## apply script / splash groups), then chained groups (TWelaEffectFireComponent) and cooldown resets.
+func _fire_group(e: SimEntity, group: int, target: SimEntity) -> void:
+	var w := e.wela(group)
+	if w == null:
+		return
 	if group == SimConstants.GROUP_MAINWEAPON:
 		e.ammo -= e.ammo_cost   # TWelaEffectPayCostComponent for reWelaCharge
 	e.mana -= w.mana_cost
 	var amount := e.damage(group)
-	attack_fired.emit(e, target, amount)
-	if w.heals:
-		heal(target, amount, e.damage_type(group), e)
-	elif w.projectile != "":
-		_launch_projectile(w.projectile, e, target, amount, e.damage_type(group))
-	else:
-		deal_damage(target, amount, e.damage_type(group), e)
+	var dtype := e.damage_type(group)
+	if group == e.fire_group or w.kind == Wela.Kind.FIGHT:
+		attack_fired.emit(e, target, amount)
+	if w.projectile != "":
+		_launch_projectile(w.projectile, e, target, amount, dtype)
+	elif w.kills:
+		if target.alive and target != e:
+			target.exiled = w.exiles
+			_kill(target, e)
+	elif w.heals:
+		heal(target, amount, dtype, e)
+	elif w.damages:
+		deal_damage(target, amount, dtype, e)
 	if w.apply_script != "" and target.alive:
 		apply_buff(target, w.apply_script, {}, e)
+	for sg in w.instant_target_groups:   # splash warheads around the target position
+		_fire_splash(e, sg, target.position)
+	for cg in w.chain_groups:
+		var cw := e.wela(cg)
+		if cw == null or time_ms < cw.cooldown_ready_at or not _wela_ready(e, cw):
+			continue
+		var chain_target := e if w.chain_to_self else target
+		if chain_target.alive and (w.chain_to_self or cw.target_allowed(chain_target, e)):
+			_fire_group(e, cg, chain_target)
+	for rg in w.reset_cooldown_groups:   # TWelaEffectResetCooldownComponent.Expire
+		var rw := e.wela(rg)
+		if rw != null:
+			rw.cooldown_ready_at = time_ms
+			if rg == SimConstants.GROUP_MAINWEAPON:
+				e.cooldown_ready_at = time_ms
+
+
+## TWarheadSplash*Component: every valid entity within eiWelaAreaOfEffect of the point.
+func _fire_splash(e: SimEntity, group: int, center: Vector2) -> void:
+	var w := e.wela(group)
+	if w == null:
+		return
+	var radius := e.bb.get_float("eiWelaAreaOfEffect", group, 0.0)
+	var amount := e.damage(group)
+	var dtype := e.damage_type(group)
+	for other: SimEntity in entities.values():
+		if not other.alive or not other.is_targetable() or other.team == 0:
+			continue
+		if w.target_allies != (other.team == e.team):
+			continue
+		if not w.target_allowed(other, e):
+			continue
+		if other.position.distance_to(center) - other.collision_radius > radius:
+			continue
+		if w.heals:
+			heal(other, amount, dtype, e)
+		else:
+			deal_damage(other, amount, dtype, e)
 
 
 ## Mana regeneration (Priest group 4): +1 per cooldown while below the cap.
@@ -407,7 +514,7 @@ func _regenerate(e: SimEntity) -> void:
 		return
 	var w: Wela = null
 	for x in e.welas:
-		if x.kind == Wela.Kind.RESOURCE_REGEN and x.resource == "reMana":
+		if x.kind == Wela.Kind.RESOURCE_REGEN and x.resource == "reMana" and e.bb.has_value("eiCooldown", x.group):
 			w = x
 	if w == null:
 		return
@@ -468,11 +575,33 @@ func heal(target: SimEntity, amount: float, _damage_type: int, _source: SimEntit
 		return 0.0
 	var healed := minf(amount, target.max_health - target.health)
 	target.health += healed
+	if healed > 0.0:
+		_on_healed(target, healed)
 	return healed
 
 
+## TAutoBrainOnHealedComponent: fires once (or once per TimesForEach healed) on the owner; the group may
+## add mana (HeavyGunner) or chain-fire another group (Defender's Wall of Light).
+func _on_healed(e: SimEntity, healed: float) -> void:
+	for w in e.welas:
+		if w.kind != Wela.Kind.ON_HEALED:
+			continue
+		var times := 1 if w.times_for_each <= 0 else int(roundf(healed)) / w.times_for_each
+		for i in times:
+			if w.resource == "reMana":
+				e.mana = mini(e.mana_cap, e.mana + 1)
+			for cg in w.chain_groups:
+				var cw := e.wela(cg)
+				if cw == null or not _wela_ready(e, cw):
+					continue
+				var target := _pick_target(e, cw, e.range_of(cg))
+				if target != null:
+					_fire_group(e, cg, target)
+
+
 func _kill(e: SimEntity, killer: SimEntity = null) -> void:
-	_on_before_death(e, killer)
+	if not e.exiled:
+		_on_before_death(e, killer)
 	e.alive = false
 	e.health = 0.0
 	e.died_at = time_ms
@@ -480,12 +609,15 @@ func _kill(e: SimEntity, killer: SimEntity = null) -> void:
 	map.pathfinding.cancel_path(e.id)
 	if e.is_spawner() and build_zones.has(e.build_zone_id):
 		build_zones[e.build_zone_id].release(e.build_field)
+	for other: SimEntity in entities.values():   # break auras this entity provided
+		if other.link_buffs.has(e.id):
+			_break_link(e, other)
 	entity_died.emit(e)
 	if e.has("upNexus") and not finished:
 		finished = true
 		winner_team = TEAM_BLUE if e.team == TEAM_RED else TEAM_RED
 		team_lost.emit(e.team)
-	elif e.has("upLanetower"):
+	elif e.has("upLanetower") and not e.exiled:
 		spawn("Units/Neutral/LaneNode", 0, e.position)   # Lanetower.ets group 2: TAutoBrainOnDeath -> LaneNode
 
 
@@ -520,7 +652,7 @@ func _pick_target(e: SimEntity, w: Wela, range: float) -> SimEntity:
 			continue
 		if other.has("upFlying") and not other.has("upGround") and not e.may_target_flying():
 			continue
-		if not w.target_allowed(other):
+		if not w.target_allowed(other, e):
 			continue
 		var dist := e.position.distance_to(other.position) - other.collision_radius - e.collision_radius
 		if dist > range:
@@ -528,6 +660,8 @@ func _pick_target(e: SimEntity, w: Wela, range: float) -> SimEntity:
 		var key := dist + (100000.0 if other.has("upLowPrio") else 0.0)
 		if w.efficiency_missing_health:
 			key -= (other.max_health - other.health) * 1000.0
+		if w.efficiency_max_health != 0:
+			key -= other.max_health * 1000.0 * w.efficiency_max_health
 		if key < best_key:
 			best_key = key
 			best = other
@@ -646,6 +780,7 @@ func _move_to(e: SimEntity, target_id: int, target_pos: Vector2, use_waypoints: 
 	e.move_target_pos = target_pos
 	e.move_use_waypoints = use_waypoints
 	e.moving = true
+	e.stand_since = -1
 	_leave_standing(e)
 	_compute_path(e)
 
@@ -709,6 +844,8 @@ func _enter_tile(e: SimEntity) -> void:
 
 ## TMovementComponent.OnStand + TPathfindingComponent.OnStand: stop, drop the path, block the tile.
 func _stand(e: SimEntity) -> void:
+	if e.moving or e.stand_since < 0:
+		e.stand_since = time_ms
 	e.moving = false
 	e.path = []
 	map.pathfinding.cancel_path(e.id)

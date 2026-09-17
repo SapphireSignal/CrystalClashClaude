@@ -453,6 +453,105 @@ func test_priest_heals_injured_ally() -> void:
 	runner.check(sim.time_ms - t0 >= 3000, "mana regenerates 1 per 3 s")
 
 
+func test_monk_dragon_punch_and_exile() -> void:
+	var sim := Simulation.new(9, 4)
+	var monk := sim.spawn("Units/White/Monk", Simulation.TEAM_BLUE, Vector2(0, -23))     # 265 hp, 38 dmg
+	var archer := sim.spawn("Units/White/Archer", Simulation.TEAM_RED, Vector2(1.5, -23)) # 19 hp: less than half
+	archer.base_speed = 0.0
+	sim.apply_buff(archer, "Stun")
+	while archer.alive and sim.time_ms < 3000:
+		sim.step()
+	runner.check(not archer.alive, "archer killed")
+	runner.check(archer.exiled, "target with less than half the monk's health is exiled")
+	var monk2 := sim.spawn("Units/White/Monk", Simulation.TEAM_BLUE, Vector2(20, -23))
+	var monk3 := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(21.5, -23))
+	monk3.base_speed = 0.0
+	sim.apply_buff(monk3, "Stun")
+	monk2.health = 200.0   # healthier than a 150 hp target but not twice as healthy
+	monk3.health = 150.0
+	var hits: Array = []
+	var on_hit := func(att, _t, d): if att == monk2: hits.append(d)
+	sim.attack_fired.connect(on_hit)
+	while hits.is_empty() and sim.time_ms < 6000:
+		sim.step()
+	sim.attack_fired.disconnect(on_hit)
+	# 38 (group 4) + 48 dragon punch (group 3, monk healthier), no exile (group 2 needs 2x)
+	runner.check(monk3.alive, "not exiled when target has more than half the monk's health")
+	runner.check_near(monk3.health, 150.0 - 38.0 - 48.0, "38 + 48 dragon punch damage vs unarmored")
+
+
+func test_avenger_double_shot_at_full_health() -> void:
+	var sim := Simulation.new(9, 4)
+	var avenger := sim.spawn("Units/White/Avenger", Simulation.TEAM_BLUE, Vector2(0, -23))
+	var monk := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(4, -23))
+	monk.base_speed = 0.0
+	sim.apply_buff(monk, "Stun")
+	var launched: Array = []
+	var on_launch := func(_p): launched.append(sim.time_ms)
+	sim.projectile_spawned.connect(on_launch)
+	while launched.size() < 2 and sim.time_ms < 3000:
+		sim.step()
+	runner.check_eq(launched.size(), 2, "two projectiles per attack at full health")
+	if launched.size() == 2:
+		runner.check_eq(launched[0], launched[1], "both launched in the same tick")
+	avenger.health = 100.0
+	launched.clear()
+	while launched.size() < 1 and sim.time_ms < 8000:
+		sim.step()
+	var t := sim.time_ms
+	sim.step()
+	sim.projectile_spawned.disconnect(on_launch)
+	runner.check_eq(launched.size(), 1, "one projectile per attack when damaged")
+
+
+func test_marksman_range_grows_while_standing() -> void:
+	var e := SimEntity.new()
+	e.setup("Units/White/Marksman", 4)
+	runner.check_near(e.range_of(1, 0), 13.5, "base range while moving")
+	e.stand_since = 0
+	e.moving = false
+	runner.check_near(e.range_of(1, 5000), 13.5 + 3.0, "half the bonus after 5 s")
+	runner.check_near(e.range_of(1, 20000), 13.5 + 6.0, "+6 after 10 s standing")
+
+
+func test_suntower_homeland_aura_links_allies() -> void:
+	var sim := Simulation.new(9, 4)
+	var tower := sim.spawn("Units/White/Suntower", Simulation.TEAM_BLUE, Vector2(0, -23))
+	var near := sim.spawn("Units/White/Footman", Simulation.TEAM_BLUE, Vector2(3, -23))
+	var far := sim.spawn("Units/White/Footman", Simulation.TEAM_BLUE, Vector2(30, -23))
+	near.base_speed = 0.0
+	far.base_speed = 0.0
+	sim.step()
+	runner.check(near.link_buffs.has(tower.id), "ally within 5.5 is linked")
+	runner.check(not far.link_buffs.has(tower.id), "ally out of range is not linked")
+	sim._kill(tower)
+	runner.check(not near.link_buffs.has(tower.id), "links break when the tower dies")
+	var defender := sim.spawn("Units/White/Defender", Simulation.TEAM_BLUE, Vector2(10, -23))
+	var friend := sim.spawn("Units/White/Footman", Simulation.TEAM_BLUE, Vector2(12, -23))
+	friend.base_speed = 0.0
+	while sim.time_ms < 2000:
+		sim.step()
+	runner.check(friend.has("upLotharBuffed"), "Defender aura marks allies upLotharBuffed after its 1.8 s delay")
+	runner.check(not defender.has("upLotharBuffed"), "aura does not affect the Defender itself")
+
+
+func test_monument_of_light_aoe() -> void:
+	var sim := Simulation.new(9, 4)
+	var monument := sim.spawn("Units/White/MonumentOfLight", Simulation.TEAM_BLUE, Vector2(0, -23))
+	var ally := sim.spawn("Units/White/Monk", Simulation.TEAM_BLUE, Vector2(4, -23))
+	var enemy := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(-4, -23))
+	ally.base_speed = 0.0
+	enemy.base_speed = 0.0
+	sim.apply_buff(enemy, "Stun")
+	ally.health = 100.0
+	runner.check_eq(monument.mana, 3, "monument starts with 3 mana")
+	while ally.health < 200.0 and sim.time_ms < 3000:
+		sim.step()
+	runner.check_near(ally.health, 200.0, "allies in 8 healed for 100")
+	runner.check_near(enemy.health, 265.0 - 20.0, "enemies in 8 take 20 splash")
+	runner.check_eq(monument.mana, 0, "pulse cost 3 mana")
+
+
 func test_drop_formation() -> void:
 	var sim := Simulation.new(1, 4)
 	var squad := sim.drop_squad("Units/White/Footman", Simulation.TEAM_BLUE, Vector2(0, -23), 4)

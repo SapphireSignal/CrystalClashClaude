@@ -2,10 +2,11 @@
 
 Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
 
-## State (2026-09-16, checkpoint 7)
-- Phase 2 core sim works and is tested (180 tests). `game/sim/`: `simulation.gd` (loop, think chain over
-  welas, combat hooks, projectiles, buffs, economy, movement, spawners, card play, ammo, tech-ups, lane
-  nodes), `wela.gd` (weapon/ability groups parsed from unit components), `buff.gd` (modifier scripts),
+## State (2026-09-16, checkpoint 8)
+- Phase 2 core sim works and is tested (199 tests). `game/sim/`: `simulation.gd` (loop, think chain over
+  welas, chained fire groups, auras, splash, combat hooks, projectiles, buffs, economy, movement, spawners,
+  card play, ammo, tech-ups, lane nodes), `wela.gd` (weapon/ability groups parsed from unit components:
+  see its header for the covered component classes), `buff.gd` (modifier scripts),
   `commander.gd`, `cards.gd`, `projectile.gd`, `pathfinding.gd`, `lanes.gd`, `sim_map.gd`, `build_zone.gd`,
   `sim_entity.gd` (stat Read chain: `damage()`, `speed()`, `armor()`, `cooldown()`, `has()`), `blackboard.gd`,
   `unit_db.gd`, `sim_constants.gd`. Data: `game/data/units.json` (values + server components, compact JSON),
@@ -13,12 +14,13 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
 - Sandbox `game/main.tscn`: capsules, 12-slot white deck on keys 1-9,0,-,=, simple red AI. Renderer: Compatibility.
 
 ## Next step (in order, one at a time, test after each)
-1. **Coverage audit of White faction components**: for each `Units/White/*.ets` list component classes that
-   `wela.gd` / `buff.gd` do not yet interpret (write a tiny Python or GDScript report), then implement the
-   most common ones: `TWelaEffectFireComponent` (chain-fire another group), `TAutoBrainOnDeathComponent`
-   with `TWelaEffectFactoryComponent` (spawn on death), `TWelaTargetConstraintCompareUnitPropertyComponent`
-   (BothMustHaveAny ground/flying), `TWelaReadyEnemiesNearbyComponent`, links/auras (`eiLinkPattern`,
-   `Scripts/Links/*Aura.ets`: apply a modifier script to allies in range while alive, e.g. Suntower Homeland).
+1. **Link payloads**: extend `tools/extract_units.py` to parse `Scripts/Links/*.dws` (`function Apply`)
+   into `modifiers.json` under `Links/<Name>` so auras carry their real effect (Homeland = rescue on death:
+   `TAutoBrainPreventDeathComponent` + set health + teleport to tower; Guarded = prevent death once,
+   invincibility; RangeUpgrade, HealthRegeneration, ManaRegeneration...). Then `buff.gd` needs
+   `TAutoBrainPreventDeathComponent` (intercept `_kill`) and `TWarheadSpottyRemoveBuffComponent`.
+   Still unhandled in White: `TAutoBrainOnUnitPropertyComponent` (HeavyGunner mana on property),
+   HeavyGunner infused projectile splash (`eiWelaAreaOfEffect` on projectiles), Ballista `upFlying` mode.
 2. **Spells** (`Scripts/Spells/White/*.sps` + `.ets`): extend the extractor for `.sps` (`PrepareSpellData`,
    `eiAbilityTargetType`, cost -20), then spell effect entities (LightPulse: stun 8 in radius 2, blind 14 in 5).
 3. Splash damage (`eiWelaAreaOfEffect`, `eiWelaSplashfactor`) for lanetower/nexus projectiles; overheal.
