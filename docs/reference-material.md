@@ -26,3 +26,32 @@ Its research folders are worth reusing; its game code is not (see CLAUDE.md Deci
 
 Codex's design docs (`docs/design/*`) describe a different game of its own ("Siegefront" directions,
 five-faction roster proposals) and must not influence the replica.
+
+## Owner screenshots of the live Crystal Clash client (2026-09-16, sent in chat; files to follow in `reference/media/`)
+These are current and take precedence over Codex's older captures. Facts read from them:
+- Top bar: PLAY, DECKBUILDER, CARD VENDOR, LEADERBOARDS, SHOP, CHAT; currencies gold (coin) and crystals (pink gem);
+  player badge with level (e.g. "sorrow (141)"). Loading screen: "Loading main menu...", credits "Soundeffects by
+  Michael Klier, Music by Julian Colbus", Crunchy Leaf and FMOD logos. Home: news panel, "9 players online",
+  patch notes button (e.g. "11-12"), guide button, weekly sales (skins at -50 % / -75 %), Discord/YouTube/Twitter/Facebook.
+- PLAY tabs: 2V2 MATCH, CO-OP CHALLENGE, GOLEM CHALLENGE, CUSTOM GAME, TUTORIAL. Ranked text: "Play together with a
+  partner or command two decks from Level 6 on in a ranked match", "you are only matched against decks of the same
+  tier", "The highest card in your deck determines in which tier you play". Co-op/Golem challenge have a Difficulty
+  selector starting at "Stone (+0%)". Custom game: Gamemode Duel 1v1 / 2v2 / 3v3 / 3v3 Two Lanes / 4v4 Two Lanes
+  (2/4/6/6/8 players) and Tier selector.
+- **Tiers are Stone, Bronze, Silver, Gold. "Crystal" still appears in the tier list and leaderboard tabs but is a
+  leftover from Rise of Legions and is not a real tier any more (owner's note).** Leaderboards: 2v2 match (Bronze,
+  Silver, Gold ranked, monthly), co-op and golem challenge (times per tier).
+- **Factions in the card vendor: Black Legion, Green Legion, White Legion, Blue Legion, Crystal Legion.** The Crystal
+  Legion is the source's `Golems` faction; tooltip: "All cards of the crystal legion can be put in any deck without
+  regarding the color restrictions." Card vendor = unlock tree per legion (nodes with tier badges stone/bronze/silver/gold).
+- Deck builder: 12 slots at the bottom (each shows a level number, e.g. 5), card grid with name, attack / defense
+  values, trait keywords (e.g. Void Bane: 14 / 240, "Cleave, Voidhunter, Soulgatherer, Feast, Deathcry: Energy
+  Supply"; Frostgoyle Fountain: - / 375, "Dismantlement, Soulgatherer, Soul Enhancer, Ritual Summon"; Gatling Turret
+  24 / 260 "Limited: Gadget, Ammunition, Searching Fire, Armor-Piercing, Surefire, Energy Flow"; Relocate "Teleports up
+  to 5 allies to another location. Buildings are healed and replenished."), cost (e.g. 1500 / 150 / 100 / 80 / 130 / 800)
+  and card tier badge; right-side filters: legion, tier, Summoning / Spawner / Building / Spell, tier I-III, sort "Received".
+  Card names seen: Granite Vanguard Spawner (30 / 440, Tremor), Crystal Enforcer Spawner (23 / 280, Siege, Crystal
+  Artillery), Footmen Spawner (26 / 184, "Raise your shield!"), Light Pulse ("Stuns and blinds up to 14 target enemy
+  units."), Surge of Light. Those numbers are the live balance and may differ from the 2022 source.
+- Shop tabs: SKINS, ICONS, BUNDLES, PREMIUM, CRYSTALS, REDEEM BONUS CODE; skins are renamed/recolored units
+  (e.g. "BRR4, Replacement of Nature" = Brratu skin, "Hellfire Turret", "Spring Gunner", "Hermit").
