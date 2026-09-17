@@ -125,10 +125,12 @@ Act as two people at once:
   strips, one tile) or with whole-frame correlation that masks the frame bottom: both misled us twice.
   Window: stretch **disabled** (the original draws its HUD in absolute pixels at every resolution, no design-space
   scaling); `Hud._layout` pins the panels to the window edges and switches to the client's `.small` layout below
-  1710x816 (`core_game_scaling.scss`: resources/minimap/top bar 80 %, deck slots 66x64, card hint 267 wide). **Sides**: the 2022 scripts' (Blue at -x, Red at +x, `SimMap.side()`).
+  1710x816 (`core_game_scaling.scss`: resources/minimap/top bar 80 %, deck slots 66x64, card hint 267 wide). **Sides**: the 2022 scripts' (Blue at -x, Red at +x, `SimMap.side()`); the camera never rotates per team and
+  `GetDisplayedTeam` paints the own team blue whatever its id, so the owner's screenshots (own base top-right, lane
+  leaving bottom-left, own nexus hover-outlined red) are the **Red** player's view: the sandbox human is team 2 (`Main.HUMAN_TEAM`).
 - 2026-09-17 **Plan (owner)**: build **Rise of Legions exactly as the 2022 repo** until the developers hand over the
   live Crystal Clash files (expected via the owner). Everything that was bent toward the live client from screenshots
-  (blue at +x, opaque blue water, no wheel zoom, no hotkey badge, countdown text) was reverted at checkpoint 56; the
+  (a wrong 'blue at +x' side swap, opaque blue water, no wheel zoom, no hotkey badge, countdown text) was reverted at checkpoint 56; the
   screenshot-derived deltas stay listed in `docs/reference-material.md` for the later refresh. Screenshots remain valid
   for engine-level checks (camera, lighting, HUD pixels, effect scale). When the files arrive: put them read-only in
   `reference/crystal-clash/` (gitignored, `.gdignore`), point the extractors/converters at it, inventory the changes

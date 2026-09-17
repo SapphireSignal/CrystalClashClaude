@@ -171,6 +171,8 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
    `SimMap.side()`, `legacy_sides` gone), water from the `.wat` values, wheel zoom 2.6..3.8 back, hotkey badges back,
    the warm-up countdown text removed (2022 shows nothing during the warm-up, `stage_1` at the first tick). The
    Crystal Clash hand-over plan is in CLAUDE.md Decisions; screenshot deltas stay in `docs/reference-material.md`.
+   The owner's screenshots turned out to be the Red player's view (own team always displayed blue): the sandbox human
+   is now team 2 at +x (`Main.HUMAN_TEAM` / `AI_TEAM`), so the sandbox matches them 1:1 again.
 0. **Done (checkpoint 53): lane node ring + two extractor fixes.** `tools/convert_particles.py` reads `<x>`/`<y>`
    axis tags case-insensitively (16 effects had zero sizes/colours: LaneNode, Capture0-2, Stun, SummoningSickness,
    RootDebuff, DarkTrollFireWave, 5 White effects, lib_field, lib_vertical_lines); `tools/extract_units.py` parses

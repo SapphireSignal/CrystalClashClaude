@@ -3,12 +3,12 @@ extends Node3D
 ## Blue (you) plays deck slots with keys 1-9, 0, -, = at the mouse position (drops) or on the next free
 ## build field (spawners). Red plays a Black deck automatically. Real assets replace the capsules in phase 5.
 
-const BLUE_DECK := [
+const HUMAN_DECK := [
 	"Units/White/FootmanDrop", "Units/White/ArcherDrop", "Units/White/FootmanSpawner", "Units/White/ArcherSpawner",
 	"Units/White/BallistaDrop", "Units/White/PriestDrop", "Units/White/MonkDrop", "Units/White/SuntowerBuilding",
 	"Spells/White/LightPulse.sps", "Spells/White/ShieldsUp.sps", "Spells/White/SolarFlare.sps", "Spells/White/HailOfArrows.sps",
 ]
-const RED_DECK := [
+const AI_DECK := [
 	"Units/Black/VoidSkeletonDrop", "Units/Black/VoidBowmanDrop", "Units/Black/VoidSkeletonSpawner", "Units/Black/VoidBowmanSpawner",
 	"Units/Black/VoidWormDrop", "Units/Black/VoidBaneDrop", "Units/Black/VoidCauldronDrop", "Units/Black/FrostgoyleFountainBuilding",
 	"Units/Black/TyrusDrop", "Spells/Black/Frenzy.sps", "Spells/Black/Freeze.sps", "Spells/Black/ShatterIce.sps",
@@ -26,6 +26,11 @@ var _armed_slot: int = -1      # card clicked in the deck panel, played at the n
 var _jump_return: Variant = null   # camera look-at to return to after a spawner jump
 var _red_next_play_at: int = 15000
 var _red_cursor: int = 0
+## The sandbox human is team 2 (Red, +x side): the HUD, textures and effects still paint the own team blue
+## (GetDisplayedTeam maps own -> 1), exactly like the client did in the owner's screenshots (own base top-right,
+## lane leaving bottom-left, hover outline in the real team colour). The AI is team 1 (Blue, -x).
+const HUMAN_TEAM := Simulation.TEAM_RED
+const AI_TEAM := Simulation.TEAM_BLUE
 
 ## The original engine is left-handed (DirectX); Godot is right-handed. `World` is scaled -1 on Z so the
 ## sim / map coordinates (used verbatim inside it) render as the exact mirror Godot would otherwise show,
@@ -36,7 +41,7 @@ var _red_cursor: int = 0
 @onready var _camera: Camera3D = $Camera3D
 @onready var _environment: WorldEnvironment = $WorldEnvironment
 var _map: MapView
-var _look_at := Vector2(-96, -23)  # ground point the camera looks at (CameraFixedToLane: z = -23); starts on the own (blue, -x) nexus like the client
+var _look_at := Vector2(96, -23)   # ground point the camera looks at (CameraFixedToLane: z = -23); set to the own nexus in _ready like the client
 var _zoom := ZOOM_MAX              # TClientCameraComponent.FZoom: distance = zoom * 10 along CAMERAOFFSET
 const ZOOM_MIN := 2.6              # coGameplayCameraMinZoom
 const ZOOM_MAX := 3.8              # coGameplayCameraMaxZoom (the start zoom, TClientCameraComponent.Create)
@@ -62,15 +67,16 @@ func _ready() -> void:
 	_environment.environment.ambient_light_color = _map.ambient_color
 	_environment.environment.ambient_light_energy = _map.ambient_energy
 	# Decks go through the Deck rules (validates them) and its slot sort, like the real card bar.
-	sim.commanders[Simulation.TEAM_BLUE].set_deck_from(Deck.from_scripts(BLUE_DECK))
-	sim.commanders[Simulation.TEAM_RED].set_deck_from(Deck.from_scripts(RED_DECK))   # red plays Black so both factions show
+	sim.commanders[HUMAN_TEAM].set_deck_from(Deck.from_scripts(HUMAN_DECK))
+	sim.commanders[AI_TEAM].set_deck_from(Deck.from_scripts(AI_DECK))   # the AI plays Black so both factions show
 	_hud = Hud.new()
 	$HUD.add_child(_hud)
-	_hud.setup(sim, Simulation.TEAM_BLUE, _camera)
+	_hud.setup(sim, HUMAN_TEAM, _camera)
 	_hud.slot_clicked.connect(_on_slot_clicked)
 	_hud.spawner_jump.connect(_spawner_jump)
 	_hud.match_left.connect(func(): get_tree().reload_current_scene())   # sandbox: Continue restarts the match
 	_selection_decal = _make_decal()
+	_look_at = sim.map.base_layout(HUMAN_TEAM)["nexus"]
 	_place_camera(_look_at)
 
 
@@ -93,7 +99,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				_armed_slot = -1
 		elif event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 			if _armed_slot >= 0:
-				_play(Simulation.TEAM_BLUE, _armed_slot, _mouse_world_2d())
+				_play(HUMAN_TEAM, _armed_slot, _mouse_world_2d())
 				_armed_slot = -1
 			else:
 				_hud.select(_unit_at(_mouse_world_2d(), true))
@@ -124,8 +130,8 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		get_tree().quit()
 		return
 	var slot := SLOT_KEYS.find(event.keycode)
-	if slot >= 0 and slot < sim.commanders[Simulation.TEAM_BLUE].slots.size():
-		_play(Simulation.TEAM_BLUE, slot, _mouse_world_2d())
+	if slot >= 0 and slot < sim.commanders[HUMAN_TEAM].slots.size():
+		_play(HUMAN_TEAM, slot, _mouse_world_2d())
 
 
 var _pending_slot: int = -1        # multi-point spell (Relocate): press the key once per point
@@ -175,16 +181,16 @@ func _spell_props(card: Cards.CardDef) -> Array:
 ## Card clicked in the deck panel: spawners go to the next free field at once, everything else waits
 ## for a left click on the ground.
 func _on_slot_clicked(slot: int) -> void:
-	var card: Cards.CardDef = sim.commanders[Simulation.TEAM_BLUE].slots[slot].card
+	var card: Cards.CardDef = sim.commanders[HUMAN_TEAM].slots[slot].card
 	if card.is_spawner():
-		_play(Simulation.TEAM_BLUE, slot, Vector2.ZERO)
+		_play(HUMAN_TEAM, slot, Vector2.ZERO)
 	else:
 		_armed_slot = slot
 
 
 ## TIngameHUD.SpawnerJump: camera to the own base (nexus + 10.5 towards the lane) and back.
 func _spawner_jump() -> void:
-	var nexus: SimEntity = sim.entities.get(sim.nexus_ids[Simulation.TEAM_BLUE])
+	var nexus: SimEntity = sim.entities.get(sim.nexus_ids[HUMAN_TEAM])
 	if nexus == null:
 		return
 	var base := nexus.position + Vector2(signf(nexus.position.x) * 10.5, 0)
@@ -246,7 +252,7 @@ func _red_ai() -> void:
 	if sim.time_ms < _red_next_play_at:
 		return
 	_red_next_play_at = sim.time_ms + 6000
-	var c: Commander = sim.commanders[Simulation.TEAM_RED]
+	var c: Commander = sim.commanders[AI_TEAM]
 	for k in c.slots.size():   # round-robin so spells and buildings get their turn
 		var i: int = (_red_cursor + k) % c.slots.size()
 		if not c.slots[i].is_ready(sim.time_ms, c):
@@ -254,10 +260,10 @@ func _red_ai() -> void:
 		var card := c.slots[i].card
 		if not card.is_spell():
 			_red_cursor = i + 1
-			_play(Simulation.TEAM_RED, i, Vector2(50 + sim.rng.randf() * 10, -23))
+			_play(AI_TEAM, i, Vector2(sim.map.side(AI_TEAM) * (50 + sim.rng.randf() * 10), -23))
 			return
 		var props := _spell_props(card)
-		var team := Simulation.TEAM_RED if props.has("upSpellAlly") else Simulation.TEAM_BLUE
+		var team := AI_TEAM if props.has("upSpellAlly") else HUMAN_TEAM
 		var units := sim.alive_entities(team).filter(func(e): return e.has("upUnit") and e.is_targetable())
 		if units.is_empty():
 			continue
@@ -266,10 +272,10 @@ func _red_ai() -> void:
 		if card.target_type == "ctEntity":
 			target = unit.id
 		elif card.epic:
-			target = sim.entities[sim.nexus_ids[Simulation.TEAM_RED]].position + Vector2(-8, 0)
+			target = sim.entities[sim.nexus_ids[AI_TEAM]].position + Vector2(-sim.map.side(AI_TEAM) * 8, 0)
 		elif _spell_point_count(card) > 1:
 			target = [unit.position, unit.position + Vector2(-5, 0)]
-		if sim.play_card(Simulation.TEAM_RED, i, target) == Simulation.PlayResult.OK:
+		if sim.play_card(AI_TEAM, i, target) == Simulation.PlayResult.OK:
 			_red_cursor = i + 1
 			return
 
@@ -325,7 +331,7 @@ func _on_spawned(e: SimEntity) -> void:
 		_views[e.id] = holder
 		_spawn_effects(e, "create", holder)
 		return
-	var model := UnitModel.create(e.unit_id, HudStyle.displayed_team(e.team, Simulation.TEAM_BLUE))
+	var model := UnitModel.create(e.unit_id, HudStyle.displayed_team(e.team, HUMAN_TEAM))
 	if model != null:
 		_units_root.add_child(model)
 		_views[e.id] = model
@@ -353,9 +359,9 @@ func _on_spawned(e: SimEntity) -> void:
 		cap.height = 1.8
 		mesh.mesh = cap
 	var mat := StandardMaterial3D.new()
-	match e.team:
-		Simulation.TEAM_RED: mat.albedo_color = Color(0.9, 0.25, 0.2)
-		Simulation.TEAM_BLUE: mat.albedo_color = Color(0.2, 0.4, 0.95)
+	match HudStyle.displayed_team(e.team, HUMAN_TEAM):
+		2: mat.albedo_color = Color(0.9, 0.25, 0.2)   # displayed team: enemy red
+		1: mat.albedo_color = Color(0.2, 0.4, 0.95)   # displayed team: own blue
 		_: mat.albedo_color = Color(0.6, 0.6, 0.6)
 	mesh.material_override = mat
 	_units_root.add_child(mesh)
@@ -363,7 +369,7 @@ func _on_spawned(e: SimEntity) -> void:
 
 
 func _on_projectile_spawned(p: Projectile) -> void:
-	var model := UnitModel.create(p.unit_id, HudStyle.displayed_team(p.team, Simulation.TEAM_BLUE))   # arrows, missiles ...
+	var model := UnitModel.create(p.unit_id, HudStyle.displayed_team(p.team, HUMAN_TEAM))   # arrows, missiles ...
 	if model != null:
 		model.position = Vector3(p.position.x, 1.2, p.position.y)
 		_units_root.add_child(model)
@@ -412,7 +418,7 @@ func _spawn_effects(e, activation: String, parent: Node3D) -> void:
 			continue   # needs target tracking (later)
 		var path: String = effect["path"]
 		if path.contains("%d"):
-			path = path % HudStyle.displayed_team(e.team, Simulation.TEAM_BLUE)
+			path = path % HudStyle.displayed_team(e.team, HUMAN_TEAM)
 		var groups: Array = effect.get("groups", [])
 		var group := int(groups[0]) if not groups.is_empty() else 0
 		var scale := 1.0
@@ -465,7 +471,7 @@ func _sync_views() -> void:
 		if e.is_lane_node():   # ShowTeamColor: GetTeamColor(Owner.TeamID), neutral grey until a tower replaces it
 			for child in view.get_children():
 				if child is RangeCircle:
-					child.set_color(HudStyle.team_color(e.team, Simulation.TEAM_BLUE))
+					child.set_color(HudStyle.team_color(e.team, HUMAN_TEAM))
 			continue
 		if view is UnitModel:
 			view.position = Vector3(e.position.x, 0.0, e.position.y)

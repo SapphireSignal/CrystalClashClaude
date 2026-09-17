@@ -56,14 +56,14 @@ func _process(delta: float) -> bool:
 		var seconds: float = _targets.pop_front()
 		if _select:
 			var units: Array = _main.sim.alive_entities().filter(func(e): return e.has("upUnit"))
-			var pick: SimEntity = units[0] if not units.is_empty() else _main.sim.entities[_main.sim.nexus_ids[Simulation.TEAM_BLUE]]
+			var pick: SimEntity = units[0] if not units.is_empty() else _main.sim.entities[_main.sim.nexus_ids[_main.HUMAN_TEAM]]
 			_main._hud.select(pick)
 		if _hover >= 0:   # hover at the first shot only: later shots show the delayed ability box
-			var c: Commander = _main.sim.commanders[Simulation.TEAM_BLUE]
+			var c: Commander = _main.sim.commanders[_main.HUMAN_TEAM]
 			_main._hud.card_hint.show_slot(c.slots[_hover], c, _main.sim.time_ms)
 			_hover = -1
 		if _zoom != "":   # zoom=nexus | unit | node: close camera on the blue nexus, the first unit or lane node
-			var target: SimEntity = _main.sim.entities[_main.sim.nexus_ids[Simulation.TEAM_BLUE]]
+			var target: SimEntity = _main.sim.entities[_main.sim.nexus_ids[_main.HUMAN_TEAM]]
 			if _zoom == "unit" or _zoom == "node":
 				var units: Array = _main.sim.alive_entities(-1).filter(func(e): return e.is_lane_node() if _zoom == "node" else e.has("upUnit"))
 				if not units.is_empty():
@@ -78,11 +78,11 @@ func _process(delta: float) -> bool:
 					var centre := Vector2(root.get_viewport().size) / 2.0
 					_main._place_camera(nodes[0].position + (_main._ground_at(centre) - _main._ground_at(_screen)))
 		if _play >= 0:   # play=N: the blue deck slot N at the camera's look-at point (free cards not needed: 300 gold)
-			_main.sim.commanders[Simulation.TEAM_BLUE].free_cards = true
-			_main._play(Simulation.TEAM_BLUE, _play, _main._look_at + Vector2(6, 0))
+			_main.sim.commanders[_main.HUMAN_TEAM].free_cards = true
+			_main._play(_main.HUMAN_TEAM, _play, _main._look_at + Vector2(6, 0))
 			_play = -1
 		if _finish:   # kill the red nexus at the first shot: later shots show the victory screen
-			_main.sim._kill(_main.sim.entities[_main.sim.nexus_ids[Simulation.TEAM_RED]])
+			_main.sim._kill(_main.sim.entities[_main.sim.nexus_ids[_main.AI_TEAM]])
 			_finish = false
 		var path := "res://.tmp/shot_%d.png" % int(seconds)
 		var err := root.get_viewport().get_texture().get_image().save_png(path)
