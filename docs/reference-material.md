@@ -124,3 +124,6 @@ mesh format), 1717 `.tex` (engine texture format) plus 913 `.png` and 797 `.tga`
 effects and FMOD events per ability. Converters needed for `.tex`, `.msh`, `.pfx`, `.dui` and the FMOD banks
 (phase 5); FBX and png/tga import directly. Frostgoyle spawn: dark burst on the fountain, then the goyle rises
 into its flying height (owner observation).
+- Card bar keybinds: under each card slot the charge count (left) and the player's configured key label (right,
+  e.g. 1 2 3 ... and 0 - = for the spawner slots, "-" when unbound). Rebindable in settings; the HUD must show
+  the user's own binding. Locked tier slots show "02:48 / 05:48" with a lock icon.
