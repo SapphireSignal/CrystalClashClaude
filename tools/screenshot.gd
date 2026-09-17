@@ -51,7 +51,7 @@ func _process(delta: float) -> bool:
 				var units: Array = _main.sim.alive_entities().filter(func(e): return e.has("upUnit"))
 				if not units.is_empty():
 					target = units[0]
-			_main._camera_distance = 18.0
+			_main._zoom = 2.6
 			_main._place_camera(target.position)
 		if _finish:   # kill the red nexus at the first shot: later shots show the victory screen
 			_main.sim._kill(_main.sim.entities[_main.sim.nexus_ids[Simulation.TEAM_RED]])

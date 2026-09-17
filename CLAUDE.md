@@ -187,5 +187,6 @@ comparison with `reference/media`. Phase 5 (assets) started: `tools/copy_unit_as
 converts every unit mesh cache to glb, `game/units/unit_model.gd` builds each unit's original model with the engine's
 scale rules, team textures and the script's animation frame ranges (extractor `visuals`). `tools/convert_map.py`
 converts the maps (terrain glb from the heightmap, water, lights, vegetation instances, decorations) and
-`game/maps/map_view.gd` renders them; the sandbox runs on the original Single map with the real units, towers and
-nexus. See `CONTINUE.md`.
+`game/maps/map_view.gd` renders them (grass tufts baked like `TGrassTuft`); the sandbox runs on the original Single
+map with the real units, towers and nexus, the original camera (zoom 2.6-3.8 x 10 along CAMERAOFFSET, FOV 0.685 rad,
+lane-locked z = -23) and map lighting scaled by 0.7 to match the reference brightness. See `CONTINUE.md`.

@@ -30,8 +30,12 @@ var _red_cursor: int = 0
 @onready var _camera: Camera3D = $Camera3D
 @onready var _environment: WorldEnvironment = $WorldEnvironment
 var _map: MapView
-var _look_at := Vector2(-40, -23)   # ground point the camera looks at
-var _camera_distance := 70.0
+var _look_at := Vector2(-40, -23)   # ground point the camera looks at (CameraFixedToLane: z = -23)
+var _zoom := ZOOM_MAX              # TClientCameraComponent.FZoom: distance = zoom * 10 along CAMERAOFFSET
+const ZOOM_MIN := 2.6              # coGameplayCameraMinZoom
+const ZOOM_MAX := 3.8              # coGameplayCameraMaxZoom (the default zoom)
+const ZOOM_SPEED := 0.2            # ZOOMSPEED per wheel notch
+const CAMERA_FOV := 0.6853981635   # coEngineCameraFoV (vertical, radians)
 var _drag_anchor: Variant = null    # ground point under the mouse when the right drag started
 
 
@@ -85,10 +89,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			else:
 				_hud.select(_unit_at(_mouse_world_2d(), true))
 		elif event.pressed and event.button_index == MOUSE_BUTTON_WHEEL_UP:
-			_camera_distance = maxf(25.0, _camera_distance - 5.0)
+			_zoom = maxf(ZOOM_MIN, _zoom - ZOOM_SPEED)
 			_place_camera(_look_at)
 		elif event.pressed and event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
-			_camera_distance = minf(140.0, _camera_distance + 5.0)
+			_zoom = minf(ZOOM_MAX, _zoom + ZOOM_SPEED)
 			_place_camera(_look_at)
 	elif event is InputEventMouseMotion and _drag_anchor != null:
 		var now := _mouse_world_2d()   # keep the grabbed ground point under the cursor
@@ -285,7 +289,8 @@ func _mouse_world_2d() -> Vector2:
 func _place_camera(look_at_2d: Vector2) -> void:
 	# Original camera offset direction (Constants.Client.pas:34), scaled to see the lane.
 	_look_at = look_at_2d
-	var offset := Vector3(-0.3947, 0.8121, 0.4297).normalized() * _camera_distance   # own base bottom-left, lane runs to the top-right
+	_camera.fov = rad_to_deg(CAMERA_FOV)
+	var offset := Vector3(-0.3947, 0.8121, 0.4297).normalized() * _zoom * 10.0   # own base bottom-left, lane runs to the top-right
 	var target := Vector3(look_at_2d.x, 0, look_at_2d.y)
 	_camera.position = target + offset
 	_camera.look_at(target, Vector3.UP)

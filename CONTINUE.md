@@ -2,7 +2,7 @@
 
 Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
 
-## State (2026-09-17, checkpoint 31)
+## State (2026-09-17, checkpoint 32)
 - Phases 1-3 done, 799 tests pass. Sandbox `game/main.tscn`: blue deck on keys 1-9,0,-,= or by clicking a card
   (drops/spells then need a left click on the ground, spawners go to the next free field); red AI plays Black.
 - **Phase 4 (HUD): step 1 done.** `game/ui/` holds the code-built HUD from `docs/hud.md`: top bar (clock, nexus
@@ -54,12 +54,18 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
   terrain, a flat water plane, the map lights/ambient, MultiMesh vegetation and decoration meshes; `main.tscn`
   lost its flat ground and sun. The sandbox (Single map) now looks like the reference screenshots.
 
+- **Checkpoint 32:** grass tufts (`TGrassTuft.ComputeAndSave` ported into `convert_map.py`, baked to
+  `grass.glb`, 1435 / 1207 tufts), the original camera (`main.gd`: zoom 3.8 default, 2.6..3.8, 0.2 per wheel
+  notch, distance = zoom x 10, FOV 0.6853981635 rad, `coEngineCameraFoV`), `MapView.LIGHT_SCALE` 0.7 so the lane
+  stones render at ~190 like the reference (Godot lights in linear space, the original in gamma space,
+  `Standardshader.fx:515`).
+
 ## Next step (in order, one at a time, run the game after each)
-1. Map polish: (a) compare `tools/screenshot.gd` shots with `reference/media/ingame` at the same camera spot and
-   tune light energies / ambient (the lane looks washed out); (b) water: port the look roughly (colour, wave
-   texture `Maps/Classic/WaterTexture.tga`, transparency) as a shader; (c) terrain `Material.png` (specular) and
-   the grass vegetation entries (`.veg` items without `Meshes`, `TVegetationGrass`?); (d) verify the Delphi
-   `Random` replica against the original (palm variants/rotations) if a screenshot shows a mismatch.
+1. Map polish: (a) water: port the look roughly (colour, wave texture `Maps/Classic/WaterTexture.tga`,
+   transparency, reflections) as a shader; (b) shadows look weak: check the DirectionalLight shadow settings and
+   the original's shadow strength; (c) terrain `Material.png` (specular) later; (d) verify the Delphi `Random`
+   replica against the original (palm variants/rotations) if a screenshot shows a mismatch; (e) grass wind
+   animation (`Custom` vertex data = time offset) as a shader.
 2. Models polish: (a) walk clip speed per the original formula (`Visuals.pas:3352`, IgnoreScalingForAnimations
    variant at 3355); (b) glow textures (`GlowTexture`, team glow) as emission; (c) `Effects/Meshes` spell props and
    the Environment/Gameplay `.msh` (13 + 2) once the map needs them; (d) the 18 "Basis must be normalized" import

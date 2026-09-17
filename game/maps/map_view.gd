@@ -5,6 +5,9 @@ extends Node3D
 
 const MAPS_DIR := "res://assets/maps/"
 const ENV_DIR := "res://assets/environment/"
+## The original lit in gamma space (Standardshader.fx:515 colour * (NdotL * light + ambient)); Godot lights in
+## linear space, so the map's intensities are scaled to match the reference screenshots' brightness.
+const LIGHT_SCALE := 0.7
 
 static var _material_cache: Dictionary = {}
 
@@ -24,6 +27,8 @@ func load_map(map_name: String) -> void:
 	_add_vegetation(data.get("vegetation", []))
 	for deco in data.get("decorations", []):
 		_add_decoration(deco)
+	if data.has("grass"):
+		_add_grass(dir, data["grass"])
 
 
 func _add_terrain(path: String) -> void:
@@ -58,7 +63,7 @@ func _add_water(water: Dictionary) -> void:
 func _add_lights(lights: Dictionary) -> void:
 	var ambient: Array = lights.get("ambient", [1, 1, 1, 1])
 	ambient_color = Color(ambient[0], ambient[1], ambient[2])
-	ambient_energy = float(ambient[3])
+	ambient_energy = float(ambient[3]) * LIGHT_SCALE
 	for light in lights.get("directional", []):
 		if not light.get("enabled", false):
 			continue
@@ -67,7 +72,7 @@ func _add_lights(lights: Dictionary) -> void:
 		var dir := Vector3(d[0], d[1], d[2]).normalized()
 		var c: Array = light["color"]
 		node.light_color = Color(c[0], c[1], c[2])
-		node.light_energy = float(c[3])
+		node.light_energy = float(c[3]) * LIGHT_SCALE
 		node.shadow_enabled = true
 		add_child(node)
 		node.look_at_from_position(Vector3(0, 60, 0), Vector3(0, 60, 0) + dir, Vector3.UP if absf(dir.y) < 0.99 else Vector3.RIGHT)
@@ -100,6 +105,19 @@ func _add_vegetation(items: Array) -> void:
 		instance.material_override = _environment_material(str(first.get("diffuse", "")), true)
 		instance.name = str(first["mesh"]).get_file().get_basename()
 		add_child(instance)
+
+
+## TGrassTuft quads baked by the converter, drawn with the grass texture cut out (no wind animation yet).
+func _add_grass(dir: String, grass: Dictionary) -> void:
+	var mesh := _mesh_of(dir + str(grass["file"]))
+	if mesh == null:
+		return
+	var instance := MeshInstance3D.new()
+	instance.mesh = mesh
+	instance.material_override = _environment_material(str(grass.get("diffuse", "")), true)
+	instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	instance.name = "Grass"
+	add_child(instance)
 
 
 ## RDecoEntityDescription: a script entity at Position facing Front; its meshes come from the script.

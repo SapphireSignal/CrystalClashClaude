@@ -36925,5 +36925,10 @@
     }
    ]
   }
- ]
+ ],
+ "grass": {
+  "file": "grass.glb",
+  "diffuse": "Grass/Grass.tga",
+  "tufts": 1435
+ }
 }

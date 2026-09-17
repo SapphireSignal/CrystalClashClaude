@@ -283,6 +283,114 @@ def read_vegetation(path: Path, index: dict) -> list[dict]:
     return result
 
 
+# ---------------------------------------------------------------- grass (TGrassTuft.ComputeAndSave)
+
+def _normalize(v: np.ndarray) -> np.ndarray:
+    n = np.linalg.norm(v)
+    return v / n if n > 0 else v
+
+
+def _rotate_axis(v: np.ndarray, axis: np.ndarray, angle: float) -> np.ndarray:
+    """RVector3.RotateAxis (Rodrigues)."""
+    a = _normalize(axis)
+    return v * math.cos(angle) + np.cross(a, v) * math.sin(angle) + a * np.dot(a, v) * (1 - math.cos(angle))
+
+
+def _arbitrary_orthogonal(v: np.ndarray) -> np.ndarray:
+    r = np.cross(v, np.array([0.0, 1.0, 0.0]))
+    if np.linalg.norm(r) < 1e-9:
+        r = np.cross(v, np.array([1.0, 0.0, 0.0]))
+    return _normalize(r)
+
+
+def build_grass(path: Path) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, str]:
+    """Bakes every TGrassTuft of the .veg like the engine: three crossed quads per tuft, random rotation,
+    trapezial top, random size, the engine's Delphi Random replayed from FRandSeed."""
+    positions, normals, uvs, indices = [], [], [], []
+    diffuse = ""
+    if not path.exists():
+        return np.zeros((0, 3)), np.zeros((0, 3)), np.zeros((0, 2)), np.zeros(0, dtype=np.uint32), diffuse
+    root = ElementTree.parse(path).getroot()
+    for item in root.iter("Item"):
+        if item.get("type") != "Engine.Vegetation.TGrassTuft":
+            continue
+        rng = DelphiRandom(int(item.findtext("FRandSeed")))
+        position = np.array(vec(item.find("FPosition")))
+        ground = _normalize(np.array(vec(item.find("FGroundNormal"))))
+        rotation = rng.random() * 2 * math.pi
+        top = ground.copy()
+        side = _arbitrary_orthogonal(top)
+        front = _normalize(np.cross(top, side))
+        angle_node = item.find("Angle")
+        angle = num(angle_node.findtext("Mean")) + (rng.random() * 2 - 1) * num(angle_node.findtext("Variance"))
+        top = _normalize(_rotate_axis(top, side, angle - math.pi / 2))
+        size_node = item.find("Size")
+        mean = vec(size_node.find("Mean"), ("X", "Y"))
+        variance = vec(size_node.find("Variance"), ("X", "Y"))
+        real_size = [mean[i] + (rng.random() * 2 - 1) * variance[i] for i in range(2)]
+        trap_node = item.find("Trapezial")
+        trapezial = num(trap_node.findtext("Mean")) + (rng.random() * 2 - 1) * num(trap_node.findtext("Variance")) - 0.5
+        rng.random()   # timeOffset (wind animation phase)
+        mid_offset = num(item.findtext("MidOffset"))
+        normal_adjust = num(item.findtext("NormalAdjustment"))
+        scale = num(item.findtext("Scale"))
+        diffuse = diffuse or (item.findtext("Diffuse") or "").strip()
+        for i in range(3):
+            r_angle = (i / 3) * 2 * math.pi + rotation
+            normal = _normalize(_rotate_axis(_normalize(np.cross(top, side)), ground, r_angle))
+            normal = _normalize(normal + (ground - normal) * normal_adjust)
+            def corner(sx: float, up: float) -> np.ndarray:
+                v = (side * sx * real_size[0] / 2 + top * up * real_size[1] + front * real_size[0] * mid_offset / 2) * scale
+                return _rotate_axis(v, ground, r_angle) + position
+            lt, rt, lb, rb = corner(1, 1), corner(-1, 1), corner(1, 0), corner(-1, 0)
+            lt, rt = lt + (rt - lt) * trapezial, rt + (lt - rt) * trapezial
+            base = len(positions)
+            positions += [lt, rt, lb, rb]
+            normals += [normal] * 4
+            uvs += [[0, 0], [1, 0], [0, 1], [1, 1]]
+            indices += [base, base + 2, base + 1, base + 1, base + 2, base + 3]
+    return (np.array(positions, dtype=np.float32), np.array(normals, dtype=np.float32), np.array(uvs, dtype=np.float32),
+            np.array(indices, dtype=np.uint32), diffuse)
+
+
+def write_grass_glb(veg_path: Path, out_dir: Path, index: dict) -> dict | None:
+    positions, normals, uvs, indices, diffuse = build_grass(veg_path)
+    if len(positions) == 0:
+        return None
+    # the engine flips winding for DirectX: emit the opposite order (alpha-cut grass is drawn double-sided anyway)
+    indices = indices.reshape(-1, 3)[:, ::-1].reshape(-1).copy()
+    blob = bytearray()
+    views, accessors = [], []
+
+    def add(array, component, kind, target, minmax=False):
+        data = np.ascontiguousarray(array).tobytes()
+        while len(blob) % 4:
+            blob.append(0)
+        views.append({"buffer": 0, "byteOffset": len(blob), "byteLength": len(data), "target": target})
+        blob.extend(data)
+        acc = {"bufferView": len(views) - 1, "componentType": component, "count": int(array.shape[0]), "type": kind}
+        if minmax:
+            acc["min"] = [float(v) for v in array.min(axis=0)]
+            acc["max"] = [float(v) for v in array.max(axis=0)]
+        accessors.append(acc)
+        return len(accessors) - 1
+
+    primitive = {"attributes": {"POSITION": add(positions, 5126, "VEC3", 34962, True), "NORMAL": add(normals, 5126, "VEC3", 34962),
+                                "TEXCOORD_0": add(uvs, 5126, "VEC2", 34962)}, "indices": add(indices, 5125, "SCALAR", 34963), "mode": 4}
+    gltf = {"asset": {"version": "2.0", "generator": "CrystalClash convert_map"}, "scene": 0, "scenes": [{"nodes": [0]}],
+            "nodes": [{"name": "Grass", "mesh": 0}], "meshes": [{"name": "Grass", "primitives": [primitive]}],
+            "buffers": [{"byteLength": len(blob)}], "bufferViews": views, "accessors": accessors}
+    json_bytes = json.dumps(gltf, separators=(",", ":")).encode()
+    json_bytes += b" " * (-len(json_bytes) % 4)
+    body = bytes(blob) + b"\0" * (-len(blob) % 4)
+    header = struct.pack("<III", 0x46546C67, 2, 12 + 8 + len(json_bytes) + 8 + len(body))
+    (out_dir / "grass.glb").write_bytes(header + struct.pack("<II", len(json_bytes), 0x4E4F534A) + json_bytes + struct.pack("<II", len(body), 0x004E4942) + body)
+    parts = diffuse.replace("\\", "/").split("/")
+    files = index.get(parts[-2].lower(), {}) if len(parts) >= 2 else {}
+    tex = f"{parts[-2]}/{files.get(parts[-1].lower(), parts[-1])}" if len(parts) >= 2 else ""
+    return {"file": "grass.glb", "diffuse": tex, "tufts": int(len(positions) // 12)}
+
+
 RE_ENV_MESH = re.compile(r"TMeshComponent\.Create(?:Grouped)?\(Entity(?:,\s*\[[^\]]*\])?,\s*'([^']*)'\)(.*?);", re.S)
 RE_ENV_SIZE = re.compile(r"WriteGrouped\(eiModelSize,\s*\[([0-9.]+)\]")
 
@@ -334,9 +442,12 @@ def convert(name: str) -> None:
         "vegetation": read_vegetation(map_dir / f"{name}.veg", index),
         "decorations": read_decorations(map_dir / f"{name}.bcc", index),
     }
+    grass = write_grass_glb(map_dir / f"{name}.veg", out_dir, index)
+    if grass:
+        data["grass"] = grass
     (out_dir / "map.json").write_text(json.dumps(data, indent=1), encoding="utf-8")
     print(f"{name}: terrain {heights.shape[0]}x{heights.shape[0]}, water {len(data['water'])}, lights {len(data['lights'].get('directional', []))}, "
-          f"vegetation {len(data['vegetation'])}, decorations {len(data['decorations'])} -> {out_dir}")
+          f"vegetation {len(data['vegetation'])}, grass tufts {data.get('grass', {}).get('tufts', 0)}, decorations {len(data['decorations'])} -> {out_dir}")
 
 
 if __name__ == "__main__":
