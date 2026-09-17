@@ -10,6 +10,11 @@ spawner fight with the unit panel, blue base; 1280x720 and 1600x900 variants; 4 
 camera/lighting; a Victory banner) and `lobby/` 10 files (leaderboards de/fr/ru, collection ru, queue en, victory
 summaries 1v1 ru and 2v2 es, deck-unlocked pt, maintenance splash "Rise of Legions Crystal Dawn"). The HUD is the
 *normal* layout at 1920x1080 (window >= 1710 wide), unlike the owner's Crystal Clash shots (small layout).
+Added 2026-09-17 by the owner: `lobby/menu_loading_screen.png`, a phone photo of the menu's own loading page
+(Early Access build, window ~1640x924). Checked against `MenuLoadingScreen` (checkpoint 60): logo width, logo bottom,
+opener text block start (~49 % down), line spacing, status text (83 %), spinner (88 %) and the three bottom-left logos
+all match. Deltas are the older build only: the green `EARLY ACCESS` banner (the repo ships the `CRYSTAL DAWN`
+ReleaseBanner.png) and the opener says "Over 3 years" (the repo's lang says 4). Nothing to change.
 
 ## Screen coverage (2026-09-17): what defines each screen, and which shots verify it
 The ground truth for **every** screen is the repo: 139 `.dui` layouts + 57 `.scss` in `Graphics/GUI` (loading
