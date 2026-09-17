@@ -31,6 +31,9 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
 - Sandbox `game/main.tscn`: capsules, 12-slot white deck on keys 1-9,0,-,= , simple red AI. Renderer: Compatibility.
 - `docs/factions/black.md`: complete Black faction spec (souls, 12 units, 7 spells, component semantics).
 - `reference/media/` (local, gitignored): folder for real-game screenshots/videos the owner drops in.
+- `docs/reference-material.md`: where the real-game screenshots, UI captures, trailer, menu audio and the
+  Steam news/patch-note archive live (Codex's `D:\Games\CrystalClash` research folders). Use in phases 3-5
+  and for the patch-notes audit.
 
 ## Next step (in order, one at a time, test after each)
 1. Green, Blue, Golems the same way as Black: `docs/factions/<x>.md` (research agents write them, same
