@@ -21,7 +21,7 @@ and the Lang tables. Screenshots only verify rendering.
 
 | Screen | Rise of Legions shots (`rolmedia`) | Crystal Clash shots (`ccmedia`, later client) |
 |---|---|---|
-| In-game HUD normal layout 1920 | 13 (fights, unit panel, spawner panel) | - |
+| In-game HUD normal layout 1920 | 17 (fights, unit panel, spawner panel; 4 `press_*` official shots from gamepressure.com with the card hover hint, lane towers, spawner tooltip) | - |
 | In-game HUD small layout | - | 21 (1679x1079) |
 | Capture-mode (no HUD) | 4 | - |
 | Victory banner / summary | 3 | 1 |
