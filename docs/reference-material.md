@@ -112,6 +112,9 @@ These are current and take precedence over Codex's older captures. Facts read fr
   6-18 ammo and a single target. Nexus live: 8000 HP, 25 ammo, 96 damage (source: 110-120 damage, 8-20 ammo).
   Towers and bases were reworked after the repo snapshot; the patch-notes audit must cover them first.
 - Capture point (lane node): a white disc on the lane with a blue progress ring while a team captures it.
+  The big capture arcs (radius 16.5, `RangeLine.tga`) look *lighter* than the floor in the live client; the
+  2022 source tints them with the node's own team colour, neutral grey `404040` (never changes: the node is
+  replaced by a tower). We keep the source's grey; with the texture's 13 % peak alpha it is a faint dark arc.
 - Lane node after a tower dies: the losing team cannot recapture for a while (owner: ~20 s live; source
   LaneNode_Red/_Blue block 40 s). Selecting an enemy squad: panel "Thistles", "40 / 40", attack "8.8", armor "0%",
   "Doubleshot, Evasion" (source Thistle: 27 HP, 14 damage x2). Enemy nexus is drawn red. Floating combat text

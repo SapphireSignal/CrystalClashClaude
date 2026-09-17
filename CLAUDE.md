@@ -193,4 +193,5 @@ lane-locked z = -23) and map lighting scaled by 0.7 to match the reference brigh
 (spec), `tools/convert_particles.py` -> `assets/effects/`, `game/effects/particle_effect.gd` (engine-faithful CPU path
 player), scripts' effect components in `units.json` `effects`, played by the sandbox on create / fire / die /
 projectile impact. HUD verified against the live-client screenshots (resource panel, deck panel with the
-engine's colour-override darken shader); lane node capture circle (`game/effects/range_circle.gd`) in, unverified. See `CONTINUE.md`.
+engine's colour-override darken shader); lane node capture circle (`game/effects/range_circle.gd`) verified: neutral
+grey tint like the source, faint arc. See `CONTINUE.md`.

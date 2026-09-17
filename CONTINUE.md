@@ -2,7 +2,7 @@
 
 Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
 
-## State (2026-09-17, checkpoint 36)
+## State (2026-09-17, checkpoint 37)
 - Phases 1-3 done, 799 tests pass. Sandbox `game/main.tscn`: blue deck on keys 1-9,0,-,= or by clicking a card
   (drops/spells then need a left click on the ground, spawners go to the next free field); red AI plays Black.
 - **Phase 4 (HUD): step 1 done.** `game/ui/` holds the code-built HUD from `docs/hud.md`: top bar (clock, nexus
@@ -85,16 +85,14 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
   skip off-screen / non-finite projections (the polygon errors are gone). `tools/screenshot.gd` has `zoom=node`.
 
 ## FIX FIRST (owner's request, before anything else)
-Compare with `tools/screenshot.gd -- 15 18 zoom=node play=2` (camera on the first lane node) and the reference.
-1. **Lane node capture circle: code in, NOT verified.** `game/effects/range_circle.gd` ports
-   `TVertexWorldspaceCircle` (radius = eiWelaRange[1] 16.5, thickness 0.5, slices 0.57-0.93 and 0.07-0.43, 64
-   samples, U along the arc, V outer->inner, `RangeLine.tga` copied to `assets/effects/textures/`); `main.gd`
-   builds a holder per lane node (also plays its `create` effects, `LaneNode.pfx`) and tints the circle white /
-   capturing team colour (original: `GetTeamColor(Owner.TeamID)` = team 0 grey, but the live client shows a light
-   arc; decision: white until a team charges it). In the last screenshot the ring was not visible on the bright
-   floor: `RangeLine.tga` alpha peaks at 33/255. Check the ring is drawn at all (mesh, y 0.01, camera frustum),
-   compare with the faint arc in the reference bottom-left crop, and check `LaneNode.pfx` plays. `play=2` at the
-   node placed nothing visible (drop zone?) - use the nexus view for the footmen instead.
+1. **Done (checkpoint 37): lane node capture circle verified.** The ring renders (mesh, y 0.01, orientation:
+   start +Z about +Y, gaps across the lane, arcs along it, exactly `DrawCircle` Up=UNITZ Left=UNITX); it was
+   invisible because it was tinted white. The original tints it `GetTeamColor(Owner.TeamID)` and the node
+   stays team 0, so it is neutral grey `404040` at the texture's 13 % peak alpha: a faint dark arc, visible at
+   zoom 3.8 (at `zoom=node` 2.6 the 16.5 radius is outside the frame). Live-client delta (light arc) noted in
+   `docs/reference-material.md`. Still open here: `LaneNode.pfx` (the disc particles) did not show in the shot,
+   check `_spawn_effects(e, "create", holder)` for lane nodes; the blue progress ring (`TResourceDisplayComponent`
+   team power) and `Capture%d.pfx` on fire are not built yet.
 2. The footmen's shield-block ring shows as scattered dots: check the effect scale rule
    (`ScaleWith(eiCollisionRadius)` x model size / 1.7) against the reference and a debug view.
 3. Lane stones still brighter/flatter than the reference: revisit `MapView.LIGHT_SCALE` and the terrain

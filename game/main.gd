@@ -446,11 +446,10 @@ func _sync_views() -> void:
 		var e: SimEntity = sim.entities.get(id)
 		if e == null:
 			continue
-		if e.is_lane_node():   # ShowTeamColor: the circle takes the colour of the team charging the node
-			var team := e.capturing_team if e.capturing_team >= 0 else 0
+		if e.is_lane_node():   # ShowTeamColor: GetTeamColor(Owner.TeamID), neutral grey until a tower replaces it
 			for child in view.get_children():
 				if child is RangeCircle:
-					child.set_color(HudStyle.team_color(team, Simulation.TEAM_BLUE) if team > 0 else Color.WHITE)
+					child.set_color(HudStyle.team_color(e.team, Simulation.TEAM_BLUE))
 			continue
 		if view is UnitModel:
 			view.position = Vector3(e.position.x, 0.0, e.position.y)
