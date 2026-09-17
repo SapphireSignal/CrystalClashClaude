@@ -118,8 +118,9 @@ Act as two people at once:
   pitch 54 / yaw 47 / distance 38 / original FOV, 4.8 px mean block error; `docs/reference-material.md`).
   `main.gd` and `minimap.gd` use the constant verbatim. Do not re-measure it from single features (sand
   strips, one tile) or with whole-frame correlation that masks the frame bottom: both misled us twice.
-  Window: stretch `canvas_items` + `expand`; the HUD lays out from the viewport rect (`Hud._layout`) so any
-  resolution/aspect keeps the panels pinned to the edges. **Sides**: the live client has Blue at +x (own base top-right, lane
+  Window: stretch **disabled** (the original draws its HUD in absolute pixels at every resolution, no design-space
+  scaling); `Hud._layout` pins the panels to the window edges and switches to the client's `.small` layout below
+  1710x816 (`core_game_scaling.scss`: resources/minimap/top bar 80 %, deck slots 66x64, card hint 267 wide). **Sides**: the live client has Blue at +x (own base top-right, lane
   leaving to the bottom-left, blue top-right on the minimap): `SimMap.side()`; tests run with
   `SimMap.legacy_sides = true` (2022 layout, blue at -x) so their coordinates stay the scripts'.
 - 2026-09-16 `reference/media/` is filled by the owner only (lobby/ and ingame/ screenshots). Never read or

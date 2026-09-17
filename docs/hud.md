@@ -3,8 +3,11 @@
 Ground truth: `reference/rise-of-legions/Graphics/GUI/Game.dui` + `HUD/**/*.dui` (markup) and
 `Graphics/GUI/Stylesheets/core_game*.scss` (pixel layout), view-model `TIngameHUD`
 (`BaseConflict.Classes.Gamestates.GUI.pas`), values pushed from `BaseConflict.EntityComponents.Client.pas:1700-1830`.
-Owner screenshots in `reference/media/ingame/` are in the client's **small** layout (window < 1710x816), our
-1920x1080 window uses the normal sizes below. Images are copied 1:1 by `tools/copy_ui_assets.py` into
+Owner screenshots in `reference/media/ingame/` are in the client's **small** layout (window < 1710x816):
+`core_game_scaling.scss` `.core-game.small` = resources / minimap / game-info / tooltip at 80 % of their art,
+deck panel 64 high with 66x64 slots (spawner margin 48, locked groups shifted 38 %), card hint 267 wide with its
+top 208 px above the bottom, hint text 12 px. `Hud._layout` applies this below that window size; the HUD is
+drawn in absolute pixels at every resolution like the original (project stretch mode disabled). Images are copied 1:1 by `tools/copy_ui_assets.py` into
 `assets/ui/<same path as under Graphics/GUI>`; fonts (Proza Libre) into `assets/fonts/`.
 Text: `tools/extract_lang.py` -> `game/data/lang/en.json` (keys lowercased, `§key` references resolved, HTML stripped).
 

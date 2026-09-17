@@ -116,9 +116,12 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
   (4.8 px). `main.gd` uses `CAMERAOFFSET` verbatim. Window stretch `expand` + `Hud._layout()` from the viewport
   rect (panels pinned to edges at any resolution; `FinalScreen` centred). `tools/screenshot.gd -- ... size=WxH`
   renders at the reference window size (1679x1079) for honest comparisons. The owner's monitor is 1680x1050-ish:
-  their screenshots are 1679x1079 and use the client's *small* HUD layout (todo: port the small layout below
-  1710 px width, `docs/hud.md`). Owner's remark: where the reference looks bad (e.g. its blocky shadows) we may
-  do better, as long as it stays unnoticeable as a difference.
+  their screenshots are 1679x1079 and use the client's *small* HUD layout. Owner's remark: where the reference
+  looks bad (e.g. its blocky shadows) we may do better, as long as it stays unnoticeable as a difference.
+- **Checkpoint 45: HUD sizes match.** Stretch mode disabled (absolute pixels like the original) and `Hud._layout`
+  applies the `.small` layout below 1710x816 (80 % panels, 66x64 deck slots, 267 card hint). Verified at
+  1679x1079 against the game-start reference (`.tmp/hud_cmp.png`). Small-layout details not done: locked deck
+  groups shift 38 % (ours 55 %), spawner margin 48, jump button position, hint text 12 px.
 
 ## FIX FIRST (owner's request, before anything else)
 1. **Done (checkpoint 37): lane node capture circle verified.** The ring renders (mesh, y 0.01, orientation:

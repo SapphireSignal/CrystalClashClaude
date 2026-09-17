@@ -9,6 +9,7 @@ signal match_left      # the final screen's Continue button (or its timeout)
 
 const TECH_W := 158.0
 const TECH_H := 34.0
+const SMALL_LAYOUT_MAX := Vector2i(1710, 816)   # docs/hud.md: below this window size the client uses `.small`
 
 var info_bar: GameInfoBar
 var resources: ResourcePanel
@@ -87,13 +88,26 @@ func _layout() -> void:
 	var view := get_viewport_rect().size   # the canvas (1920 wide, height by the window's aspect); size is 0 under a CanvasLayer
 	var w := view.x
 	var h := view.y
-	info_bar.position = Vector2((w - GameInfoBar.WIDTH) / 2.0, 0)
-	resources.position = Vector2(0, h - ResourcePanel.SIZE)
-	minimap.position = Vector2(w - Minimap.SIZE, h - Minimap.SIZE)
+	# core_game_scaling.scss `.core-game.small` (window narrower than 1710 or lower than 816 px): resources,
+	# minimap, game-info, tooltip at 80 % of their art, deck slots 66x64 instead of 85x90 (panel 64 high),
+	# card hint 267 wide with its top 208 px above the bottom.
+	var window := DisplayServer.window_get_size()
+	var small := window.x < SMALL_LAYOUT_MAX.x or window.y < SMALL_LAYOUT_MAX.y
+	var s := 0.8 if small else 1.0
+	var deck_s := 66.0 / DeckPanel.SLOT_W if small else 1.0
+	var hint_s := 267.0 / CardHint.WIDTH if small else 1.0
+	info_bar.scale = Vector2(s, s)
+	resources.scale = Vector2(s, s)
+	minimap.scale = Vector2(s, s)
+	deck.scale = Vector2(deck_s, deck_s)
+	card_hint.scale = Vector2(hint_s, hint_s)
+	info_bar.position = Vector2((w - GameInfoBar.WIDTH * s) / 2.0, 0)
+	resources.position = Vector2(0, h - ResourcePanel.SIZE * s)
+	minimap.position = Vector2(w - Minimap.SIZE * s, h - Minimap.SIZE * s)
 	info.position = Vector2(w - InfoPanel.WIDTH, h * 0.4 - InfoPanel.HEIGHT / 2.0)
-	card_hint.position = Vector2((w - CardHint.WIDTH) / 2.0, h - 260)
+	card_hint.position = Vector2((w - CardHint.WIDTH * hint_s) / 2.0, h - (208.0 if small else 260.0))
 	announcements.position = Vector2((w - Announcements.WIDTH) / 2.0, Announcements.TOP)
-	deck.position = Vector2((w - deck.size.x) / 2.0, h - DeckPanel.HEIGHT)
+	deck.position = Vector2((w - deck.size.x * deck_s) / 2.0, h - (64.0 if small else DeckPanel.HEIGHT))
 
 
 func select(e: SimEntity) -> void:
