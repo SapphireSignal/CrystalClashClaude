@@ -552,6 +552,34 @@ func test_monument_of_light_aoe() -> void:
 	runner.check_eq(monument.mana, 0, "pulse cost 3 mana")
 
 
+func test_homeland_rescue() -> void:
+	var sim := Simulation.new(10, 4)
+	sim.spawn_bases()
+	var tower := sim.spawn("Units/White/Suntower", Simulation.TEAM_BLUE, Vector2(-40, -23))
+	var footman := sim.spawn("Units/White/Footman", Simulation.TEAM_BLUE, Vector2(-37, -23))
+	footman.base_speed = 0.0
+	sim.apply_buff(footman, "Stun")
+	sim.step()
+	runner.check(footman.has("upRescued"), "linked footman is marked rescued")
+	sim._kill(footman)
+	runner.check(footman.alive, "death prevented once")
+	runner.check_near(footman.health, 10.0, "health set to 10")
+	runner.check(not footman.has("upStunned"), "state effects stripped")
+	runner.check(footman.has("upImmuneToRescued"), "immune to a second rescue")
+	runner.check(footman.position.distance_to(Vector2(-96, -23)) < 6.0, "teleported next to the own nexus")
+	runner.check(not footman.link_buffs.has(tower.id), "link consumed")
+	sim._kill(footman)
+	runner.check(not footman.alive, "second death is final")
+
+
+func test_heavy_gunner_gains_mana_when_blessed() -> void:
+	var sim := Simulation.new(10, 4)
+	var gunner := sim.spawn("Units/White/HeavyGunner", Simulation.TEAM_BLUE, Vector2(0, -23))
+	runner.check_eq(gunner.mana, 0, "heavy gunner starts empty")
+	sim.apply_buff(gunner, "BlessingArmor")
+	runner.check_eq(gunner.mana, gunner.mana_cap, "a blessing fills the mana (group 5 gives 100, capped at 4)")
+
+
 func test_drop_formation() -> void:
 	var sim := Simulation.new(1, 4)
 	var squad := sim.drop_squad("Units/White/Footman", Simulation.TEAM_BLUE, Vector2(0, -23), 4)

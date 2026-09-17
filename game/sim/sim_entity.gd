@@ -173,6 +173,9 @@ func cooldown(group: int = SimConstants.GROUP_MAINWEAPON) -> int:
 ## (ScaleWithTime over the value group's cooldown), Ballista while its ready group holds (upFlying).
 func range_of(group: int = SimConstants.GROUP_MAINWEAPON, now: int = -1) -> float:
 	var r := bb.get_float("eiWelaRange", group, 0.0)
+	if group == SimConstants.GROUP_MAINWEAPON:
+		for b in buffs:
+			r += b.range_add + (b.range_add_building if is_building() else 0.0)
 	var w := wela(group)
 	if w == null or w.range_modifier_group < 0:
 		return r

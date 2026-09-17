@@ -170,7 +170,7 @@ def create_entity_body(text: str) -> str:
 def parse_modifier(path: Path) -> dict:
     """Scripts/Modifiers/*.dws: procedure Apply(Entity; params) with SetValue lines and components."""
     text = path.read_text(encoding="utf-8", errors="replace")
-    m = re.search(r"procedure Apply\((.*?)\);(.*?)^end;", text, re.S | re.M)
+    m = re.search(r"(?:procedure|function) Apply\((.*?)\)(?:\s*:\s*[\w ]+)?;(.*?)^end;", text, re.S | re.M)
     if not m:
         return {}
     params = [p.split(":")[0].strip() for p in m.group(1).split(";")[1:] if ":" in p]
@@ -201,6 +201,10 @@ def extract_modifiers() -> dict:
         data = parse_modifier(path)
         if data:
             out[path.stem] = data
+    for path in sorted(SCRIPTS.glob("Links/*.dws")):
+        data = parse_modifier(path)
+        if data:
+            out["Links/" + path.stem] = data
     return out
 
 

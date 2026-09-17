@@ -119,7 +119,9 @@ lane node. Data-driven abilities: the extractor records every server component p
 turns them into weapon/ability groups (main attack, heals with mana, Shieldblock, Relentless damage
 multipliers, deathrattle projectiles, chained fire groups like Monk Dragon Punch and Avenger double shot,
 auras/links with activation delay, resource-compare constraints, range modifiers, splash warheads,
-on-healed triggers, cooldown resets) and `buff.gd` turns `Scripts/Modifiers/*.dws` into timed buffs
-(stun/root/blessings, stat modifiers, DoT). All 12 White units parse. 199 tests pass. `game/main.tscn` is a sandbox with capsule
+on-healed triggers, cooldown resets, on-property triggers) and `buff.gd` turns `Scripts/Modifiers/*.dws`
+and `Scripts/Links/*.dws` aura payloads into buffs (stun/root/blessings, stat modifiers, DoT/HoT/mana
+ticks, taken-damage multipliers, prevent-death rescues like Homeland and Guarded). All 12 White units
+parse. 209 tests pass. `game/main.tscn` is a sandbox with capsule
 units on the Compatibility renderer: keys 1-9,0,-,= play the 12 deck slots, a simple red AI plays back.
 See `CONTINUE.md`.

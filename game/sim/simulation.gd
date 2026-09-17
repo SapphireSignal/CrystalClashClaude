@@ -140,18 +140,79 @@ func apply_buff(e: SimEntity, script_name: String, params: Dictionary = {}, sour
 	e.add_buff(b)
 	if b.stops_movement and e.moving:
 		_stand(e)
+	for w in e.welas:   # TAutoBrainOnUnitPropertyComponent.TriggerOn (HeavyGunner gains mana when blessed)
+		if w.kind != Wela.Kind.ON_PROPERTY:
+			continue
+		for p in w.trigger_props:
+			if b.properties.has(p):
+				if w.resource == "reMana":
+					e.mana = mini(e.mana_cap, e.mana + int(e.bb.get_float("eiWelaDamage", w.group, 1.0)))
+				break
 	buff_applied.emit(e, b)
 	return b
 
 
 func _update_buffs(e: SimEntity) -> void:
 	for b in e.buffs.duplicate():
-		if b.dot_damage > 0.0 and time_ms >= b.dot_next_at and b.dot_times > 0:
-			b.dot_next_at += b.dot_interval
-			b.dot_times -= 1
-			deal_damage(e, b.dot_damage, b.dot_type, entities.get(b.source_id))
+		if b.tick_interval > 0 and time_ms >= b.next_tick_at and b.tick_times != 0:
+			b.next_tick_at += b.tick_interval
+			if b.tick_times > 0:
+				b.tick_times -= 1
+			if b.dot_damage > 0.0:
+				deal_damage(e, b.dot_damage, b.dot_type, entities.get(b.source_id))
+			if b.hot_heal > 0.0:
+				heal(e, b.hot_heal, SimConstants.DamageType.HOT, entities.get(b.source_id))
+			if b.mana_per_tick > 0:
+				e.mana = mini(e.mana_cap, e.mana + b.mana_per_tick)
 		if b.is_expired(time_ms):
 			e.remove_buff(b)
+
+
+## TAutoBrainPreventDeathComponent (Homeland rescue, Guarded): the first matching buff intercepts death,
+## sets health, strips buffs, applies its scripts and may teleport the unit next to its own nexus.
+func _try_prevent_death(e: SimEntity) -> bool:
+	for b in e.buffs.duplicate():
+		if not b.prevents_death:
+			continue
+		if b.rescue_needs_creator:
+			var creator: SimEntity = entities.get(b.source_id)
+			if creator == null or not creator.alive:
+				continue
+		e.health = b.rescue_health
+		if not b.rescue_removes_all_except.is_empty():
+			for other in e.buffs.duplicate():
+				var keep := false
+				for t in b.rescue_removes_all_except:
+					if other.has_type(t):
+						keep = true
+				if not keep:
+					e.remove_buff(other)
+		if not b.rescue_removes_any.is_empty():
+			for other in e.buffs.duplicate():
+				for t in b.rescue_removes_any:
+					if other.has_type(t):
+						e.remove_buff(other)
+						break
+		for script in b.rescue_scripts:
+			if Buff.exists(script):
+				apply_buff(e, script, {}, entities.get(b.source_id))
+		if b.rescue_teleports_to_nexus:
+			var nexus: SimEntity = entities.get(nexus_ids.get(e.team, 0))
+			if nexus != null:
+				var toward := Vector2(1.0 if e.team == TEAM_BLUE else -1.0, 0.0)
+				_teleport(e, nexus.position + toward * (nexus.collision_radius + e.collision_radius + 1.0))
+		e.link_buffs.erase(b.source_id)
+		e.remove_buff(b)
+		return true
+	return false
+
+
+func _teleport(e: SimEntity, pos: Vector2) -> void:
+	_stand(e)
+	_leave_standing(e)
+	e.position = pos
+	_enter_tile(e)
+	_stand(e)
 
 
 # ---------------------------------------------------------------- card play (TCommanderAbility)
@@ -535,6 +596,9 @@ func deal_damage(target: SimEntity, amount: float, damage_type: int, source: Sim
 	if source != null and source.alive:
 		amount = _will_deal_damage(source, amount, damage_type, target)
 	amount = _on_take_damage(target, amount, damage_type)
+	for b in target.buffs:   # TBuffTakenDamageMultiplierComponent (Spellshield aura)
+		if b.taken_damage_mult != 1.0 and (b.taken_damage_types == 0 or damage_type & b.taken_damage_types):
+			amount *= b.taken_damage_mult
 	var final := SimConstants.apply_armor(amount, target.armor(), damage_type)
 	target.health -= final
 	if target.health <= 0.0:
@@ -600,6 +664,8 @@ func _on_healed(e: SimEntity, healed: float) -> void:
 
 
 func _kill(e: SimEntity, killer: SimEntity = null) -> void:
+	if not e.exiled and _try_prevent_death(e):
+		return
 	if not e.exiled:
 		_on_before_death(e, killer)
 	e.alive = false

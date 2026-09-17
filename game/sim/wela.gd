@@ -5,7 +5,7 @@ class_name Wela
 ## (Monk Dragon Punch, Avenger double shot), auras/links (Suntower Homeland), ground self-target AoE
 ## (Monument of Light), on-healed triggers and cooldown resets (Defender).
 
-enum Kind { FIGHT, SUB, ON_TAKE_DAMAGE, DEALT_DAMAGE_MULT, RESOURCE_REGEN, ON_DEATH, LINK, ON_HEALED, SELF_GROUND }
+enum Kind { FIGHT, SUB, ON_TAKE_DAMAGE, DEALT_DAMAGE_MULT, RESOURCE_REGEN, ON_DEATH, LINK, ON_HEALED, SELF_GROUND, ON_PROPERTY }
 
 var group: int
 var kind: Kind
@@ -64,6 +64,8 @@ var link_pattern: String = ""
 var link_delay: int = 0
 # ON_HEALED
 var times_for_each: int = 0
+# ON_PROPERTY (TAutoBrainOnUnitPropertyComponent.TriggerOn)
+var trigger_props: Array = []
 # runtime
 var cooldown_ready_at: int = 0
 var next_at: int = -1
@@ -258,6 +260,12 @@ static func parse(components: Array, bb: Blackboard) -> Array[Wela]:
 						w.chain_groups.append(int(c[1][0][0]))
 			"TAutoBrainOnBeforeDeath", "TAutoBrainOnDeathComponent":
 				get.call(g, Kind.ON_DEATH).kind = Kind.ON_DEATH
+			"TAutoBrainOnUnitPropertyComponent":
+				var w: Wela = get.call(g, Kind.ON_PROPERTY)
+				w.kind = Kind.ON_PROPERTY
+				for c in calls:
+					if c[0] == "TriggerOn":
+						w.trigger_props.append_array(c[1][0])
 	for item in later:
 		for gg in item[0]:
 			if not by_group.has(gg):
