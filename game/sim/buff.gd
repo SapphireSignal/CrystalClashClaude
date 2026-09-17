@@ -39,6 +39,7 @@ var shard_damage: float = 0.0
 var shard_type: int = 0
 var shard_range: float = 0.0
 var shard_must_not_have: Array = []
+var shard_enemies: bool = false     # EnergyRift: the buff's fight group shoots enemies of the carrier (Frostspear: its allies)
 var armor_requires_props: Array = []   # TModifierArmorTypeComponent.ReadyGroup: armor change only while these hold
 var expires_at: int = -1
 var values: Dictionary = {}         # "eiWelaModifier" -> {group_id: value}
@@ -297,6 +298,10 @@ static func create(script_name: String, now: int, params: Dictionary = {}) -> Bu
 					b.taken_damage_mult = b._value("eiWelaModifier", g, 1.0)
 			"TAutoBrainOnDealDamageComponent":
 				b.on_hit_group = g
+			"TWelaTargetingRadialComponent":
+				for call in calls:
+					if call[0] == "SetTargetTeamConstraint" and call[1][0] == "tcEnemies":
+						b.shard_enemies = true
 			"TWelaTargetConstraintUnitPropertyComponent":
 				for call in calls:
 					if g == b.on_hit_group and call[0] == "MustHave":

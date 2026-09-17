@@ -250,7 +250,7 @@ func _update_buffs(e: SimEntity) -> void:
 			if b.shard_projectile != "":   # Frostspear: one shard at a random unit of the victim's team within range
 				var candidates: Array[SimEntity] = []
 				for other: SimEntity in entities.values():
-					if other.alive and other != e and other.team == e.team and other.is_targetable() \
+					if other.alive and other != e and (other.team == e.team) != b.shard_enemies and other.team != 0 and other.is_targetable() \
 						and not _has_any(other, b.shard_must_not_have) \
 						and other.position.distance_to(e.position) - other.collision_radius <= b.shard_range:
 						candidates.append(other)
@@ -438,7 +438,8 @@ func _cast_spell(team: int, c: Commander, slot: Commander.DeckSlot, target: Vari
 			return PlayResult.BAD_TARGET
 		var chosen: Wela = null
 		for w in caster.welas:
-			if not w.commander_cast or not (w.heals or w.damages or w.projectile != "" or w.apply_script != "" or w.spawns or w.kills):
+			if not w.commander_cast or not (w.heals or w.damages or w.projectile != "" or w.apply_script != "" or w.spawns or w.kills \
+				or not w.chain_groups.is_empty()):   # AmmoRefill only chain-fires its tier groups
 				continue
 			if w.target_allies != (unit.team == team) or not w.target_allowed(unit, caster):
 				continue
@@ -1065,6 +1066,8 @@ func _fire_group(e: SimEntity, group: int, target: SimEntity) -> void:
 	elif w.resource == "reHealth" and not w.heals and w.kind != Wela.Kind.RESOURCE_REGEN and w.resource != "":
 		target.health = minf(target.max_health, target.health + amount)
 	elif w.resource == "reMana" and not w.changes_max and w.kind != Wela.Kind.RESOURCE_REGEN:
+		if w.resource_percentage:   # AmmoRefill: a share of the cap, rounded (TWarheadSpottyResourceComponent.AmountIsPercentage)
+			amount = roundf(amount * target.mana_cap)
 		gain_mana(target, int(amount))   # induction energy, ammo transfers
 	elif w.resource == "reWelaChargeCapacity":
 		var who := e if w.warhead_to_self else target

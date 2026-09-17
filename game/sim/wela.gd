@@ -680,7 +680,8 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 				else:
 					var w: Wela = get.call(g, Kind.RESOURCE_REGEN)
 					w.resource = res
-					if (w.kind == Kind.SUB or w.kind == Kind.SELF_PASSIVE) and res == "reMana" and not w.changes_max:
+					if (w.kind == Kind.SUB or w.kind == Kind.SELF_PASSIVE) and res == "reMana" and not w.changes_max \
+						and bb.has_value("eiCooldown", g):   # a timed regeneration (Priest); AmmoRefill's tier groups just fire
 						w.kind = Kind.RESOURCE_REGEN
 			"TAutoBrainOnHealedComponent":
 				var w: Wela = get.call(g, Kind.ON_HEALED)

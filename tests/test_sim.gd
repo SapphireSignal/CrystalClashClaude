@@ -2020,3 +2020,60 @@ func test_aegis_gatling_cones() -> void:
 	for i in 17:
 		sim.step()
 	runner.check(south.health < hp, "beams deal damage every 500 ms")
+
+
+func _blue_spell_sim() -> Simulation:
+	var sim := Simulation.new(31, 4)
+	sim.spawn_bases()
+	var c: Commander = sim.commanders[Simulation.TEAM_BLUE]
+	c.set_deck(["Spells/Blue/AmmoRefill.sps", "Spells/Blue/EnergyRift.sps", "Spells/Blue/Relocate.sps",
+		"Spells/Blue/FactoryReset.sps", "Spells/Blue/FluxField.sps", "Spells/Blue/InverseGravity.sps", "Spells/Blue/OrbitalStrike.sps"])
+	c.gold = 1000.0
+	c.raise_tier(3)
+	c.free_cards = true
+	while not sim.game_started:
+		sim.step()
+	return sim
+
+
+func test_ammo_refill() -> void:
+	var sim := _blue_spell_sim()
+	var drone := sim.spawn("Units/Blue/DamperDrone", Simulation.TEAM_BLUE, Vector2(-40, -23))   # tier 1, cap 2
+	var turret := sim.spawn("Units/Blue/MissileTurret", Simulation.TEAM_BLUE, Vector2(-45, -23))   # tier 2, cap 14
+	var aegis := sim.spawn("Units/Blue/Aegis", Simulation.TEAM_BLUE, Vector2(-50, -23))   # tier 3, cap 12
+	drone.mana = 0
+	turret.mana = 0
+	aegis.mana = 0
+	var t := sim.time_ms
+	while sim.time_ms < t + 1500:   # the legendary spawn lockout makes the Aegis untargetable
+		sim.step()
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 0, drone.id), Simulation.PlayResult.OK, "refill a tier 1 unit")
+	runner.check_eq(drone.mana, 2, "tier 1: 100 % of max energy")
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 0, turret.id), Simulation.PlayResult.OK, "refill a tier 2 building")
+	runner.check_eq(turret.mana, 7, "tier 2: 50 %")
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 0, aegis.id), Simulation.PlayResult.OK, "refill a tier 3 unit")
+	runner.check_eq(aegis.mana, 3, "tier 3: 25 %")
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 0, drone.id), Simulation.PlayResult.BAD_TARGET, "a full unit is no target")
+	var monk := sim.spawn("Units/White/Monk", Simulation.TEAM_BLUE, Vector2(-40, -20))
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 0, monk.id), Simulation.PlayResult.BAD_TARGET, "no energy, no target")
+
+
+func test_energy_rift() -> void:
+	var sim := _blue_spell_sim()
+	var turret := sim.spawn("Units/Blue/GatlingTurret", Simulation.TEAM_BLUE, Vector2(-40, -23))
+	turret.mana = 0
+	var monk := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(-30, -23))
+	monk.locked_until = 1 << 30
+	var unit := sim.spawn("Units/White/Monk", Simulation.TEAM_BLUE, Vector2(-50, -20))
+	unit.base_speed = 0.0
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 1, unit.id), Simulation.PlayResult.BAD_TARGET, "buildings only")
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 1, turret.id), Simulation.PlayResult.OK, "energy rift on an allied building")
+	runner.check(turret.has("upHasEnergyRift"), "marked")
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 1, turret.id), Simulation.PlayResult.BAD_TARGET, "one rift per building")
+	var t := sim.time_ms
+	while sim.time_ms < t + 5500:
+		sim.step()
+	runner.check(monk.health <= 265.0 - 4 * 24.0 and monk.health > 265.0 - 7 * 24.0, "24 spell damage per second at a random enemy within 14 (got %.0f)" % monk.health)
+	while sim.time_ms < t + 31000:
+		sim.step()
+	runner.check(not turret.has("upHasEnergyRift"), "the rift ends after 30 s")
