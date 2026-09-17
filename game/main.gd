@@ -53,8 +53,10 @@ func _process(delta: float) -> void:
 	var charges := ""
 	for i in c.slots.size():
 		charges += "%d:%d " % [i + 1, c.slots[i].charges]
-	_label.text = "t=%ds  gold=%d/%d wood=%d tier=%d income=%d  units=%d\n%s" % [
-		sim.time_ms / 1000, c.gold, c.gold_cap(), c.wood, c.tier, c.income(), sim.alive_entities().size(), charges]
+	var tier_names := ["", "Stone", "Bronze", "Silver"]
+	_label.text = "%02d:%02d   Mana %d / %d (+%d)   Essence %d   Tier %s   units %d\n%s" % [
+		sim.time_ms / 60000, (sim.time_ms / 1000) % 60, c.gold, c.gold_cap(), c.income(), c.wood, tier_names[c.tier],
+		sim.alive_entities().size(), charges]
 
 
 func _unhandled_input(event: InputEvent) -> void:

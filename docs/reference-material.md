@@ -136,3 +136,6 @@ destruction are particle effects (`Graphics/Effects/ParticleEffects/**/*.pfx`, e
 `NexusDie0-5.pfx`, `tower_nexus_shot_charge.pfx`, `SpawnerImpact.pfx`) plus mesh effects declared in the scripts
 (`TMeshEffectComponent`: ghost, glow, ice, dissolve). Projectiles have their own meshes (`.xml` + FBX). Godot
 imports the FBX clips directly; `.pfx` needs a converter to GPUParticles / CPUParticles (phase 5).
+- Sides are assigned per match (the loading screen shows your team on the left or right); the camera is set up
+  from the player's own base, so the lane runs bottom-left to top-right for the SW team and the mirror for the
+  NE team. The sandbox always plays the SW (blue) side.
