@@ -148,14 +148,18 @@ func _build_plate(count: int) -> Control:
 	else:
 		var end := HudStyle.tex("HUD/DeckPanel/tier_block_multi_end.png")
 		var mid := HudStyle.tex("HUD/DeckPanel/tier_block_multi_mid.png")
-		var x := 41.0
-		while x < w - 41:   # whole tiles first, the ends drawn over them: no fractional seam
-			plate.add_child(HudStyle.picture(mid, Rect2(x, 0, 45, panel_height)))
-			x += 45
-		plate.add_child(HudStyle.picture(end, Rect2(0, 0, 41, panel_height)))
-		var right_end := HudStyle.picture(end, Rect2(w - 41, 0, 41, panel_height))
-		right_end.flip_h = true
-		plate.add_child(right_end)
+		# .mid spans 100 % of the group; .left / .right hang outside it by their slanted part (Position -70ch,
+		# Anchor caBottomLeft at the parent's bottom-right), slant facing outwards (the art's transparent corner
+		# is top-right, so the left end is the mirrored image).
+		# Measured on the live client: a 3-slot plate is 170 px wide for 198 px of slots, i.e. inset ~21 design
+		# px per side (the plates of adjacent locked groups never touch).
+		var inset := 21.0
+		var overhang := 41.0 * 0.3
+		plate.add_child(HudStyle.picture(mid, Rect2(inset + overhang, 0, w - 2.0 * (inset + overhang), panel_height)))
+		var left_end := HudStyle.picture(end, Rect2(inset, 0, 41, panel_height))
+		left_end.flip_h = true
+		plate.add_child(left_end)
+		plate.add_child(HudStyle.picture(end, Rect2(w - inset - 41, 0, 41, panel_height)))
 	return plate
 
 
@@ -165,12 +169,14 @@ func _build_plate_top(count: int) -> Control:
 	top.mouse_filter = MOUSE_FILTER_IGNORE
 	var w := SLOT_STEP * count
 	top.size = Vector2(w, panel_height)
-	var timer := HudStyle.label("00:00", int(panel_height * 0.25), HudStyle.WHITE, HudStyle.FONT_SEMIBOLD)
+	var timer := HudStyle.label("00:00", int(panel_height * 0.25), HudStyle.WHITE, HudStyle.FONT_SEMIBOLD, HORIZONTAL_ALIGNMENT_LEFT)
 	timer.name = "Timer"
-	HudStyle.place(timer, Rect2(0, panel_height * 0.07, w - 24, 22))
+	HudStyle.place(timer, Rect2(0, panel_height * 0.07, w, 22))
 	top.add_child(timer)
 	var lock_h := panel_height * 0.15
-	top.add_child(HudStyle.picture(HudStyle.tex("HUD/DeckPanel/lock_icon.png"), Rect2(w / 2.0 + 24, panel_height * 0.11, lock_h * 19.0 / 26.0, lock_h)))
+	var lock := HudStyle.picture(HudStyle.tex("HUD/DeckPanel/lock_icon.png"), Rect2(0, panel_height * 0.11, lock_h * 19.0 / 26.0, lock_h))
+	lock.name = "Lock"
+	top.add_child(lock)
 	return top
 
 
@@ -252,6 +258,13 @@ func refresh(sim: Simulation, commander: Commander) -> void:
 		g.root.get_node("Slots").position.y = SLOT_H * locked_shift if locked else 0.0
 		if locked:
 			g.timer.text = HudStyle.int_to_time(_time_to_tier(sim, g.tier))
+			# the countdown and the lock icon form one centred pair (lock 6 px after the text)
+			var font := g.timer.get_theme_font("font")
+			var text_w := font.get_string_size(g.timer.text, HORIZONTAL_ALIGNMENT_LEFT, -1, g.timer.get_theme_font_size("font_size")).x
+			var lock: Control = g.plate_top.get_node("Lock")
+			var pair_w := text_w + 6.0 + lock.size.x
+			g.timer.position.x = (g.width - pair_w) / 2.0
+			lock.position.x = g.timer.position.x + text_w + 6.0
 			for v in g.slots:
 				locked_views[v] = true
 	for v in _views:

@@ -160,6 +160,10 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
   art, timer 10 px below its top) like the reference. Verified on the 1679x1079 grid (`.tmp/deck_grid.png`).
   Still open in the HUD: top bar red-left/blue-right; the sandbox deck has 7 stage-1 cards (reference decks
   show 3/3/3/3, so their plates are 3 wide).
+- **Checkpoint 51: tier plates corrected.** The multi plate = mid over the group inset 21 design px per side
+  (measured: a 3-slot plate is 170 px for 198 px of slots, adjacent plates never touch), end pieces with the
+  slant outwards (left end = mirrored art), countdown + lock icon laid out as one centred pair (lock 6 px
+  after the text, `DeckPanel.refresh`). `.tmp/plates_cmp.png` shows reference vs ours.
 
 ## FIX FIRST (owner's request, before anything else)
 1. **Done (checkpoint 37): lane node capture circle verified.** The ring renders (mesh, y 0.01, orientation:
