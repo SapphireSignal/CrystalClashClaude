@@ -2,7 +2,7 @@
 
 Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
 
-## State (2026-09-17, checkpoint 37)
+## State (2026-09-17, checkpoint 60)
 - Phases 1-3 done, 799 tests pass. Sandbox `game/main.tscn`: blue deck on keys 1-9,0,-,= or by clicking a card
   (drops/spells then need a left click on the ground, spawners go to the next free field); red AI plays Black.
 - **Phase 4 (HUD): step 1 done.** `game/ui/` holds the code-built HUD from `docs/hud.md`: top bar (clock, nexus
@@ -201,8 +201,17 @@ Then checkpoint (tests, Status, CONTINUE.md, commit + push, give the new-chat pr
 - Deck slot pitch 85 (was 87).
 
 ## Next step (in order, one at a time, run the game after each)
-0. **Pre-match screens** per `docs/lobby.md` section 4 (checkpoint 59 wrote the spec): (1) the menu's loading screen,
-   (2) MainMenu shell + Navbar + Dashboard (news tiles / online counter stubbed: master server), (3) Teambuilding
+0. **Pre-match screens** per `docs/lobby.md` section 4 (checkpoint 59 wrote the spec). **(1) done (checkpoint 60):**
+   `game/app.tscn` + `app.gd` = TGameStateManager (states MainMenu / LoadGame / Game, project main scene);
+   `game/ui/menu/menu_background.gd` (bg.anb: 4 layers, zoom 1.15, sin/cos offset x0.08 scaled by 1-depth) and
+   `menu_loading_screen.gd` (`.loading-main-page`: logo 30 % + release banner, opener 24 px bold, status text
+   font = its height, spinner -1 rad/s, three clickable logos, slow text after 40 s). Engine rules learned:
+   `%` in Position = of the parent's content rect, `auto` size = art aspect, `FontSize : 100%` = own height.
+   Preloading = threaded load of `main.tscn`; with no dashboard yet MainMenu jumps into the sandbox when done,
+   and the sandbox's Continue reloads `app.tscn` (step 6 rewires it). `tools/copy_ui_assets.py` copies
+   `Shared/Logos`, `Shared/AnimatedBackground`, `MainMenu/LoadingScreen`, `Shared/Spinner.png`. Verified with
+   `.tmp/menu_shot.gd` (not committed; instantiates MenuBackground + MenuLoadingScreen, saves `.tmp/menu_*.png`).
+   Next: (2) MainMenu shell + Navbar + Dashboard (news tiles / online counter stubbed: master server), (3) Teambuilding
    screen with Play jumping into the sandbox (no matchmaking), (4) the in-match LoadingScreen, (6) Final screen's
    Continue back to the dashboard, (7) SettingsMenu tabs. New scene `game/ui/menu/` + a `game/app.tscn` state
    machine (GAMESTATE_* from `Constants.Client.pas:51-58`); the sandbox `main.tscn` becomes the ingame state.
