@@ -35,6 +35,7 @@ var bounce_must_not_have: Array = []
 var bounce_count: int = 0
 var hit_ids: Array = []
 var damage_change_per_hit: float = 0.0   # eiWelaModifier of the on-deal-damage group (-1 = depleting)
+var no_reflection: bool = false      # TBrainProjectileComponent.CantBeReflected (tower shots), or already reflected once
 
 
 func _init(p_unit_id: String, league: int) -> void:
@@ -61,7 +62,9 @@ func _init(p_unit_id: String, league: int) -> void:
 		match comp["class"]:
 			"TBrainProjectileComponent":
 				for c in calls:
-					if c[0] == "Bounces":
+					if c[0] == "CantBeReflected":
+						no_reflection = true
+					elif c[0] == "Bounces":
 						bounce_group = c[1][0][0]
 						bounces_max = bb.get_int("eiWelaCount", int(comp["groups"][0]), 0)
 						bounce_range = bb.get_float("eiWelaRange", int(bounce_group), 0.0)

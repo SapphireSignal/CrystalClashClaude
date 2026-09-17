@@ -125,6 +125,7 @@ var must_not_have_damage_types: int = 0
 # RESOURCE_REGEN
 var resource: String = ""
 # LINK (aura)
+var link_creator_group: int = -1       # TWelaLinkEffectComponent.CreatorGroup: fired in the owner by the link payload (FireInCreator)
 var link_property: String = ""
 var link_pattern: String = ""
 var link_delay: int = 0
@@ -218,6 +219,9 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 						w.blocking = true
 					elif c[0] == "ThinksPassively":
 						w.passive = true
+					elif c[0] == "ThinksPassivelyIfConscious":
+						w.passive = true
+						w.passive_if_conscious = true
 					elif c[0] == "ThinksLocal":
 						w.think_local = true
 			"TWelaEfficiencyDamageTypeComponent":
@@ -264,10 +268,14 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 						w.link_time = int(c[1][0])
 					elif c[0] == "Preemptive":
 						w.preemptive_link = true
+			"TWelaLinkEffectComponent":
+				for c in calls:
+					if c[0] == "CreatorGroup":
+						get.call(g, Kind.LINK).link_creator_group = UnitDb.group_id(c[1][0][0], map)
 			"TWelaLinkEffectUnitPropertyComponent":
 				if args.size() >= 1:
 					get.call(g, Kind.LINK).link_property = str(args[0])
-			"TBrainApproachComponent":
+			"TBrainApproachComponent", "TBrainFollowComponent":   # ShieldDrone follows an ally like an approach
 				get.call(g, Kind.SUB).approach = true
 			"TBrainWaitComponent":
 				get.call(g, Kind.WAIT).kind = Kind.WAIT

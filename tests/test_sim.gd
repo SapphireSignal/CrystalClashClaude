@@ -1887,3 +1887,46 @@ func test_phase_drone_teleport_strike_and_shield_overload() -> void:
 		sim.step()
 	sim.deal_damage(drone, 10.0, SimConstants.DamageType.MELEE, monk)
 	runner.check(drone.has("upInvincible"), "ready again after 8 s")
+
+
+func test_inductioner_missile_launcher() -> void:
+	var sim := Simulation.new(2, 4)
+	var ind := sim.spawn("Units/Blue/Inductioner", Simulation.TEAM_BLUE, Vector2(-40, -23))
+	ind.locked_until = 1 << 30
+	var wisp := sim.spawn("Units/Green/Wisp", Simulation.TEAM_RED, Vector2(-28, -23))
+	var monk := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(-30, -23))
+	wisp.locked_until = 1 << 30
+	monk.locked_until = 1 << 30
+	for i in 20:
+		sim.step()
+	runner.check(wisp.alive and monk.health == 265.0, "no energy: no missile, and the main gun is ground-only within 8")
+	ind.mana = 2
+	var t := sim.time_ms
+	while wisp.alive and sim.time_ms < t + 3000:
+		sim.step()
+	runner.check(not wisp.alive, "missile launcher: 53 x2 vs flying kills the wisp at range 15")
+	runner.check_eq(ind.mana, 0, "costs 2 energy")
+
+
+func test_shield_drone_follow_and_reflect() -> void:
+	var sim := Simulation.new(2, 4)
+	var drone := sim.spawn("Units/Blue/ShieldDrone", Simulation.TEAM_BLUE, Vector2(-40, -23))
+	var footman := sim.spawn("Units/White/Footman", Simulation.TEAM_BLUE, Vector2(-34, -23))
+	footman.base_speed = 0.0
+	var archer := sim.spawn("Units/White/Archer", Simulation.TEAM_RED, Vector2(-26, -23))
+	archer.locked_until = 1 << 30
+	for i in 40:
+		sim.step()
+	runner.check(drone.position.distance_to(footman.position) < 3.5 and drone.position.x > -39.0, "follows the melee ally (got %.1f)" % drone.position.distance_to(footman.position))
+	runner.check(footman.linked_from(drone.id), "reflective shield linked to allies within 7 after 1 s")
+	runner.check(footman.has("upProjectileReflector"), "the link grants upProjectileReflector")
+	archer.locked_until = 0
+	drone.locked_until = 1 << 30
+	var drone_hp := drone.health
+	var archer_hp := archer.health
+	var t := sim.time_ms
+	while archer.health == archer_hp and sim.time_ms < t + 4000:
+		sim.step()
+	runner.check(archer.health < archer_hp, "the archer's arrow flies back at it")
+	runner.check_near(archer_hp - archer.health, 20.0 * 0.4, "reflected at 40 % (archer 20 ranged, light armor takes ranged in full)")
+	runner.check_near(drone.health, drone_hp - 10.0, "the drone pays 10 true damage per reflection")

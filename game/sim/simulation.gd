@@ -800,6 +800,8 @@ func _wela_ready(e: SimEntity, w: Wela) -> bool:
 func _think_passive(e: SimEntity, w: Wela) -> void:
 	if time_ms < w.cooldown_ready_at or not _wela_ready(e, w):
 		return
+	if w.passive_if_conscious and not e.can_think(time_ms):   # ThinksPassivelyIfConscious: not while stunned / frozen
+		return
 	var targets := _pick_targets(e, w, e.range_of(w.group, time_ms), e.target_count(w.group))
 	if targets.is_empty():
 		return
@@ -875,6 +877,7 @@ func _think_link(e: SimEntity, w: Wela) -> void:
 				other.add_buff(b)
 			if w.link_property != "":
 				b.properties.append(w.link_property)
+			b.creator_group = w.link_creator_group
 			if UnitDb.has_unit(w.link_pattern):   # a link entity with its own brain (Links/VecraAura.ets, RootlingLink.ets)
 				var raw := UnitDb.raw(w.link_pattern)
 				b.link_bb = Blackboard.new()
@@ -1558,6 +1561,34 @@ func _projectile_splash(p: Projectile, primary: SimEntity) -> void:
 		deal_damage(other, per_target, p.damage_type, source)
 
 
+## TBrainProjectileComponent.OnMoveTargetReached: after the hit, an enemy target with upProjectileReflector
+## sends the projectile back to its creator (once, team switched). The reflector link brain
+## (Links/ProjectileReflector) fires for non-true, non-reflected shots: the projectile is modified
+## (x0.4, dtReflected) and the link owner's creator group fires in the owner (10 true self damage).
+func _reflect_projectile(p: Projectile, target: SimEntity) -> bool:
+	if p.no_reflection or target.team == p.team or not target.has("upProjectileReflector"):
+		return false
+	var creator: SimEntity = entities.get(p.source_id)
+	if creator == null or not creator.alive:
+		return false
+	for key in target.link_buffs:
+		var b: Buff = target.link_buffs[key]
+		if not b.reflects_projectiles or (p.damage_type & b.reflect_not_types):
+			continue
+		if b.projectile_script != "" and Buff.exists(b.projectile_script):
+			var mod := Buff.create(b.projectile_script, time_ms)
+			p.damage = mod.modify_damage(p.damage, 0, {})   # the projectile's warhead group
+			p.damage_type |= mod.damage_type_add
+		var owner: SimEntity = entities.get(b.source_id)
+		if b.fire_in_creator and owner != null and owner.alive and b.creator_group >= 0:
+			_fire_group(owner, b.creator_group, owner)
+	p.no_reflection = true
+	p.team = target.team
+	p.target_id = creator.id
+	p.last_target_position = creator.position
+	return true
+
+
 ## TMovementComponent.IdleDirect with range 0 toward the (homing) target, then FireAtTarget on arrival.
 func _move_projectiles() -> void:
 	for id in projectiles.keys():
@@ -1593,6 +1624,8 @@ func _move_projectiles() -> void:
 						apply_buff(target, p.on_hit_script, {}, entities.get(p.source_id))
 					if p.bounces_max > 0 and _bounce(p, target, dealt):
 						continue
+				if _reflect_projectile(p, target):   # ShieldDrone's Reflective Shield: back to the shooter
+					continue
 			projectiles.erase(id)
 			projectile_removed.emit(p, hit)
 		else:

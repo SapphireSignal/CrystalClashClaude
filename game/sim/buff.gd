@@ -24,6 +24,12 @@ var late_expires_at: int = -1
 var link_damage: float = 0.0        # link entity brain (Links/VecraAura.ets): periodic damage to the linked target
 var link_damage_type: int = 0
 var link_leech: float = 0.0         # share of dealt damage healed back to the link owner
+var creator_group: int = -1         # TWelaLinkEffectComponent.CreatorGroup: group fired in the link owner (FireInCreator)
+var reflects_projectiles: bool = false   # Links/ProjectileReflector: TAutoBrainOnWelaHitByProjectileComponent
+var reflect_not_types: int = 0      # TWelaTargetConstraintWelaPropertyComponent.MustNotHave on the projectile (true, reflected)
+var fire_in_creator: bool = false   # TWelaEffectFireComponent.FireInCreator
+var projectile_script: String = ""  # TWarheadApplyScriptComponent applied to the hitting projectile
+var damage_type_add: int = 0        # TModifierDamageTypeComponent.Add (ProjectileReflectorProjectile: dtReflected)
 var target_count_add: int = 0       # TModifierWelaTargetCountComponent on the main weapon (Frenzy: ranged +1)
 var on_fire_group: int = -1         # TWelaEffectFireComponent on the main weapon, redirected to self
 var on_fire_heal: float = 0.0       # Frenzy: melee heal 70 per attack
@@ -167,6 +173,19 @@ static func create(script_name: String, now: int, params: Dictionary = {}) -> Bu
 					for call in calls:
 						if call[0] == "TargetGroup":
 							b.on_fire_group = gid.call(call[1][0][0])
+				for call in calls:
+					if call[0] == "FireInCreator":
+						b.fire_in_creator = true
+			"TAutoBrainOnWelaHitByProjectileComponent":
+				b.reflects_projectiles = true
+			"TWelaTargetConstraintWelaPropertyComponent":
+				for call in calls:
+					if call[0] == "MustNotHave":
+						b.reflect_not_types = SimConstants.damage_mask(call[1][0])
+			"TModifierDamageTypeComponent":
+				for call in calls:
+					if call[0] == "Add":
+						b.damage_type_add |= SimConstants.damage_mask(call[1][0])
 			"TModifierWelaTargetCountComponent":
 				var value_group := g
 				for call in calls:
@@ -306,7 +325,9 @@ static func create(script_name: String, now: int, params: Dictionary = {}) -> Bu
 						b.rescue_removes_any = call[1][0]
 			"TWarheadApplyScriptComponent":
 				var script: String = Wela.script_key(str(comp.get("args", [""])[0]))
-				if b.on_hit_group >= 0:
+				if b.reflects_projectiles:
+					b.projectile_script = script   # modifies the reflected projectile (x0.4, dtReflected)
+				elif b.on_hit_group >= 0:
 					b.on_hit_script = script
 				else:
 					pending_scripts.append(script)
