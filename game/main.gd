@@ -23,6 +23,9 @@ var _red_next_play_at: int = 15000
 
 @onready var _units_root: Node3D = $Units
 @onready var _camera: Camera3D = $Camera3D
+var _look_at := Vector2(-40, -23)   # ground point the camera looks at
+var _camera_distance := 70.0
+var _drag_anchor: Variant = null    # ground point under the mouse when the left drag started
 
 
 func _ready() -> void:
@@ -52,6 +55,30 @@ func _process(delta: float) -> void:
 		charges += "%d:%d " % [i + 1, c.slots[i].charges]
 	_label.text = "t=%ds  gold=%d/%d wood=%d tier=%d income=%d  units=%d\n%s" % [
 		sim.time_ms / 1000, c.gold, c.gold_cap(), c.wood, c.tier, c.income(), sim.alive_entities().size(), charges]
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton:
+		if event.button_index == MOUSE_BUTTON_LEFT:
+			_drag_anchor = _mouse_world_2d() if event.pressed else null
+		elif event.pressed and event.button_index == MOUSE_BUTTON_WHEEL_UP:
+			_camera_distance = maxf(25.0, _camera_distance - 5.0)
+			_place_camera(_look_at)
+		elif event.pressed and event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+			_camera_distance = minf(140.0, _camera_distance + 5.0)
+			_place_camera(_look_at)
+	elif event is InputEventMouseMotion and _drag_anchor != null:
+		var now := _mouse_world_2d()   # keep the grabbed ground point under the cursor
+		_place_camera(_look_at + (_drag_anchor - now))
+	elif event is InputEventKey and event.is_pressed():
+		var pan := Vector2.ZERO
+		match event.keycode:
+			KEY_LEFT: pan.x = -5.0
+			KEY_RIGHT: pan.x = 5.0
+			KEY_UP: pan.y = -5.0
+			KEY_DOWN: pan.y = 5.0
+		if pan != Vector2.ZERO:
+			_place_camera(_look_at + pan)
 
 
 func _unhandled_key_input(event: InputEvent) -> void:
@@ -112,7 +139,8 @@ func _mouse_world_2d() -> Vector2:
 
 func _place_camera(look_at_2d: Vector2) -> void:
 	# Original camera offset direction (Constants.Client.pas:34), scaled to see the lane.
-	var offset := Vector3(-0.3947, 0.8121, -0.4297).normalized() * 70.0
+	_look_at = look_at_2d
+	var offset := Vector3(-0.3947, 0.8121, -0.4297).normalized() * _camera_distance
 	var target := Vector3(look_at_2d.x, 0, look_at_2d.y)
 	_camera.position = target + offset
 	_camera.look_at(target, Vector3.UP)
