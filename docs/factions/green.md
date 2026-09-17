@@ -8,7 +8,7 @@ Links, Effects and Projectiles, plus the Pascal component implementations. Numbe
 
 Green has no template-level group like Black's soul group; its shared mechanic lives in the scripts:
 - **Saplings** (`Sapling.ets`, `upSapling`, `upSoulless`, 2 HP, 17 s life) are mass-produced tokens: Woodwalker (2 per
-  4 mana), SaplingFarm (3 per 5 mana), Saplingcharge (15 + 10×? see §2). They are consumed by Oracle (sacrifice → +60 max HP
+  4 mana), SaplingFarm (3 per 5 mana), Saplingcharge (115 over 11 s, §2). They are consumed by Oracle (sacrifice → +60 max HP
   each, via `reWelaChargeCapacity`), and transformed by EvolveOracle (1 sapling → Oracle at 60 % HP) and EvolveThistle
   (up to 6 saplings → Thistles). `upSoulless` = release no soul to Black gatherers.
 - **Enchantments** = any `upBlessed` buff (`TAutoBrainOnUnitPropertyComponent.TriggerOn([upBlessed])`): Sapling "Flourish"
@@ -93,7 +93,7 @@ Group 1 range `1.0`, `dtMelee`, dmg `150`, CD `1700`, AP `500`, dur `1500`. Rele
 Powerful Debut "Rupture": [4,5] range `1.0`; group 5 `[dtSplash,dtAbility]`, AoE `3.0`, dmg `120`, AP `133`, dur `1233`. Group 6 `eiWelaModifier 0.40` (Evasion).
 `CreateMeta` (shared): `TUnitPropertyComponent([5],[upInvincible,upBurrowed])` — **while group 5 exists it is burrowed and invincible.**
 SERVER:
-- **groups 4/5**: `TBrainApproachComponent([4])` + attention `tcEnemies` (digging approach); `TBrainWelaFightComponent([5]).Preemptive` + `TAutoBrainOnUnitPropertyComponent([5]).TriggerOn([upFlying])` → radial `tcEnemies` → [4,5] `Event(eiDamageable)`, `MustHave([upGround]).MustNotHave([upBanished])`, `Enemies` → `TWelaEffectRedirecterComponent.RedirectToGround` → instant → `TWarheadSplashDamageComponent` → `TWelaEffectRemoveAfterUseComponent.TargetGroup([4,5])`. **Spawns burrowed: approaches the first ground enemy, erupts for 120 splash in 3.0 at its ground position (or immediately if it ever becomes flying), then groups 4/5 are removed and it fights normally.**
+- **groups 4/5**: `TBrainApproachComponent([4])` + attention `tcEnemies` (digging approach); `TBrainWelaFightComponent([5]).Preemptive` + `TAutoBrainOnUnitPropertyComponent([5]).TriggerOn([upFlying])` → radial `tcEnemies` → [4,5] `Event(eiDamageable)`, `MustHave([upGround]).MustNotHave([upBanished])`, `Enemies` → `TWelaEffectRedirecterComponent.RedirectToGround` → instant → `TWarheadSplashDamageComponent` → `TWelaEffectRemoveAfterUseComponent.TargetGroup([4,5])`. **Spawns burrowed: approaches the first ground enemy, erupts for 120 splash in 3.0 at its **own** ground position (`RedirectToGround` = owner position; or immediately if it ever becomes flying), then groups 4/5 are removed and it fights normally.**
 - **group 1**: standard melee; Relentless `TModifierMultiplyDealtDamageComponent([1]).MustNotHave([dtSpell]).CheckWelaConstraint.SetValueGroup([2])` gated by group 2 `MustHaveAny([upFrozen,upStunned,upBlinded,upGrounded,upLifted,upBleeding,upPetrified]).MustNotHave([upRooted])` → ×1.5; `SetValueGroup([3])` gated by `MustHave([upRooted])` → ×2.0.
 - **group 6**: `TBuffTakenDamageMultiplierComponent.DodgeDamage().DamageTypeMustNotHave([dtSpell,dtDot,dtSplash])`. **40 % dodge.**
 
@@ -170,4 +170,52 @@ SERVER (same plumbing as OnTheEdge): group 0 `TBrainWelaFightComponent.DisableTa
 
 ## 4. Component semantics (Pascal) — not yet handled by the port
 
-(PLACEHOLDER)
+Port already handles the classes/fluents listed in `game/sim/wela.gd` + `buff.gd`. New for Green:
+
+**`TBrainWelaLinkComponent.LinkTime(ms)` / `.Preemptive`** (`Server.Brains.pas:979`, impl 1316–1393) — `LinkTime` sets the re-link timer (default `DEFAULT_LINK_BUILD_TIME 250`, :982): when it expires and the group is ready, `eiFire` is re-triggered on all current targets (:1387), i.e. the acquire cadence, not a duration. `Preemptive` (:1086) returns `False` from `ThinkChain` while linked and triggers `eiStand` (:1382), so the Rootling stops moving while its beam is up. Invalid targets get `eiLinkBreak` (:1340).
+
+**`TLinkEventRedirecter`** (`Server.Welas.pas:677`, 922; created on the link with `SourceGroup = ComponentGroup` :1557) — empty `eiCooldown`/`eiWelaDamage`/`eiDamageType` reads on a link entity are redirected to the link source's group. `RootlingLink` group 0 thus uses 1000 / 12 / `[dtRanged]` from Rootling group 1.
+
+**`TLinkBrainComponent.FiresAtCreate([g])`** (`Server.pas:150`, impl 1502–1580) — hooks `eiIdle`; on the first tick it loads `eiCooldown` of its group into a timer and, with `FiresAtCreate`, immediately fires `eiFire` at `eiLinkDest` in group `g` (gated by `eiIsReady` of both groups + `eiWelaTargetPossible`, :1544–1552). Then on every timer expiry it fires at `eiLinkDest` in its own group (`TimesExpired`, capped 50, :1555–1578). Root once, damage every 1000 ms.
+
+**`TWarheadLinkApplyScriptComponent`** (`Shared.Wela.pas:918`, impl 2554–2609) — ctor sets `FNotAtFire` (:2577); hooks `eiAfterCreate` and applies the script to `eiLinkDest[0]`, remembering the returned groups (:2580–2599); `BeforeComponentFree` (:2554) removes those groups from the target via global `eiRemoveComponentGroup` — the buff lives exactly as long as the link (SporeField heal, HealingGarden mana aura).
+
+**`TBuffTakenDamageMultiplierComponent.DodgeDamage()`** (`Server.pas:77`, logic `OnTakeDamage` 2123–2167) — `eiWelaModifier` of the group is the dodge chance: `if random < f then f := 0 else f := 1` (:2143–2151), `Amount *= f` (:2165); on dodge fires `eiFire` at self in its group (:2148). Skipped entirely when the damage carries any `DamageTypeMustNotHave` type (:2083) or when a heal.
+
+**`TBrainProjectileComponent.Bounces([g])` / `.NoTargetChecks`** (`Server.Brains.pas:429`, `OnMoveTargetReached` 1885–1949) — after a hit, if `FBounceCount < eiWelaCount` and the wela is ready: the hit target is appended to `eiWelaSavedTargets` of group `g` (the blacklist), `eiWelaUpdateTargets` runs in `g`, the found target becomes the new `eiWelaSavedTargets`, `FBounceCount++`, `eiMoveTo` re-issued (:1923–1946); no target → `SelfDestruct` (:1998). `NoTargetChecks` (:1879) skips the `eiIsReady` and `eiWelaTargetPossible` checks on arrival (ForestGuardian splash always lands).
+
+**`TWelaReadyEventCompareComponent`** (`Shared.Wela.pas:747`, 3147–3183) — `IsReady = ResourceCompare(reFloat, Read(ComparedEvent, CheckingGroup), Comparator, ReferenceValue)`; Wisp: ready while `eiWelaDamage[0] > 0`.
+
+**`TWelaTargetConstraintBlacklistComponent`** (`Shared.Wela.pas:265`, 2902–2908) — target invalid if contained in `eiWelaSavedTargets` of the constraint's own group.
+
+**`TAutoBrainOnDealDamageComponent.DontFire.WriteAmountTo(ev).AddAmountAtWrite`** (`Server.Brains.pas:670`, 2736–2798) — on `eiDamageDone`: `Amount *= eiWelaModifier(own group, default 1)`, then `Amount += Blackboard(ev, FireGroup)` and written to `ev` in the fire group (:2762–2768); `DontFire` suppresses the `eiFire`. Wisp: modifier −1 → remaining damage −= dealt.
+
+**`TWelaEfficiencyDamageTypeComponent.Prioritize([...])`** (`Server.Welas.pas:865`, 3092–3105) — score 1 if the target's `eiDamageType[GROUP_MAINWEAPON]` intersects the set, else 0 (soft sort key).
+
+**`TWelaTargetingRadialComponent.PrioritizeMostDistant`** (`Server.Welas.pas:127`, comparer 1777–1779) — flips the distance tiebreak to farthest-first (after efficiency and `upLowPrio`); no sort when `MaxTargets >= count` (:1758).
+
+**`TWelaTargetingRadialAttentionComponent` with `eiAttentionrange` / `tcAllies`** (`Server.Welas.pas:82`, 1574–1649) — queries 1.2× `eiAttentionrange` of its group with the team constraint, keeps efficiency ≥ 0, picks the lane-weighted nearest, discards it if beyond the true range. **`TBrainWaitComponent`** (`Server.Brains.pas:314`, 1270–1287) — `eiThinkChain` at epLow: updates its targets and, if any, triggers `eiStand` and returns `False` (blocks lower brains). **`TBrainApproachComponent`** with allied attention (:237, 1572–1600) walks to `eiWelaRange + radii − 0.1` of the ally.
+
+**`TWarheadSpottyKillComponent.Sacrifice`** (`Server.Warheads.pas:91`, `ApplyEffect` 329–345) — triggers `eiSacrifice` (no subscriber anywhere; marker only) then the full `eiKill` path → `eiDie` (death rattles, kill credit) like `Exile` (which additionally writes `eiExiled`); `.Remove` only queues `eiDelayedKillEntity` (silent).
+
+**`TWarheadSpottyResourceComponent.AmountIsPercentage / SetsResourceToValue / SetFactor / RedirectToSelf`** (`Server.Warheads.pas:159`, `ApplyEffect` 390–475) — amount = `eiWelaDamage(own group) * FFactor`; `AmountIsPercentage` multiplies by the **target's cap** (:433); `SetsResourceToValue` zeroes the balance then transacts the amount (:455–462); `ChangesMax` → `eiResourceCapTransaction` (fills balance too, `Shared.pas:1886–1914`); `RedirectToSelf` (`TWarheadComponent` :640–653) retargets the warhead to its owner. EvolveOracle: current HP := 0.6 × cap.
+
+**`TAutoBrainWelaTargetProducedUnitComponent.FireOnlyAtUnitsInOwnGroup.FireInGroup([g])`** (`Server.Brains.pas:520`, 1756–1766) — hooks `eiWelaUnitProduced`; only for productions addressed to its own group; fires `eiFire` at the produced entity in group `g`.
+
+**`TModifierWelaDamageComponent.ScaleWithResource(r)` / `.FactorForUnitProperty(props,f)`** (`Shared.Wela.pas:151`, `OnWelaDamage` 1058–1085) — `Factor = eiWelaModifier(value group)`; with `ScaleWithResource` `Factor *= Balance(r) + offset` (current balance, capped by `MaximumResourceScaleFactor`); with matching properties `Factor *= f`; result `Previous + Factor` (unless `Multiply`/`Divide`). Brratu: `34 + 0.2 × current HP`. BlessingStrength: +8, +4 on `upLinkWeapon` (subscribed on groups `[0,1,Group]`).
+
+**`TModifierResourceComponent.ScaleWithResource.UseResourceCap.AddModifier`** (`Shared.Wela.pas:102`, `ApplyNow` 1124–1149) — `v = eiWelaDamage(value group)`; `ScaleWithResource` multiplies by cap (`UseResourceCap`) or balance; then `v *= eiWelaModifier` or `v += eiWelaModifier` with `AddModifier`; negative clamped to keep cap ≥ 1; applied via `eiResourceCapTransaction` (max **and** current HP). Removal applies `−v` (:1150–1156). BlessingHealth: `0.3 × maxHP + 50`.
+
+**`TWelaEffectRedirecterComponent.RedirectToGround`** (`Server.Welas.pas:253`, 3164–3175) — `eiFire` at epFirst replaces the targets with `ATarget.Create(Owner.Position)` — the **owner's** ground position.
+
+**`TWelaEffectActivationAbilityComponent.SetCheckGroup([]).CheckNotFull(r)` / `.TriggerOnReachResourceCap(r)`** (`Server.Welas.pas:353`, `Fire` 2691–2709) — on fire, reads balance/cap of `r` in the check group; `TriggerOnReachResourceCap` requires `balance = cap`, `CheckNotFull` the inverse (:2677–2683); then writes `eiWelaActive := FActivationState` (default False; `SetsActive` → True) to the activation group if it changes. Mana-reg groups switch themselves off at cap; the spender switches them back on.
+
+**`TThinkImpulseImmediateComponent`** (`Server.Brains.pas:74`, 1035–1043) — thinks every frame unless exiled. (`TThinkImpulseOnceComponent` :2389 once then frees; `TThinkImpulseTimerComponent` :1464 every ~250 ms; `TThinkImpulseTimerCooldownComponent` :1783 uses group `eiCooldown`, not ready until first expiry unless `TimerIsReady`.)
+
+**`TUnitPropertyComponent.Remove`** (`Shared.pas:36`, 2346–2366) — subtracts the properties from every `eiUnitProperties` read while the group lives (Grounded strips `upFlying`).
+
+**`TWelaTargetConstraintEventComponent(eiIsAlive)`** (`Shared.Wela.pas:501`, 1489–1502) — reads the target's `eiIsAlive` (`THealthComponent.OnIsAlive`, `Shared.pas:1073`: plain alive flag), unlike `eiDamageable` (alive and not invincible). Oracle can eat saplings that are invincible (e.g. during `LegendarySpawn`).
+
+**`udUsePathfinding = False` / `upMonumental` / `eiSpeed`** — `TMovementComponent` (`Shared.pas:998–1002`, `IdleDirect` 706–735) walks straight to the target by `eiSpeed` per ms without a grid path and with `IgnoreOtherEntities` (:671); `upMonumental` has no engine behaviour (`Constants.pas:254`, script tag for targeting only); default unit speed is `4/1000` (`HelperScripts/UnitTemplate.dws:7`), Brratu `2/1000`.
+
+**Statistics** — `TWelaEffectStatisticsComponent` (incl. `.CheckMaxTargets`, `Server.Statistics.pas:105`) and `TStatisticsUnitComponent` are telemetry only; ignore.
