@@ -111,6 +111,15 @@ These are current and take precedence over Codex's older captures. Facts read fr
   Upgrade"; it fires two shots at two enemies. The 2022 source lanetower has 800-1400 HP by league/level, 100 damage,
   6-18 ammo and a single target. Nexus live: 8000 HP, 25 ammo, 96 damage (source: 110-120 damage, 8-20 ammo).
   Towers and bases were reworked after the repo snapshot; the patch-notes audit must cover them first.
+- Camera (measured on the lane node screenshots, 2026-09-17): the platform ring's ellipse ratio gives a pitch of
+  53-54 deg and the same ring pixel size as our zoom 3.8, so pitch, zoom and FOV equal the 2022 `CAMERAOFFSET`.
+  The lane runs at 29.2 deg on screen in the live client but 36.7 deg with the 2022 vector, i.e. the live yaw
+  is 55.5 deg across the lane instead of 47.4. The game-start shot (blue nexus, "Game is about to begin")
+  shows the own base top-right with the lane leaving to the bottom-left, and the minimap has blue top-right:
+  the live camera sits on the opposite side (yaw + 180 deg). Applied in `main.gd` / `minimap.gd`
+  (offset 0.3305, 0.8121, -0.4809) at the owner's request ("I just want the camera the same").
+- Top bar in the live client: red bar left, blue bar right for both the blue and the red player (own team is
+  not on the left). Ours puts blue (own) left: check the original `.dui` before changing.
 - Capture point (lane node): a white disc on the lane with a blue progress ring while a team captures it.
   The big capture arcs (radius 16.5, `RangeLine.tga`) look *lighter* than the floor in the live client; the
   2022 source tints them with the node's own team colour, neutral grey `404040` (never changes: the node is

@@ -291,7 +291,11 @@ func _place_camera(look_at_2d: Vector2) -> void:
 	# Original camera offset direction (Constants.Client.pas:34), scaled to see the lane.
 	_look_at = look_at_2d
 	_camera.fov = rad_to_deg(CAMERA_FOV)
-	var offset := Vector3(-0.3947, 0.8121, 0.4297).normalized() * _zoom * 10.0   # own base bottom-left, lane runs to the top-right
+	# Live-client camera (owner's request, docs/reference-material.md): the 2022 CAMERAOFFSET (-0.3947, 0.8121,
+	# 0.4297) has the same pitch (54.3 deg) and zoom, but the live client looks from the other side (yaw + 180 deg:
+	# the blue base is top-right, the lane leaves it to the bottom-left) and 55.5 deg across the lane instead of 47.4
+	# (lane on screen at 29.2 deg, measured on the reference screenshots, ours was 36.7).
+	var offset := Vector3(0.3305, 0.8121, -0.4809).normalized() * _zoom * 10.0
 	var target := Vector3(look_at_2d.x, 0, look_at_2d.y)
 	_camera.position = target + offset
 	_camera.look_at(target, Vector3.UP)

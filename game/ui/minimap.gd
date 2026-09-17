@@ -8,7 +8,7 @@ signal menu_pressed
 const SIZE := 302.0
 const CONTENT := 281.0
 const INFLATE := -38.0
-const CAMERAOFFSET_XZ := Vector2(-0.394721269607544, -0.429695725440979)   # Constants.Client.pas CAMERAOFFSET
+const CAMERAOFFSET_XZ := Vector2(0.3305, 0.4809)   # live-client camera yaw (main.gd, docs/reference-material.md); 2022: (-0.3947, -0.4297)
 
 var _sim: Simulation
 var _own_team: int = 1

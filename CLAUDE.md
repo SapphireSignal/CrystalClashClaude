@@ -113,6 +113,10 @@ Act as two people at once:
   translation column (transpose the 3x3), hierarchy `Parent * Child`, skinning `Combined * Offset * v`, pivots
   collapsed into their bone, triangle winding reversed back for glTF. Model front axis is +Z, frames at 30 fps.
   Blender is only a probe tool.
+- 2026-09-17 Camera = the **live client's** (owner: "I just want the camera the same"): pitch, zoom and FOV equal the
+  2022 `CAMERAOFFSET`, but the camera sits on the opposite side (own blue base top-right, lane leaves to the
+  bottom-left) at 55.5 deg across the lane (29.2 deg lane angle on the reference screenshots,
+  `docs/reference-material.md`). `main.gd` and `minimap.gd` use (0.3305, 0.8121, -0.4809).
 - 2026-09-16 `reference/media/` is filled by the owner only (lobby/ and ingame/ screenshots). Never read or
   copy from the owner's personal Pictures / OneDrive folders.
 

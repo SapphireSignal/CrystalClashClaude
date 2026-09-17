@@ -84,6 +84,18 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
   blue `highlight_drop.png` disc): kept. Side fixes: particle quads with a zero normal no longer error, unit bars
   skip off-screen / non-finite projections (the polygon errors are gone). `tools/screenshot.gd` has `zoom=node`.
 
+- **Checkpoint 38: live-client camera.** Measured on the reference screenshots (ellipse fit of the platform ring
+  and the sand strip angle): pitch/zoom/FOV as the 2022 constant, camera on the opposite side (own base
+  top-right, lane to the bottom-left, blue top-right on the minimap) at yaw 55.5 deg instead of 47.4 (lane at
+  29.2 deg on screen). `main.gd` + `minimap.gd` offset (0.3305, 0.8121, -0.4809); CLAUDE.md decision recorded.
+  Noted for later: the live top bar is red-left / blue-right for both players (ours: own blue left).
+  **Seen while verifying (`tools/screenshot.gd -- 12 zoom=nexus` vs reference `image-1789614749130.webp`):**
+  the base area differs a lot: the reference nexus is a big round stone base with the crystal in a round sand
+  clearing ringed by jungle, drop tiles up-right; ours shows a small dark tower without crystal on a bridge-like
+  stone pattern with sand strips and almost no vegetation. Check (a) `UnitModel` for NexusLevel1 (crystal pivot
+  mesh, scale), (b) `MapView` vegetation/decoration placement near (-96,-23) (Delphi `Random` replica, `.veg`
+  instance transforms), (c) whether the 2022 Single map terrain textures really differ from the live map.
+
 ## FIX FIRST (owner's request, before anything else)
 1. **Done (checkpoint 37): lane node capture circle verified.** The ring renders (mesh, y 0.01, orientation:
    start +Z about +Y, gaps across the lane, arcs along it, exactly `DrawCircle` Up=UNITZ Left=UNITX); it was
