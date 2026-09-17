@@ -2,7 +2,7 @@
 
 Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
 
-## State (2026-09-17, checkpoint 30)
+## State (2026-09-17, checkpoint 31)
 - Phases 1-3 done, 799 tests pass. Sandbox `game/main.tscn`: blue deck on keys 1-9,0,-,= or by clicking a card
   (drops/spells then need a left click on the ground, spawners go to the next free field); red AI plays Black.
 - **Phase 4 (HUD): step 1 done.** `game/ui/` holds the code-built HUD from `docs/hud.md`: top bar (clock, nexus
@@ -48,16 +48,23 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
   footman, Void Bane). FBX files are no longer copied. `BindTextureToTeam` -> `team_textures` per mesh, applied
   by `UnitModel.create(unit_id, displayed_team)`. Lane nodes have no mesh (particles only) and get no view.
 
+- **Checkpoint 31: the original maps.** `tools/convert_map.py <Map>` writes `assets/maps/<Map>/terrain.glb` +
+  chunk textures + `map.json` (water, lights, 3428/2425 vegetation instances, 47/23 decorations) and copies
+  `assets/environment/**` (meshes via `tools/msh_to_gltf.py --environment`). `game/maps/map_view.gd` builds
+  terrain, a flat water plane, the map lights/ambient, MultiMesh vegetation and decoration meshes; `main.tscn`
+  lost its flat ground and sun. The sandbox (Single map) now looks like the reference screenshots.
+
 ## Next step (in order, one at a time, run the game after each)
-1. Models polish: (a) walk clip speed per the original formula (`Visuals.pas:3352`, IgnoreScalingForAnimations
+1. Map polish: (a) compare `tools/screenshot.gd` shots with `reference/media/ingame` at the same camera spot and
+   tune light energies / ambient (the lane looks washed out); (b) water: port the look roughly (colour, wave
+   texture `Maps/Classic/WaterTexture.tga`, transparency) as a shader; (c) terrain `Material.png` (specular) and
+   the grass vegetation entries (`.veg` items without `Meshes`, `TVegetationGrass`?); (d) verify the Delphi
+   `Random` replica against the original (palm variants/rotations) if a screenshot shows a mismatch.
+2. Models polish: (a) walk clip speed per the original formula (`Visuals.pas:3352`, IgnoreScalingForAnimations
    variant at 3355); (b) glow textures (`GlowTexture`, team glow) as emission; (c) `Effects/Meshes` spell props and
    the Environment/Gameplay `.msh` (13 + 2) once the map needs them; (d) the 18 "Basis must be normalized" import
    errors: find which glb nodes have zero scale (probably `_Scaling` pivots folded into static matrices are fine;
    check animated ones) - cosmetic unless a model looks wrong.
-2. **Maps**: `tools/convert_map.py` for `Maps/Classic`: `.ter` heightmap -> `assets/maps/Classic/height.png` or
-   ArrayMesh + the 16 chunk textures (`Classic<N>Diffuse.png`) as splat tiles, `.veg` instances -> a scene with
-   the vegetation FBX (copy `Graphics/Environment`), `.wat` water plane, `.lig` lights. Replace the flat plane in
-   `main.tscn`.
 3. Particles (`.pfx`) and sounds (FMOD banks: need a bank extractor) later. Find the original mesh/animation formats under `reference/rise-of-legions/`
    and the loaders in `reference/delphi3d-engine/`, textures (`.tga`/`.dds`), particles `.pfx`, FMOD sound banks.
    Write `docs/assets.md` rows per format with a conversion plan, then `tools/convert_*.py` for meshes first
@@ -83,6 +90,8 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
 - Godot import errors "quaternion (nan)" / "Basis must be normalized" come from some FBX skins; models still load.
 - `UnitModel` must collect its AnimationPlayers in `create()` (before `_ready`), or `play()` finds none.
 - StandardMaterial3D has `metallic_specular`, not `specular`.
+- The engine's XML serializer uses a custom base64 alphabet (`0-9A-Za-z+/`) and 5-byte headers per nested
+  dynamic array; `compressed="true"` is lowercase. The sim loads `SimMap.SINGLE` by default, not Classic.
 - `tools/msh_to_gltf.py --all` skips glbs newer than their `.msh`: delete `assets/units/**/*.glb` to force a rebuild.
 - Godot's glTF importer keeps `matrix` nodes exactly; TRS decomposition of zero-scale pivots loses rotations.
 - Lambdas connected to sim signals must be disconnected in tests; lambdas capture ints by value (use Arrays).

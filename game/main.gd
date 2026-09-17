@@ -1,5 +1,5 @@
 extends Node3D
-## Sandbox: runs the Simulation at a fixed tick and renders entities with placeholder meshes.
+## Sandbox: runs the Simulation at a fixed tick on the original map and renders the original unit models.
 ## Blue (you) plays deck slots with keys 1-9, 0, -, = at the mouse position (drops) or on the next free
 ## build field (spawners). Red plays a Black deck automatically. Real assets replace the capsules in phase 5.
 
@@ -28,6 +28,8 @@ var _red_cursor: int = 0
 
 @onready var _units_root: Node3D = $Units
 @onready var _camera: Camera3D = $Camera3D
+@onready var _environment: WorldEnvironment = $WorldEnvironment
+var _map: MapView
 var _look_at := Vector2(-40, -23)   # ground point the camera looks at
 var _camera_distance := 70.0
 var _drag_anchor: Variant = null    # ground point under the mouse when the right drag started
@@ -41,6 +43,11 @@ func _ready() -> void:
 	sim.projectile_removed.connect(func(p, _hit): _on_died(p))
 	sim.team_lost.connect(func(t): print("team %d lost" % t))
 	sim.spawn_bases()
+	_map = MapView.new()   # the original map: terrain, water, lights, vegetation, decorations
+	add_child(_map)
+	_map.load_map(sim.map.name)
+	_environment.environment.ambient_light_color = _map.ambient_color
+	_environment.environment.ambient_light_energy = _map.ambient_energy
 	# Decks go through the Deck rules (validates them) and its slot sort, like the real card bar.
 	sim.commanders[Simulation.TEAM_BLUE].set_deck_from(Deck.from_scripts(BLUE_DECK))
 	sim.commanders[Simulation.TEAM_RED].set_deck_from(Deck.from_scripts(RED_DECK))   # red plays Black so both factions show

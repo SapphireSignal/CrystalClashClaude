@@ -10,9 +10,9 @@ Compiled artifacts `.msh` (mesh) and `.tex` (texture) are never parsed; their FB
 | Textures | `.tga` / `.png` (`Diffuse/Normal/Material/Glow`) | 792 / 816 | `.png` | Pillow | todo |
 | Material xml | `<Mesh>.xml` (German decimal commas) | 200 | `StandardMaterial3D` built at load (`unit_model.gd`): diffuse albedo, cull mode, alpha test, specular power -> roughness | - | basic; Material.tga channels (R spec intensity, G spec power, B tint, A shading reduction, `Standardshader.fx:394`), glow, outline, metal effect todo |
 | Particles | `.pfx` XML (mean/variance) | 366 | `GPUParticles3D` `.tres` | Python | todo |
-| Terrain | `<Map>.ter` 513x513 float32 heightmap (base64+zlib) | 2 | `ArrayMesh` + `HeightMapShape3D` | Python numpy | todo |
-| Map zones | `<Map>.bcm` polygons | 2 | JSON resource | Python | todo |
-| Decorations / vegetation / water / lights | `.bcc .veg .wat .lig` | 2 each | `.tscn` | Python | todo |
+| Terrain | `<Map>.ter` 513x513 float32 heightmap (custom base64 alphabet `0-9A-Za-z+/`, zlib, nested-array 5-byte headers), `FScale` 300/50/300 | 2 | `assets/maps/<Map>/terrain.glb` (16 chunk primitives, chunk id = row*4+col, chunk Diffuse/Normal png next to it) | `tools/convert_map.py` | done (Material.png splat/spec maps unused) |
+| Map zones | `<Map>.bcm` polygons | 2 | `game/data/maps/<Map>.json` | `tools/extract_maps.py` | done |
+| Decorations / vegetation / water / lights | `.bcc .veg .wat .lig` | 2 each | `assets/maps/<Map>/map.json` (vegetation instances with the engine's Delphi Random replayed per FRandSeed, decoration entities -> `Scripts/Environment/*.ets` meshes, water plane, directional lights + ambient) + `assets/environment/**` (msh -> glb via `tools/msh_to_gltf.py --environment`, textures) rendered by `game/maps/map_view.gd` | `tools/convert_map.py` | done except the water shader (flat colour plane now) and the vegetation grass type (skipped entries) |
 | GUI | `.dui` + `.scss` + GUI textures | 139 / 53 | Control scenes built in code, textures copied 1:1 to `assets/ui/` | `tools/copy_ui_assets.py` (262 HUD images incl. InfoPanel attack/armor icons, card icons are 512x256 mip atlases: left 256 square is the icon), layout spec in `docs/hud.md` | HUD in progress |
 | Fonts | `.ttf` ProzaLibre + fontawesome | 6 | `assets/fonts/` | `tools/copy_ui_assets.py` | done (fontawesome not needed yet) |
 | Sound | FMOD `.bank` + `GUIDs.txt` | 10 | `.ogg` | python-fsb5 or FMOD GDExtension | todo |

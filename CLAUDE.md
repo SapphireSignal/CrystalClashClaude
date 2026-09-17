@@ -185,5 +185,7 @@ original 4 s / 11 s timers). The extractor records `ability_details`
 (tooltip variables/keywords) and `unit_bars` per script. `tools/screenshot.gd` captures the running game for
 comparison with `reference/media`. Phase 5 (assets) started: `tools/copy_unit_assets.py` copies unit textures/xml, `tools/msh_to_gltf.py`
 converts every unit mesh cache to glb, `game/units/unit_model.gd` builds each unit's original model with the engine's
-scale rules, team textures and the script's animation frame ranges (extractor `visuals`); the sandbox shows the real
-units, towers and nexus. See `CONTINUE.md`.
+scale rules, team textures and the script's animation frame ranges (extractor `visuals`). `tools/convert_map.py`
+converts the maps (terrain glb from the heightmap, water, lights, vegetation instances, decorations) and
+`game/maps/map_view.gd` renders them; the sandbox runs on the original Single map with the real units, towers and
+nexus. See `CONTINUE.md`.

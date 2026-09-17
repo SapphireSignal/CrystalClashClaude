@@ -8,7 +8,8 @@ skinned as `Combined * Offset * v`, which is glTF's `jointMatrix = globalJoint *
 mesh node at the root, so the offset matrices become the inverse bind matrices unchanged.
 
 Usage: python tools/msh_to_gltf.py <file.msh> <out.glb>
-       python tools/msh_to_gltf.py --all      (every Graphics/Units/**/*.msh -> assets/units/<same path>.glb)
+       python tools/msh_to_gltf.py --all           (every Graphics/Units/**/*.msh -> assets/units/<same path>.glb)
+       python tools/msh_to_gltf.py --environment   (Graphics/Environment/**/*.msh -> assets/environment/...)
 """
 from __future__ import annotations
 
@@ -24,8 +25,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from msh import Msh, load  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
-SRC = ROOT / "reference" / "rise-of-legions" / "Graphics" / "Units"
-OUT = ROOT / "assets" / "units"
+GRAPHICS = ROOT / "reference" / "rise-of-legions" / "Graphics"
+TREES = {"--all": (GRAPHICS / "Units", ROOT / "assets" / "units"),
+         "--environment": (GRAPHICS / "Environment", ROOT / "assets" / "environment")}
 
 FLOAT = 5126
 UINT16 = 5123
@@ -284,7 +286,8 @@ def convert_file(src: Path, dst: Path) -> None:
 
 
 def main(argv: list[str]) -> int:
-    if argv and argv[0] == "--all":
+    if argv and argv[0] in TREES:
+        SRC, OUT = TREES[argv[0]]
         count = 0
         for src in sorted(SRC.rglob("*.msh")):
             rel = src.relative_to(SRC)

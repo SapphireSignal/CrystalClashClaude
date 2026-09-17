@@ -68,6 +68,8 @@ class Msh:
     bones: list[Bone]          # flat, in file order
     skin: list[SkinLink]
     animations: list[Animation]
+    sphere_center: np.ndarray = field(default_factory=lambda: np.zeros(3))
+    sphere_radius: float = 0.0
 
     def bone_by_name(self, name: str) -> Bone | None:
         low = name.lower()
@@ -144,7 +146,7 @@ def load(path: Path) -> Msh:
     (header_length,) = read("I")
     (morph_count,) = read("I")
     bbox = read("6f")
-    read("4f")   # bounding sphere
+    sphere = read("4f")   # bounding sphere centre + radius (vegetation sizes divide by 2 * radius)
     pos += 33    # OriginalFileHash string[32]
     # vertex chunk
     pos += 5     # protector string[4]
@@ -219,7 +221,10 @@ def load(path: Path) -> Msh:
             pos += SHORTSTRING
             channels.append(Channel(target, times, keys[:, 1:4].copy(), keys[:, 4:7].copy(), keys[:, 7:11].copy()))
         animations.append(Animation(name, channels))
-    return Msh(np.array(bbox[:3]), np.array(bbox[3:]), positions, normals, uvs, weights, bone_idx, colors, indices, root, bones, skin, animations)
+    msh = Msh(np.array(bbox[:3]), np.array(bbox[3:]), positions, normals, uvs, weights, bone_idx, colors, indices, root, bones, skin, animations)
+    msh.sphere_center = np.array(sphere[:3])
+    msh.sphere_radius = float(sphere[3])
+    return msh
 
 
 if __name__ == "__main__":
