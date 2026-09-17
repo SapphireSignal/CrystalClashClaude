@@ -36,6 +36,8 @@ var bounce_count: int = 0
 var hit_ids: Array = []
 var damage_change_per_hit: float = 0.0   # eiWelaModifier of the on-deal-damage group (-1 = depleting)
 var no_reflection: bool = false      # TBrainProjectileComponent.CantBeReflected (tower shots), or already reflected once
+var kills: bool = false              # TWarheadSpottyKillComponent (AegisRiftProjectile)
+var exiles: bool = false             # .Exile: no death effects, no soul
 
 
 func _init(p_unit_id: String, league: int) -> void:
@@ -111,6 +113,11 @@ func _init(p_unit_id: String, league: int) -> void:
 						for c in calls:
 							if c[0] == "MustHaveAny":
 								mult_vs_props.append([c[1][0], mult_groups[vg]])
+			"TWarheadSpottyKillComponent":
+				kills = true
+				for c in calls:
+					if c[0] == "Exile":
+						exiles = true
 			"TWarheadApplyScriptComponent":
 				if hit_group != "" and comp["groups"].has(hit_group):
 					on_hit_script = Wela.script_key(str(comp["args"][0]))

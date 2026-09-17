@@ -1930,3 +1930,93 @@ func test_shield_drone_follow_and_reflect() -> void:
 	runner.check(archer.health < archer_hp, "the archer's arrow flies back at it")
 	runner.check_near(archer_hp - archer.health, 20.0 * 0.4, "reflected at 40 % (archer 20 ranged, light armor takes ranged in full)")
 	runner.check_near(drone.health, drone_hp - 10.0, "the drone pays 10 true damage per reflection")
+
+
+func test_airdominator_hits_flyers_only() -> void:
+	var sim := Simulation.new(2, 4)
+	var air := sim.spawn("Units/Blue/Airdominator", Simulation.TEAM_BLUE, Vector2(-40, -23))
+	var wisp := sim.spawn("Units/Green/Wisp", Simulation.TEAM_RED, Vector2(-28, -23))
+	var monk := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(-34, -23))   # outside the missile splash
+	wisp.locked_until = 1 << 30
+	monk.locked_until = 1 << 30
+	var t := sim.time_ms
+	while wisp.alive and sim.time_ms < t + 8000:
+		sim.step()
+	runner.check(not wisp.alive, "two 25 x2 missiles at range 15 kill the 75 hp wisp")
+	for i in 120:
+		sim.step()
+	runner.check_near(monk.health, 265.0, "a flyer's weapon never hits ground units (BothMustHaveAny)")
+
+
+func test_bombardier_line_laser_and_wave_gun() -> void:
+	var sim := Simulation.new(2, 4)
+	var bomb := sim.spawn("Units/Blue/Bombardier", Simulation.TEAM_BLUE, Vector2(-40, -23))
+	var line: Array = []
+	for x in [-33.0, -28.0, -24.0]:
+		var m := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(x, -23))
+		m.locked_until = 1 << 30
+		line.append(m)
+	var aside := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(-33, -20))
+	aside.locked_until = 1 << 30
+	var t := sim.time_ms
+	while line[0].health == 265.0 and sim.time_ms < t + 3000:
+		sim.step()
+	for m in line:
+		runner.check_near(m.health, 265.0 - 82.0, "laser: 82 splash to every enemy on the 18-long line (monks are unarmored)")
+	runner.check_near(aside.health, 265.0, "a unit beside the 1.0-wide line is missed")
+	runner.check_eq(bomb.mana, 4, "wave gun waits for a target with max hp >= 300")
+	var big := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(-25, -30))
+	big.locked_until = 1 << 30
+	big.max_health = 400.0
+	big.health = 400.0
+	t = sim.time_ms
+	while big.health == 400.0 and sim.time_ms < t + 6000:
+		sim.step()
+	runner.check_near(big.health, 400.0 - 275.0, "wave gun: 275 ability damage")
+	runner.check(big.has("upStunned"), "and a 3 s stun")
+	runner.check_eq(bomb.mana, 0, "for all 4 energy")
+
+
+func test_aegis_starfall_rift_missiles() -> void:
+	var sim := Simulation.new(2, 4)
+	var ally := sim.spawn("Units/White/Monk", Simulation.TEAM_BLUE, Vector2(-39, -23))
+	var near := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(-41, -23))
+	var big := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(-32, -23))
+	var small := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(-31, -20))
+	for m in [ally, near, big, small]:
+		m.locked_until = 1 << 30
+	big.max_health = 400.0
+	big.health = 400.0
+	var aegis := sim.spawn("Units/Blue/Aegis", Simulation.TEAM_BLUE, Vector2(-40, -23))
+	var t := sim.time_ms
+	while sim.time_ms < t + 500:
+		sim.step()
+	runner.check(not ally.alive and not near.alive, "debut starfall kills every unit of both teams within 1.5")
+	runner.check(big.alive and small.alive, "but nothing further away")
+	while big.alive and sim.time_ms < t + 3000:
+		sim.step()
+	runner.check(not big.alive and big.exiled, "rift cannon annihilates the highest-max-hp enemy within 11")
+	runner.check(small.alive, "one shot per 4 s")
+	while sim.time_ms < t + 6000:
+		sim.step()
+	runner.check(aegis.mana <= 10 and aegis.mana >= 9, "missiles: one energy per 1.8 s after 1.6 s (got %d)" % aegis.mana)
+
+
+func test_aegis_gatling_cones() -> void:
+	var sim := Simulation.new(2, 4)
+	var aegis := sim.spawn("Units/Blue/Aegis", Simulation.TEAM_BLUE, Vector2(-40, -23))
+	aegis.wela(1).used = true
+	aegis.wela(2).used = true
+	var south := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(-40, -19))
+	var west := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(-44, -23))
+	south.locked_until = 1 << 30
+	west.locked_until = 1 << 30
+	var t := sim.time_ms
+	while sim.time_ms < t + 2500:
+		sim.step()
+	runner.check(south.link_buffs.has("%d:4" % aegis.id) and not south.link_buffs.has("%d:3" % aegis.id), "the (0,1) cone gatling links the unit in +y")
+	runner.check(west.link_buffs.has("%d:3" % aegis.id) and not west.link_buffs.has("%d:4" % aegis.id), "the (-1,0) cone gatling links the unit in -x")
+	var hp := south.health
+	for i in 17:
+		sim.step()
+	runner.check(south.health < hp, "beams deal damage every 500 ms")

@@ -28,7 +28,20 @@ RE_ARITH = re.compile(r"^[0-9.+\-*/() ]+$")
 
 
 def strip_annotations(s: str) -> str:
-    return re.sub(r"\{@\w+\}", "", s)
+    return re.sub(r"\{@?\w+\}", "", s)  # {@UBL_Health} balance tags and {1766} old-value notes
+
+
+RE_FOR_LOOP = re.compile(r"for\s+(\w+)\s*:=\s*(\d+)\s+to\s+(\d+)\s+do\s*begin(.*?)end;", re.S)
+
+
+def expand_for_loops(body: str) -> str:
+    """'for i := 3 to 6 do begin ... end;' (Aegis gatlings) -> the block repeated with i replaced."""
+
+    def expand(m: re.Match) -> str:
+        var, lo, hi, block = m.group(1), int(m.group(2)), int(m.group(3)), m.group(4)
+        return "\n".join(re.sub(rf"\b{var}\b", str(i), block) for i in range(lo, hi + 1))
+
+    return RE_FOR_LOOP.sub(expand, body)
 
 
 def create_data_body(text: str) -> str:
@@ -189,6 +202,7 @@ def parse_components(body: str) -> list:
     """Component declarations; components inside 'if Entity.HasDamageType(dtX) then ...' carry cond = dtX."""
     body = strip_comments(body)
     body = re.sub(r"\{\$IFDEF CLIENT\}.*?\{\$ENDIF\}", "", body, flags=re.S)
+    body = expand_for_loops(body)
     out = []
     pos = 0
     for m in RE_COND_BLOCK.finditer(body):

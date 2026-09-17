@@ -61,6 +61,10 @@ var triggers_after_damage: bool = false   # TAutoBrainOnTakeDamageComponent.Trig
 var passive_if_conscious: bool = false    # .ThinksPassivelyIfConscious: not while stunned / frozen
 var teleport_to_target: bool = false   # TWarheadSpottyTeleportComponent.OffsetByCollisionRadius: blink next to the target
 var teleport_offset: float = 0.0       # .Offset(d): extra gap after both collision radii
+var cone_dir: Vector2 = Vector2.ZERO   # TWelaTargetingRadialComponent.Cone(x, z, angle): world-space cone (Aegis gatlings)
+var cone_angle: float = 0.0            # full opening angle in radians (0 = no cone)
+var line_width: float = 0.0            # TWarheadSplashDamageComponent.LineFromOwner(width): a segment of length eiWelaAreaOfEffect
+var think_immediate: bool = false      # TThinkImpulseImmediateComponent: a ThinksLocal group that still thinks every tick
 var trigger_not_self: bool = false     # TWelaTriggerCheckNotSelfComponent: not for self-inflicted damage
 var heal_percent_of_max: bool = false  # TWarheadSpottyHealComponent.PercentageOfMaxHealth
 var mirror_pairs: Array = []           # TAutoBrainOnTakeDamageComponent.CheckSelfForTargetsInGroup + FireTargetsInGroup: [[self, enemy]]
@@ -258,7 +262,7 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 			"TWelaHelperActivateTimerComponent":
 				for c in calls:
 					if c[0] == "Delay":
-						get.call(g, Kind.LINK).link_delay = int(c[1][0])
+						get.call(g, Kind.SUB).link_delay = int(c[1][0])   # the brain that follows sets the kind
 			"TBrainWelaLinkComponent":
 				var w: Wela = get.call(g, Kind.LINK)
 				w.kind = Kind.LINK
@@ -324,6 +328,11 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 						elif c[0] == "PicksRandomTargetsWithRepetition":
 							w.picks_random_targets = true
 							w.picks_with_repetition = true
+						elif c[0] == "Cone":   # Cone(dirX, dirZ, 'PI * 2 / 3')
+							w.cone_dir = Vector2(float(c[1][0]), float(c[1][1])).normalized()
+							var ex := Expression.new()
+							assert(ex.parse(str(c[1][2]).replace("PI", str(PI))) == OK, "bad cone angle %s" % str(c[1][2]))
+							w.cone_angle = float(ex.execute())
 			"TWelaEfficiencyMissingHealthComponent":
 				get.call(g, Kind.SUB).efficiency_missing_health = true
 			"TWelaEfficiencyUnitPropertyComponent":
@@ -371,6 +380,8 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 				for c in calls:
 					if c[0] == "PercentageOfMaxHealth":
 						w.damage_percent_of_max = true
+					elif c[0] == "LineFromOwner":
+						w.line_width = float(c[1][0])
 			"TWarheadSpottyRemoveBuffComponent":
 				for c in calls:
 					if c[0] == "MustHaveAny":
@@ -679,6 +690,9 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 						w.times_for_each = int(c[1][0])
 			"TWelaTriggerCheckNotSelfComponent":
 				get.call(g, Kind.ON_TAKE_DAMAGE).trigger_not_self = true
+			"TThinkImpulseImmediateComponent":
+				for gg in groups:
+					get.call(gg, Kind.SUB).think_immediate = true
 			"TThinkImpulseFireComponent":   # fires the target groups from an auto brain (healed, hit)
 				var w: Wela = by_group[g] if by_group.has(g) else get.call(g, Kind.ON_HEALED)
 				for c in calls:

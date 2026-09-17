@@ -343,10 +343,6 @@ func can_think(_now: int) -> bool:
 	return true
 
 
-func may_target_flying() -> bool:
-	return not has("upRangedGroundOnly")
-
-
 func has_ammo() -> bool:
 	return ammo_cost == 0 or ammo >= ammo_cost
 

@@ -722,7 +722,7 @@ func _think_passives(e: SimEntity) -> void:
 			continue
 		if w.kind == Wela.Kind.LINK:
 			_think_link(e, w)
-		elif w.kind == Wela.Kind.FIGHT and w.passive and not w.think_local:
+		elif w.kind == Wela.Kind.FIGHT and w.passive and (not w.think_local or w.think_immediate):
 			_think_passive(e, w)
 		elif w.kind == Wela.Kind.SELF_PASSIVE:
 			_think_self_passive(e, w)
@@ -857,7 +857,7 @@ func _think_link(e: SimEntity, w: Wela) -> void:
 		var linked: bool = other.link_buffs.has(key)
 		var allies := w.target_allies or not w.team_constraint_set   # auras link allies unless told otherwise
 		var in_range := other.alive and (w.target_self or ((other.team == e.team) == allies and other.team != 0 and other != e \
-			and other.position.distance_to(e.position) - other.collision_radius <= range))
+			and other.position.distance_to(e.position) - other.collision_radius <= range and _in_cone(e, w, other)))
 		var validator: Wela = e.wela(w.validate_group) if w.validate_group >= 0 else null
 		if linked and (not in_range or (validator != null and not validator.target_allowed(other, e))):
 			_break_link_key(other, key)
@@ -907,6 +907,18 @@ func _think_link(e: SimEntity, w: Wela) -> void:
 							_fire_link_group(e, other, b, cg)
 					elif lw.link_brain:   # TLinkBrainComponent([0,1,2]): the other groups fire too (gatling splash)
 						_fire_link_group(e, other, b, lw.group)
+
+
+## TWelaTargetingRadialComponent.Cone: the target is inside when the angle between the world-space cone
+## direction and the direction to it, minus the target's angular radius, is within half the opening.
+func _in_cone(e: SimEntity, w: Wela, other: SimEntity) -> bool:
+	if w.cone_angle <= 0.0:
+		return true
+	var offset := other.position - e.position
+	var dist := offset.length()
+	if dist <= 0.0001:
+		return true
+	return absf(w.cone_dir.angle_to(offset / dist)) - atan(other.collision_radius / dist) <= w.cone_angle / 2.0
 
 
 func _link_count(e: SimEntity, w: Wela) -> int:
@@ -1165,7 +1177,12 @@ func _fire_splash(e: SimEntity, group: int, center: Vector2) -> void:
 		if not w.target_allowed(other, e):
 			continue
 		var offset := other.position - center
-		if offset.length() - other.collision_radius > radius:
+		if w.line_width > 0.0:   # LineFromOwner: a segment from the owner along its facing, eiWelaAreaOfEffect long
+			var seg_end := e.position + front * radius
+			var closest := Geometry2D.get_closest_point_to_segment(other.position, e.position, seg_end)
+			if other.position.distance_to(closest) - other.collision_radius > w.line_width / 2.0:
+				continue
+		elif offset.length() - other.collision_radius > radius:
 			continue
 		if cone > 0.0 and offset.length() > 0.0001:
 			var width_angle := atan(other.collision_radius / maxf(0.01, offset.length()))
@@ -1475,8 +1492,6 @@ func _pick_target(e: SimEntity, w: Wela, range: float) -> SimEntity:
 			continue
 		if (not w.target_any_team and w.target_allies != (other.team == e.team)) or other.team == 0:
 			continue
-		if other.has("upFlying") and not other.has("upGround") and not e.may_target_flying():
-			continue
 		if not w.target_allowed(other, e):
 			continue
 		var dist := e.position.distance_to(other.position) - other.collision_radius - (0.0 if w.ignore_own_radius else e.collision_radius)
@@ -1606,7 +1621,10 @@ func _move_projectiles() -> void:
 				for item in p.mult_vs_props:   # missiles: x2 against flying / monumental
 					if _has_any(target, item[0]) and not (p.damage_type & SimConstants.DamageType.SPELL):
 						p.damage *= item[1]
-				if p.gives_mana:
+				if p.kills:   # AegisRiftProjectile: annihilate (exile) on impact
+					target.exiled = p.exiles
+					_kill(target, entities.get(p.source_id))
+				elif p.gives_mana:
 					gain_mana(target, int(p.damage))
 				elif p.raises_max_health:   # Oracle's sapling: +60 max hp and +1 charge
 					target.max_health += p.damage
