@@ -2,7 +2,7 @@
 
 Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
 
-## State (2026-09-17, checkpoint 21)
+## State (2026-09-17, checkpoint 22)
 - Phase 2 core sim works and is tested (757 tests). **All five factions are complete**: White, Black, Green, Blue and
   Golems / Crystal Legion (`docs/factions/*.md` are the specs; Golems: `docs/factions/golems.md`).
 - Golems done this checkpoint: BigMeleeGolem Splinter (`checks_damage_threshold` on on-hit chains, `chain_to_ground` +
@@ -33,13 +33,15 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
 - `reference/media/` (local, gitignored): the owner's live-client screenshots, `lobby/` (36) and `ingame/` (21).
   Only the owner adds files there; never copy from their Pictures folders.
 
+- Sandbox (`game/main.gd`) now plays spells: blue deck = 8 White units + LightPulse, ShieldsUp, SolarFlare (unit under
+  the mouse), HailOfArrows on keys 9, 0, -, =; red AI rotates through a Black deck incl. Frenzy, Freeze, Shatter Ice
+  (spells target a random unit of the side the card is for, epics the own nexus, two-point spells press the key twice).
+
 ## Next step (in order, one at a time, test after each)
-1. Sandbox: `game/main.gd` should play a full deck including spells (`ctEntity` spells need a unit under the mouse,
-   Relocate needs two clicks, Cataclysm only near the nexus) and the red AI should use all factions.
-2. Phase 3 deck rules (12 slots, 2 colors, 1 epic; `BaseConflict.Constants.Cards.pas` + the deck validation in the
+1. Phase 3 deck rules (12 slots, 2 colors, 1 epic; `BaseConflict.Constants.Cards.pas` + the deck validation in the
    original client) and the commander/deck data model. Read `docs/reference-material.md` for live-client facts.
-3. Phase 4 HUD (card bar, resources, tier button, minimap) replicating the live-client screenshots in `reference/media/`.
-4. Late phase: audit Crystal Clash Steam patch notes newer than the repo snapshot (2022-01-19) and apply
+2. Phase 4 HUD (card bar, resources, tier button, minimap) replicating the live-client screenshots in `reference/media/`.
+3. Late phase: audit Crystal Clash Steam patch notes newer than the repo snapshot (2022-01-19) and apply
    balance changes via the extractor (see CLAUDE.md Decisions).
 
 ## Rules that bit us

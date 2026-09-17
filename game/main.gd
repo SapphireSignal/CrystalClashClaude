@@ -5,13 +5,13 @@ extends Node3D
 
 const BLUE_DECK := [
 	"Units/White/FootmanDrop", "Units/White/ArcherDrop", "Units/White/FootmanSpawner", "Units/White/ArcherSpawner",
-	"Units/White/BallistaDrop", "Units/White/PriestDrop", "Units/White/MonkDrop", "Units/White/MarksmanDrop",
-	"Units/White/HeavyGunnerDrop", "Units/White/SuntowerBuilding", "Units/White/AvengerDrop", "Units/White/DefenderDrop",
+	"Units/White/BallistaDrop", "Units/White/PriestDrop", "Units/White/MonkDrop", "Units/White/SuntowerBuilding",
+	"Spells/White/LightPulse.sps", "Spells/White/ShieldsUp.sps", "Spells/White/SolarFlare.sps", "Spells/White/HailOfArrows.sps",
 ]
 const RED_DECK := [
 	"Units/Black/VoidSkeletonDrop", "Units/Black/VoidBowmanDrop", "Units/Black/VoidSkeletonSpawner", "Units/Black/VoidBowmanSpawner",
-	"Units/Black/VoidWormDrop", "Units/Black/VoidBaneDrop", "Units/Black/VoidCauldronDrop", "Units/Black/VoidSlimeDrop",
-	"Units/Black/FrostgoyleFountainBuilding", "Units/Black/VoidWraithDrop", "Units/Black/VoidAltarBuilding", "Units/Black/TyrusDrop",
+	"Units/Black/VoidWormDrop", "Units/Black/VoidBaneDrop", "Units/Black/VoidCauldronDrop", "Units/Black/FrostgoyleFountainBuilding",
+	"Units/Black/TyrusDrop", "Spells/Black/Frenzy.sps", "Spells/Black/Freeze.sps", "Spells/Black/ShatterIce.sps",
 ]
 const SLOT_KEYS := [KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7, KEY_8, KEY_9, KEY_0, KEY_MINUS, KEY_EQUAL]
 
@@ -20,6 +20,7 @@ var _accumulator_ms: float = 0.0
 var _views: Dictionary = {}   # entity id -> MeshInstance3D
 var _label: Label
 var _red_next_play_at: int = 15000
+var _red_cursor: int = 0
 
 @onready var _units_root: Node3D = $Units
 @onready var _camera: Camera3D = $Camera3D
@@ -94,27 +95,94 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		_play(Simulation.TEAM_BLUE, slot, _mouse_world_2d())
 
 
+var _pending_slot: int = -1        # multi-point spell (Relocate): press the key once per point
+var _pending_points: Array = []
+
+
 func _play(team: int, slot: int, where: Vector2) -> void:
 	var c: Commander = sim.commanders[team]
+	var card := c.slots[slot].card
 	var target: Variant = where
-	if c.slots[slot].card.is_spawner():
+	if card.is_spawner():
 		target = _next_free_field(team)
 		if target == null:
 			return
+	elif card.is_spell():
+		if card.target_type == "ctEntity":   # SolarFlare, Frenzy: the unit under the mouse
+			var unit := _unit_at(where)
+			if unit == null:
+				print("play %s: no unit under the mouse" % card.name)
+				return
+			target = unit.id
+		else:
+			var count := _spell_point_count(card)
+			if count > 1:   # Relocate: A on the first press, B on the second
+				if _pending_slot != slot:
+					_pending_slot = slot
+					_pending_points = []
+				_pending_points.append(where)
+				if _pending_points.size() < count:
+					print("play %s: point %d of %d set" % [card.name, _pending_points.size(), count])
+					return
+				target = _pending_points
+				_pending_slot = -1
 	var result := sim.play_card(team, slot, target)
 	if result != Simulation.PlayResult.OK:
-		print("play %s: %s" % [c.slots[slot].card.name, Simulation.PlayResult.keys()[result]])
+		print("play %s: %s" % [card.name, Simulation.PlayResult.keys()[result]])
 
 
-## Simple opponent: every few seconds play the first ready drop near its own lane node, spawners on the grid.
+func _spell_point_count(card: Cards.CardDef) -> int:
+	return int(UnitDb.raw(card.unit_id)["values"].get("eiAbilityTargetCount", {}).get("SpellGroup", 1))
+
+
+func _spell_props(card: Cards.CardDef) -> Array:
+	return UnitDb.raw(card.unit_id)["values"].get("eiUnitProperties", {}).get("SpellGroup", [])
+
+
+func _unit_at(where: Vector2) -> SimEntity:
+	var best: SimEntity = null
+	var best_dist := INF
+	for e in sim.alive_entities():
+		if not e.is_targetable() or e.is_spawner():
+			continue
+		var d := e.position.distance_to(where) - e.collision_radius
+		if d <= 0.5 and d < best_dist:
+			best_dist = d
+			best = e
+	return best
+
+
+## Simple opponent: every few seconds play the first ready card: drops near its own lane node, spawners on
+## the grid, spells on a random unit of the side the card is for (epics at the own nexus).
 func _red_ai() -> void:
 	if sim.time_ms < _red_next_play_at:
 		return
 	_red_next_play_at = sim.time_ms + 6000
 	var c: Commander = sim.commanders[Simulation.TEAM_RED]
-	for i in c.slots.size():
-		if c.slots[i].is_ready(sim.time_ms, c):
+	for k in c.slots.size():   # round-robin so spells and buildings get their turn
+		var i: int = (_red_cursor + k) % c.slots.size()
+		if not c.slots[i].is_ready(sim.time_ms, c):
+			continue
+		var card := c.slots[i].card
+		if not card.is_spell():
+			_red_cursor = i + 1
 			_play(Simulation.TEAM_RED, i, Vector2(50 + sim.rng.randf() * 10, -23))
+			return
+		var props := _spell_props(card)
+		var team := Simulation.TEAM_RED if props.has("upSpellAlly") else Simulation.TEAM_BLUE
+		var units := sim.alive_entities(team).filter(func(e): return e.has("upUnit") and e.is_targetable())
+		if units.is_empty():
+			continue
+		var unit: SimEntity = units[sim.rng.randi_range(0, units.size() - 1)]
+		var target: Variant = unit.position
+		if card.target_type == "ctEntity":
+			target = unit.id
+		elif card.epic:
+			target = sim.entities[sim.nexus_ids[Simulation.TEAM_RED]].position + Vector2(-8, 0)
+		elif _spell_point_count(card) > 1:
+			target = [unit.position, unit.position + Vector2(-5, 0)]
+		if sim.play_card(Simulation.TEAM_RED, i, target) == Simulation.PlayResult.OK:
+			_red_cursor = i + 1
 			return
 
 
