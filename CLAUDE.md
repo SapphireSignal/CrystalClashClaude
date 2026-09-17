@@ -154,7 +154,9 @@ summons, Rootdude, Forest Guardian shared cooldown, Groundbreaker burrow, Oracle
 siege; 6 spells incl. Saplingcharge's timer waves). Blue is complete (13 units: energy, gadgets, gatling
 links, missiles, ObserverDrone cloak/range aura, Atlas levels from card plays, PhaseDrone blink, ShieldDrone
 projectile reflection, Bombardier line laser, Aegis cones/starfall/rift; 7 spells incl. Relocate's two-point
-cast and OrbitalStrike's bombardment buffs). Golems (Crystal Legion) next. 650 tests pass.
+cast and OrbitalStrike's bombardment buffs). Golems (Crystal Legion) in progress: the 9 standard units (small/medium
+melee, small ranged, both flyers, boss, three towers) work unchanged and are tested; BigMelee Splinter, SmallCaster
+Crystal Speed links, BigCaster beam, SiegeGolem artillery and the 5 spells remain. 668 tests pass.
 `docs/reference-material.md` lists the owner's live-client screenshots and the balance deltas seen so far
 (towers/nexus reworked after 2022). `game/main.tscn` is a sandbox with capsule
 units on the Compatibility renderer: keys 1-9,0,-,= play the 12 deck slots, a simple red AI plays back.

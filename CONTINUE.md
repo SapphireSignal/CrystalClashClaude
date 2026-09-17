@@ -2,8 +2,11 @@
 
 Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
 
-## State (2026-09-17, checkpoint 19)
-- Phase 2 core sim works and is tested (650 tests). White, Black, Green and **Blue** factions complete.
+## State (2026-09-17, checkpoint 20)
+- Phase 2 core sim works and is tested (668 tests). White, Black, Green and **Blue** factions complete. Golems started:
+  the 9 standard units (GolemsSmallMeleeGolem, MediumMelee tremor cone, SmallRanged siege, Small/BigFlying multishot,
+  BossGolem cone + debut asteroid, the three 90-s towers incl. MeleeGolemTower punch/sweep) passed without code
+  changes (`test_golems_*` in tests/test_sim.gd).
 - Blue done this checkpoint: ObserverDrone (self-target links, `TWelaReadyEntityNearbyComponent` cloak, range aura;
   stealthed/banished units ignore capture points), Atlas (`reCardTimesPlayed` per deck slot -> `reLevel`, extractor
   resolves `if CurrentLevel < N` chains and CreateData locals into `by_level` / `level_expr` values; on-hit chains
@@ -36,9 +39,14 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
   Only the owner adds files there; never copy from their Pictures folders.
 
 ## Next step (in order, one at a time, test after each)
-1. Golems / Crystal Legion (`docs/factions/golems.md`; the source folder is `Scripts/Units/Golems`, `Colorless` holds
-   the neutral golem variants): units then spells, each with a test against the doc's numbers. `CrystalPowerSpark`
-   now has params `[TeamID, Front]` (extractor fix). Read `docs/reference-material.md` for live-client facts.
+1. Golems / Crystal Legion (`docs/factions/golems.md`, sections 1, 3 and 4; source `Scripts/Units/Golems`, `Colorless`
+   holds the neutral scenario variants). Remaining, one at a time with a test each: GolemsBigMeleeGolem Splinter
+   (`TWelaTriggerCheckTakeDamageThresholdComponent` + `RedirectToGround.RandomizeGroundtarget(3, 4)` + SplinterProjectile
+   spawning a SmallMeleeGolem on landing), GolemsSmallCasterGolem Crystal Speed (`SetBuildCheckGroup`, `MaxNewTargetCount(1)`,
+   `Links/CrystalSpeed` -30 % cooldown while linked), GolemsBigCasterGolem beam (`Links/BigCasterGolemLink` ramping x1.5
+   per 3 s to x3), GolemsSiegeGolem (`ChangeTargetToMyself` charge, `ConsumesAll`, group 4 property triggers), then the
+   5 spells (Cataclysm, Earthquake epic, EchoesOfTheFuture income loan, Petrify, StoneCircle charm; `CrystalPowerSpark`
+   params are `[TeamID, Front]`). Read `docs/reference-material.md` for live-client facts.
 2. Then the sandbox should show a full deck including spells (main.gd: `ctEntity` spells need a unit under
    the mouse, Relocate needs two clicks), then phase 3 deck rules (12 slots, 2 colors, 1 epic) and phase 4 HUD.
 3. Late phase: audit Crystal Clash Steam patch notes newer than the repo snapshot (2022-01-19) and apply

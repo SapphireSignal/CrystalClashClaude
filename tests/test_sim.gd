@@ -2207,3 +2207,137 @@ func test_relocate() -> void:
 	while sim.time_ms < t + 20100:
 		sim.step()
 	runner.check(not monk.has("upImmuneToRelocate"), "relocate immunity lasts 20 s")
+
+
+func test_golems_standard_units() -> void:
+	var sim := Simulation.new(2, 4)
+	var small := sim.spawn("Units/Golems/GolemsSmallMeleeGolem", Simulation.TEAM_BLUE, Vector2(-40, -23))
+	var victim := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(-38.5, -23))
+	victim.locked_until = 1 << 30
+	var t := sim.time_ms
+	while victim.health == 265.0 and sim.time_ms < t + 3000:
+		sim.step()
+	runner.check_near(victim.health, 265.0 - 14.0, "small melee golem: 14 melee")
+	runner.check(small.has("upSpellImmune"), "and spell immune")
+	sim._kill(small)
+	sim._kill(victim)
+	# medium melee golem: 45 degree tremor cone of 32 splash over 6.0
+	var medium := sim.spawn("Units/Golems/GolemsMediumMeleeGolem", Simulation.TEAM_BLUE, Vector2(-40, -10))
+	var front := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(-38.6, -10))
+	var behind := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(-34.5, -10))
+	var aside := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(-37, -6))
+	for m in [front, behind, aside]:
+		m.locked_until = 1 << 30
+	t = sim.time_ms
+	while front.health == 265.0 and sim.time_ms < t + 3000:
+		sim.step()
+	runner.check_near(front.health, 265.0 - 32.0, "medium melee golem: 32 splash on the target")
+	runner.check_near(behind.health, 265.0 - 32.0, "and on units up to 6 behind it in the 45 degree cone")
+	runner.check_near(aside.health, 265.0, "but not outside the cone")
+	for m in [medium, front, behind, aside]:
+		sim._kill(m)
+	# small ranged golem: siege pebbles x4 vs fortified
+	var ranged := sim.spawn("Units/Golems/GolemsSmallRangedGolem", Simulation.TEAM_BLUE, Vector2(-40, 0))
+	var tower := sim.spawn("Units/Neutral/LanetowerLevel1", Simulation.TEAM_RED, Vector2(-33, 0))
+	tower.locked_until = 1 << 30
+	var tower_hp := tower.health
+	t = sim.time_ms
+	while tower.health == tower_hp and sim.time_ms < t + 4000:
+		sim.step()
+	runner.check_near(tower.health, tower_hp - 15.0 * 4.0, "small ranged golem: 15 siege damage, x4 on fortified")
+	sim._kill(ranged)
+	sim._kill(tower)
+
+
+func test_golems_multishot_and_towers() -> void:
+	var sim := Simulation.new(2, 4)
+	var flyer := sim.spawn("Units/Golems/GolemsSmallFlyingGolem", Simulation.TEAM_BLUE, Vector2(-40, -23))
+	var a := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(-36, -23))
+	var b := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(-36, -21))
+	var c := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(-36, -25))
+	for m in [a, b, c]:
+		m.locked_until = 1 << 30
+	var t := sim.time_ms
+	while a.health == 265.0 and b.health == 265.0 and c.health == 265.0 and sim.time_ms < t + 4000:
+		sim.step()
+	for i in 20:
+		sim.step()
+	var hit := [a, b, c].filter(func(m): return m.health < 265.0).size()
+	runner.check_eq(hit, 2, "small flying golem: multishot at two different targets")
+	runner.check([a, b, c].any(func(m): return is_equal_approx(m.health, 265.0 - 29.0)), "29 ranged each")
+	sim._kill(flyer)
+	var big := sim.spawn("Units/Golems/GolemsBigFlyingGolem", Simulation.TEAM_BLUE, Vector2(-40, -23))
+	for m in [a, b, c]:
+		m.health = 265.0
+	t = sim.time_ms
+	while a.health == 265.0 and sim.time_ms < t + 4000:
+		sim.step()
+	for i in 20:
+		sim.step()
+	hit = [a, b, c].filter(func(m): return m.health < 265.0).size()
+	runner.check_eq(hit, 3, "big flying golem: three targets")
+	runner.check_near(a.health, 265.0 - 63.0, "63 ranged each")
+	sim._kill(big)
+	# towers
+	var small_tower := sim.spawn("Units/Golems/GolemsSmallGolemTower", Simulation.TEAM_BLUE, Vector2(-40, -10))
+	runner.check_eq(small_tower.lifetime_ms, 90000, "golem towers live 90 s")
+	var far := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(-29.5, -10))
+	far.locked_until = 1 << 30
+	t = sim.time_ms
+	while far.health == 265.0 and sim.time_ms < t + 3000:
+		sim.step()
+	runner.check_near(far.health, 265.0 - 30.0, "small golem tower: 30 ranged at range 11")
+	sim._kill(small_tower)
+	sim._kill(far)
+	var melee_tower := sim.spawn("Units/Golems/GolemsMeleeGolemTower", Simulation.TEAM_BLUE, Vector2(-40, 0))
+	var small_unit := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(-38.5, 0))
+	small_unit.locked_until = 1 << 30
+	small_unit.max_health = 150.0   # max hp < 200: swept, not punched
+	small_unit.health = 150.0
+	var small_hp := small_unit.health
+	t = sim.time_ms
+	while small_unit.health == small_hp and sim.time_ms < t + 3000:
+		sim.step()
+	runner.check_near(small_unit.health, small_hp - 0.333 * 110.0, "melee golem tower sweeps small targets for 36.63 splash", 0.05)
+	sim._kill(small_unit)
+	var big_unit := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(-38.5, 0))   # 265 max hp
+	big_unit.locked_until = 1 << 30
+	t = sim.time_ms
+	while big_unit.health == 265.0 and sim.time_ms < t + 3000:
+		sim.step()
+	runner.check_near(big_unit.health, 265.0 - 110.0, "and punches targets with max hp >= 200 for 110")
+	sim._kill(melee_tower)
+	sim._kill(big_unit)
+	var big_tower := sim.spawn("Units/Golems/GolemsBigGolemTower", Simulation.TEAM_BLUE, Vector2(-40, 10))
+	var x := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(-33, 10))
+	var y := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(-33, 12))
+	x.locked_until = 1 << 30
+	y.locked_until = 1 << 30
+	t = sim.time_ms
+	while x.health == 265.0 and sim.time_ms < t + 3000:
+		sim.step()
+	for i in 20:
+		sim.step()
+	runner.check(x.health < 265.0 and y.health < 265.0, "big golem tower: 68 at two targets")
+
+
+func test_golems_boss_golem() -> void:
+	var sim := Simulation.new(2, 4)
+	var near := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(-37, -23))
+	near.locked_until = 1 << 30
+	var boss := sim.spawn("Units/Golems/GolemsBossGolem", Simulation.TEAM_BLUE, Vector2(-40, -23))
+	runner.check(boss.has("upGround") and boss.has("upFlying"), "the boss counts as ground and flying")
+	var t := sim.time_ms
+	while sim.time_ms < t + 600:
+		sim.step()
+	runner.check_near(near.health, 265.0 - 100.0, "debut asteroid: 100 splash in 4.5 after 500 ms")
+	while sim.time_ms < t + 1700:   # legendary spawn lockout 1600
+		sim.step()
+	var wisp := sim.spawn("Units/Green/Wisp", Simulation.TEAM_RED, Vector2(-38, -23))
+	wisp.locked_until = 1 << 30
+	near.health = 265.0
+	boss.locked_until = 0
+	t = sim.time_ms
+	while near.health == 265.0 and not (wisp.health < 75.0) and sim.time_ms < t + 4000:
+		sim.step()
+	runner.check(near.health < 265.0 or not wisp.alive, "370 cone cleave against ground or flying targets")
