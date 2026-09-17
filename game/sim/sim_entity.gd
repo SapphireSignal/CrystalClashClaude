@@ -149,6 +149,9 @@ func move_goal(sim) -> Vector2:
 
 ## Unit property check including buffs and the derived upInjured (health below max).
 func has(prop: String) -> bool:
+	for b in buffs:
+		if b.removed_properties.has(prop):
+			return false
 	if properties.has(prop):
 		return true
 	if prop == "upInjured":
@@ -287,8 +290,8 @@ func target_count(group: int = SimConstants.GROUP_MAINWEAPON) -> int:
 	return n
 
 
-func attention_range() -> float:
-	return bb.get_float("eiAttentionrange", SimConstants.GROUP_APPROACH, SimConstants.DEFAULT_ATTENTION_RANGE)
+func attention_range(group: int = SimConstants.GROUP_APPROACH) -> float:
+	return bb.get_float("eiAttentionrange", group, SimConstants.DEFAULT_ATTENTION_RANGE)
 
 
 # ---------------------------------------------------------------- classification
@@ -316,7 +319,7 @@ func can_attack() -> bool:
 
 
 func can_move() -> bool:
-	if is_building() or is_lane_node() or is_spell_effect() or has("upCharm") or speed() <= 0.0:
+	if is_building() or is_lane_node() or is_spell_effect() or has("upCharm") or speed() <= 0.0 or max_health <= 0.0:
 		return false
 	for p in ["upRooted", "upGrounded", "upLifted", "upImmobilized"]:
 		if has(p):

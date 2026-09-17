@@ -16,6 +16,10 @@ var source_id: int = 0
 var buff_types: Array = []          # btPositive, btNegative, btState, btSummoningSickness ...
 var properties: Array = []          # unit properties granted while active
 var late_properties: Array = []     # a second property group with its own longer cooldown (Frozen -> upImmuneToFrozen)
+var removed_properties: Array = []  # TUnitPropertyComponent.Remove (Grounded strips upFlying)
+var on_expire_script: String = ""   # TWarheadApplyScriptComponent in the duration group: applied when it runs out
+var link_welas: Array = []          # link entity groups (Links/RootlingLink.ets) parsed as welas
+var link_bb: Blackboard = null
 var late_expires_at: int = -1
 var link_damage: float = 0.0        # link entity brain (Links/VecraAura.ets): periodic damage to the linked target
 var link_damage_type: int = 0
@@ -133,6 +137,7 @@ static func create(script_name: String, now: int, params: Dictionary = {}) -> Bu
 	var prop_groups: Array = []   # [group, props]
 	var timer_ready := false
 	var unready_groups := {}
+	var pending_scripts: Array = []   # rescue scripts for prevent-death buffs, otherwise applied when the buff ends
 	for comp in data["components"]:
 		if comp.has("cond") and not params.get("__" + comp["cond"], false):
 			continue   # component only exists for melee / ranged owners
@@ -164,7 +169,14 @@ static func create(script_name: String, now: int, params: Dictionary = {}) -> Bu
 			"TAutoBrainBuffComponent":
 				b.buff_types = comp.get("args", [[]])[0]
 			"TUnitPropertyComponent":
-				prop_groups.append([g, comp.get("args", [[]])[0]])
+				var removes := false
+				for call in calls:
+					if call[0] == "Remove":
+						removes = true
+				if removes:
+					b.removed_properties.append_array(comp.get("args", [[]])[0])
+				else:
+					prop_groups.append([g, comp.get("args", [[]])[0]])
 			"TWelaReadyCooldownComponent":
 				if b.prevents_death:
 					continue
@@ -277,7 +289,7 @@ static func create(script_name: String, now: int, params: Dictionary = {}) -> Bu
 				if b.on_hit_group >= 0:
 					b.on_hit_script = script
 				else:
-					b.rescue_scripts.append(script)
+					pending_scripts.append(script)
 			"TWarheadSpottyTeleportComponent":
 				for call in calls:
 					if call[0] == "ToNexus":
@@ -311,6 +323,10 @@ static func create(script_name: String, now: int, params: Dictionary = {}) -> Bu
 				for call in calls:
 					if call[0] == "Times" or call[0] == "Nth":
 						b.tick_times = int(call[1][0])
+	if b.prevents_death:
+		b.rescue_scripts = pending_scripts
+	elif not pending_scripts.is_empty():
+		b.on_expire_script = pending_scripts[0]
 	for item in prop_groups:
 		var own := int(b._value("eiCooldown", item[0], -1.0))
 		if item[0] != duration_group and own > int(b._value("eiCooldown", duration_group, 0)) and has_remove and not b.prevents_death:

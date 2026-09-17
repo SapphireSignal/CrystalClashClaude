@@ -378,7 +378,7 @@ def parse_spell(path: Path) -> dict:
 def extract_units() -> dict:
     units = {}
     paths = list(SCRIPTS.glob("Units/**/*.ets")) + list(SCRIPTS.glob("Projectiles/**/*.ets")) + list(SCRIPTS.glob("Spells/**/*.ets")) \
-        + list(SCRIPTS.glob("Links/*.ets"))
+        + list(SCRIPTS.glob("Links/*.ets")) + list(SCRIPTS.glob("Effects/**/*.ets"))
     for path in sorted(paths):
         units[str(path.relative_to(SCRIPTS).with_suffix("")).replace("\\", "/")] = parse_script(path)
     for path in sorted(SCRIPTS.glob("Spells/**/*.sps")):

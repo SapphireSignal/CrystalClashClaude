@@ -6,7 +6,7 @@ class_name Wela
 ## (Monument of Light), on-healed triggers and cooldown resets (Defender).
 
 enum Kind { FIGHT, SUB, ON_TAKE_DAMAGE, DEALT_DAMAGE_MULT, RESOURCE_REGEN, ON_DEATH, LINK, ON_HEALED, SELF_GROUND, ON_PROPERTY,
-	PREVENT_DEATH, ON_RESOURCE, SELF_PASSIVE }
+	PREVENT_DEATH, ON_RESOURCE, SELF_PASSIVE, WAIT }
 
 var group: int
 var kind: Kind
@@ -61,6 +61,10 @@ var removes_buff_types_any: Array = [] # TWarheadSpottyRemoveBuffComponent.MustH
 var remove_beacon_props: Array = []    # TWelaEffectRemoveBeaconComponent.SearchForWelaBeacon (PermaFrost wipes Frozen)
 var damage_percent_of_max: bool = false   # TWarheadSpottyDamageComponent.PercentageOfMaxHealth
 var ignore_own_radius: bool = false    # TWelaTargetingRadialComponent.IgnoreOwnCollisionradius
+var approach: bool = false             # TBrainApproachComponent: walk toward this group's attention targets
+var link_time: int = 250               # TBrainWelaLinkComponent.LinkTime: re-acquire cadence (DEFAULT_LINK_BUILD_TIME)
+var preemptive_link: bool = false      # TBrainWelaLinkComponent.Preemptive: stands still while linked
+var fires_at_create_group: int = -1    # TLinkBrainComponent.FiresAtCreate([g]) on a link entity
 # effects
 var heals: bool = false
 var damages: bool = false
@@ -180,17 +184,39 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 			"TBrainWelaSelftargetGroundComponent":
 				var w: Wela = get.call(g, Kind.SELF_GROUND)
 				w.kind = Kind.SELF_GROUND
-			"TBrainWelaLinkComponent":
-				var w: Wela = get.call(g, Kind.LINK)
-				w.kind = Kind.LINK
-				w.link_pattern = bb.get_value("eiLinkPattern", g, "").replace("\\", "/")
 			"TWelaHelperActivateTimerComponent":
 				for c in calls:
 					if c[0] == "Delay":
 						get.call(g, Kind.LINK).link_delay = int(c[1][0])
+			"TBrainWelaLinkComponent":
+				var w: Wela = get.call(g, Kind.LINK)
+				w.kind = Kind.LINK
+				w.link_pattern = bb.get_value("eiLinkPattern", g, "").replace("\\", "/")
+				for c in calls:
+					if c[0] == "LinkTime":
+						w.link_time = int(c[1][0])
+					elif c[0] == "Preemptive":
+						w.preemptive_link = true
 			"TWelaLinkEffectUnitPropertyComponent":
 				if args.size() >= 1:
 					get.call(g, Kind.LINK).link_property = str(args[0])
+			"TBrainApproachComponent":
+				get.call(g, Kind.SUB).approach = true
+			"TBrainWaitComponent":
+				get.call(g, Kind.WAIT).kind = Kind.WAIT
+			"TLinkBrainComponent":
+				var w: Wela = get.call(g, Kind.SUB)
+				for c in calls:
+					if c[0] == "FiresAtCreate":
+						w.fires_at_create_group = UnitDb.group_id(c[1][0][0], map)
+			"TWelaTargetingRadialAttentionComponent":
+				for gg in groups:
+					var w: Wela = get.call(gg, Kind.SUB)
+					for c in calls:
+						if c[0] == "SetTargetTeamConstraint":
+							w.target_allies = c[1][0] == "tcAllies"
+							w.target_any_team = c[1][0] == "tcAll"
+							w.team_constraint_set = true
 			"TWelaTargetingRadialComponent":
 				for gg in groups:
 					var w: Wela = get.call(gg, Kind.SUB)
@@ -605,6 +631,8 @@ func owner_ready(owner: SimEntity) -> bool:
 		if not _compare(value, ready_op, ready_reference):
 			return false
 	if ready_resource == "reMana" and ready_not_empty and owner.mana <= 0:
+		return false
+	if suicide_when_empty and owner.ammo > 0:   # CheckEmpty(reWelaCharge): only once the charges are spent
 		return false
 	return true
 

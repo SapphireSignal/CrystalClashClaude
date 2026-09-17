@@ -238,10 +238,16 @@ func _update_buffs(e: SimEntity) -> void:
 			if not b.late_properties.is_empty():   # Frozen ends, the immunity group keeps running
 				b.properties = b.late_properties
 				b.late_properties = []
+				b.removed_properties = []
 				b.expires_at = b.late_expires_at
 				b.stops_movement = false
+				if b.on_expire_script != "" and Buff.exists(b.on_expire_script):   # Grounded -> GroundedEnds take-off
+					apply_buff(e, b.on_expire_script, {}, entities.get(b.source_id))
+					b.on_expire_script = ""
 				continue
 			e.remove_buff(b)
+			if b.on_expire_script != "" and Buff.exists(b.on_expire_script):   # Grounded -> GroundedEnds take-off
+				apply_buff(e, b.on_expire_script, {}, entities.get(b.source_id))
 			if b.kills_on_expiry:   # Undying runs out
 				_kill(e)
 				return
@@ -564,10 +570,6 @@ func step() -> void:
 		if e.is_lane_node():
 			_think_lane_node(e)
 			continue
-		if e.think_once_waits and not e.thought_once:   # WaitOneFrame / TThinkImpulseTimerCooldownComponent
-			if time_ms >= e.created_at + e.think_delay_ms:
-				_think_once(e)
-			continue
 		if e.lifetime_ms > 0 and time_ms >= e.created_at + e.lifetime_ms:   # GROUP_BUILDING_LIFETIME suicide
 			_kill(e)
 			continue
@@ -578,6 +580,10 @@ func step() -> void:
 		_regenerate(e)
 		_resolve_pending_fire(e)
 		_think_passives(e)
+		if e.think_once_waits and not e.thought_once:   # WaitOneFrame / TThinkImpulseTimerCooldownComponent
+			if time_ms >= e.created_at + e.think_delay_ms:
+				_think_once(e)
+			continue
 		if not e.can_think(time_ms):
 			continue
 		_think(e)
@@ -677,10 +683,23 @@ func _think(e: SimEntity) -> void:
 		waiting = true
 	if waiting:
 		return
+	for w in e.welas:   # TBrainWelaLinkComponent.Preemptive: a linked Rootling stands still
+		if w.kind == Wela.Kind.LINK and w.preemptive_link and _link_count(e, w) > 0:
+			if e.moving:
+				_stand(e)
+			return
+	for w in e.welas:   # TBrainWaitComponent: stop while an enemy is within its attention range
+		if w.kind == Wela.Kind.WAIT and _pick_target(e, w, e.attention_range(w.group)) != null:
+			if e.moving:
+				_stand(e)
+			return
 	if e.can_move():
-		var main := e.wela(SimConstants.GROUP_MAINWEAPON)
-		if main != null and e.can_attack():
-			var approach := _pick_target(e, main, e.attention_range())
+		for w in e.welas:   # TBrainApproachComponent groups, in order (group 0 enemies; HeartOfTheForest group 4 allies)
+			if not w.approach or w.used or not _wela_ready(e, w):
+				continue
+			if w.group == SimConstants.GROUP_APPROACH and not e.can_attack():
+				continue
+			var approach := _pick_target(e, w, e.attention_range(w.group))
 			if approach != null:
 				e.target_id = approach.id
 				_move_to(e, approach.id, approach.position, false)
@@ -735,6 +754,10 @@ func _think_link(e: SimEntity, w: Wela) -> void:
 		return
 	var range := e.range_of(w.group)
 	var key := SimEntity.link_key(e.id, w.group)
+	var max_links := e.bb.get_int("eiWelaTargetCount", w.group, 1)
+	var links := _link_count(e, w)
+	if w.next_at > time_ms and links == 0:
+		return   # LinkTime: re-acquire cadence
 	for other: SimEntity in entities.values():
 		var linked: bool = other.link_buffs.has(key)
 		var allies := w.target_allies or not w.team_constraint_set   # auras link allies unless told otherwise
@@ -743,7 +766,9 @@ func _think_link(e: SimEntity, w: Wela) -> void:
 		var validator: Wela = e.wela(w.validate_group) if w.validate_group >= 0 else null
 		if linked and (not in_range or (validator != null and not validator.target_allowed(other, e))):
 			_break_link_key(other, key)
-		elif not linked and in_range and other.is_targetable() and w.target_allowed(other, e):
+		elif not linked and in_range and links < max_links and other.is_targetable() and w.target_allowed(other, e):
+			links += 1
+			w.next_at = time_ms + w.link_time
 			var payload := "Links/" + w.link_pattern.get_file().replace("Aura", "")
 			var b: Buff
 			if Buff.exists(payload):
@@ -754,14 +779,21 @@ func _think_link(e: SimEntity, w: Wela) -> void:
 				other.add_buff(b)
 			if w.link_property != "":
 				b.properties.append(w.link_property)
-			if UnitDb.has_unit(w.link_pattern):   # a link entity with its own brain (Links/VecraAura.ets)
-				var lb := Blackboard.new()
-				UnitDb.fill_blackboard(lb, w.link_pattern, league)
-				b.link_damage = lb.get_float("eiWelaDamage", 0, 0.0)
-				b.link_damage_type = SimConstants.damage_mask(lb.get_value("eiDamageType", 0, []))
-				b.link_leech = lb.get_float("eiWelaModifier", 1, 0.0)
-				b.tick_interval = lb.get_int("eiCooldown", 0, 1000)
+			if UnitDb.has_unit(w.link_pattern):   # a link entity with its own brain (Links/VecraAura.ets, RootlingLink.ets)
+				var raw := UnitDb.raw(w.link_pattern)
+				b.link_bb = Blackboard.new()
+				UnitDb.fill_blackboard(b.link_bb, w.link_pattern, league)
+				b.link_welas = Wela.parse(raw.get("components", []), b.link_bb, UnitDb.group_map(raw))
+				# TLinkEventRedirecter: empty damage / cooldown / type reads fall back to the owner's link group
+				b.link_damage = b.link_bb.get_float("eiWelaDamage", 0, e.bb.get_float("eiWelaDamage", w.group, 0.0))
+				var types: Variant = b.link_bb.get_value("eiDamageType", 0, e.bb.get_value("eiDamageType", w.group, []))
+				b.link_damage_type = SimConstants.damage_mask(types)
+				b.link_leech = b.link_bb.get_float("eiWelaModifier", 1, 0.0)
+				b.tick_interval = b.link_bb.get_int("eiCooldown", 0, e.bb.get_int("eiCooldown", w.group, 1000))
 				b.next_tick_at = time_ms + b.tick_interval
+				for lw in b.link_welas:
+					if lw.fires_at_create_group >= 0:   # FiresAtCreate: root once when the beam forms
+						_fire_link_group(e, other, b, lw.fires_at_create_group)
 			other.link_buffs[key] = b
 		elif linked:
 			var b: Buff = other.link_buffs[key]
@@ -770,6 +802,44 @@ func _think_link(e: SimEntity, w: Wela) -> void:
 				var dealt := deal_damage(other, b.link_damage, b.link_damage_type, e)
 				if dealt > 0.0 and b.link_leech > 0.0:
 					heal(e, dealt * b.link_leech, SimConstants.DamageType.HOT, e)
+				for lw in b.link_welas:
+					if lw.group == 0:
+						for cg in lw.chain_groups:
+							_fire_link_group(e, other, b, cg)
+
+
+func _link_count(e: SimEntity, w: Wela) -> int:
+	var key := SimEntity.link_key(e.id, w.group)
+	var n := 0
+	for other: SimEntity in entities.values():
+		if other.alive and other.link_buffs.has(key):
+			n += 1
+	return n
+
+
+## A link entity's chained group fired at the linked target: apply script, or splash around the target
+## (RedirectToGround) using the link's own values.
+func _fire_link_group(owner: SimEntity, target: SimEntity, b: Buff, group: int) -> void:
+	var lw: Wela = null
+	for x in b.link_welas:
+		if x.group == group:
+			lw = x
+	if lw == null or not target.alive:
+		return
+	if lw.splash:
+		var radius := b.link_bb.get_float("eiWelaAreaOfEffect", group, 0.0)
+		var amount := b.link_bb.get_float("eiWelaDamage", group, 0.0)
+		var dtype := SimConstants.damage_mask(b.link_bb.get_value("eiDamageType", group, []))
+		for other: SimEntity in entities.values():
+			if not other.alive or not other.is_targetable() or other.team == 0:
+				continue
+			if lw.target_allies != (other.team == owner.team) or not lw.target_allowed(other, owner):
+				continue
+			if other.position.distance_to(target.position) - other.collision_radius <= radius:
+				deal_damage(other, amount, dtype, owner)
+	elif lw.target_allowed(target, owner):
+		if lw.apply_script != "" and Buff.exists(lw.apply_script):
+			apply_buff(target, lw.apply_script, {}, owner)
 
 
 ## Break every aura link `source` provides to `target`.
@@ -882,8 +952,11 @@ func _fire_group(e: SimEntity, group: int, target: SimEntity) -> void:
 	for item in w.extra_apply_scripts:
 		if target.alive and Buff.exists(item[0]):
 			_apply_scripted(target, item[0], item[1], item[2], e)
-	if w.suicide and e.is_targetable() and e.alive:   # TWelaEffectSuicideComponent on a real unit: eiDie
-		_kill(e)
+	if w.suicide and e.alive and w.kind != Wela.Kind.FIGHT and not e.thinks_once:   # TWelaEffectSuicideComponent
+		if e.is_targetable():
+			_kill(e)   # a real unit dies (Sapling timed life)
+		else:
+			_remove_silently(e)   # a field vanishes (SporeField after 10 s)
 		return
 	for ag in w.activates_groups:   # TWelaEffectActivationAbilityComponent.SetsActive
 		var aw := e.wela(ag)
@@ -1159,8 +1232,6 @@ func _kill(e: SimEntity, killer: SimEntity = null) -> void:
 		finished = true
 		winner_team = TEAM_BLUE if e.team == TEAM_RED else TEAM_RED
 		team_lost.emit(e.team)
-	elif e.has("upLanetower") and not e.exiled:
-		spawn("Units/Neutral/LaneNode", 0, e.position)   # Lanetower.ets group 2: TAutoBrainOnDeath -> LaneNode
 
 
 ## UnitTemplate/BuildingTemplate GROUP_SOUL: every death (unless exiled or upSoulless) spawns
@@ -1192,6 +1263,9 @@ func gain_mana(e: SimEntity, amount: int) -> void:
 func _on_before_death(e: SimEntity, _killer: SimEntity) -> void:
 	for w in e.welas:
 		if w.kind != Wela.Kind.ON_DEATH or not w.owner_ready(e):
+			continue
+		if w.spawns and w.projectile == "":   # TWelaEffectFactoryComponent: the field appears at the corpse (Spore)
+			_fire_group(e, w.group, e)
 			continue
 		if w.projectile == "" and not (w.damages or w.heals or w.apply_script != "" or w.splash):
 			continue   # FireAtSelf groups carry only client effects
@@ -1335,6 +1409,9 @@ func _move_projectiles() -> void:
 					gain_mana(target, int(p.damage))
 				elif p.aoe > 0.0:
 					_projectile_splash(p, target)
+				elif not p.damages and p.impact_script != "":   # a pure buff carrier (Blessing of Strength)
+					if Buff.exists(p.impact_script):
+						apply_buff(target, p.impact_script, {}, entities.get(p.source_id))
 				else:
 					var dealt := deal_damage(target, p.damage, p.damage_type, entities.get(p.source_id))
 					if dealt > 0.0 and p.on_hit_script != "" and target.alive and Buff.exists(p.on_hit_script) \

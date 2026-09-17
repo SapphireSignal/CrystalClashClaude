@@ -21,6 +21,8 @@ var gives_mana: bool = false         # TWarheadSpottyResourceComponent(reMana): 
 var on_hit_script: String = ""      # TAutoBrainOnDealDamageComponent + TWarheadApplyScriptComponent (VoidWorm: Frozen)
 var on_hit_must_have: Array = []
 var on_hit_must_not_have: Array = []
+var impact_script: String = ""      # TWarheadApplyScriptComponent on the impact group itself (HeartOfTheForestProjectile)
+var damages: bool = false            # has a damage warhead
 # TBrainProjectileComponent.Bounces: after a hit jump to a random unhit enemy within bounce_range, up to
 # eiWelaCount times; a depleting shot (Wisp) loses the damage it dealt (TAutoBrainOnDealDamageComponent
 # WriteAmountTo(eiWelaDamage) with modifier -1) and stops when nothing is left
@@ -90,3 +92,7 @@ func _init(p_unit_id: String, league: int) -> void:
 			"TWarheadApplyScriptComponent":
 				if hit_group != "" and comp["groups"].has(hit_group):
 					on_hit_script = Wela.script_key(str(comp["args"][0]))
+				else:
+					impact_script = Wela.script_key(str(comp["args"][0]))
+			"TWarheadSpottyDamageComponent", "TWarheadSplashDamageComponent":
+				damages = true

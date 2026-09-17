@@ -1364,3 +1364,81 @@ func test_wisp_depleting_bounce() -> void:
 			hit += 1
 	runner.check_eq(hit, 7, "6 bounces after the first hit: 7 saplings killed")
 	runner.check_near(shots[0].damage, 64.0 - 7 * 2.0, "each hit depletes the damage dealt")
+
+
+func test_rootling_root_network() -> void:
+	var sim := Simulation.new(7, 4)
+	var rootling := sim.spawn("Units/Green/Rootling", Simulation.TEAM_BLUE, Vector2(0, -23))
+	var target := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(4, -23))
+	var near := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(6, -23))
+	var far := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(12, -23))
+	for m in [target, near, far]:
+		m.locked_until = 1 << 30
+	sim.apply_buff(near, "Root")
+	sim.step()
+	runner.check(target.linked_from(rootling.id), "beam links the nearest enemy")
+	runner.check(target.has("upRooted"), "rooted once when the beam forms")
+	runner.check(not rootling.moving, "preemptive: stands while linked")
+	var hp := target.health
+	var near_hp := near.health
+	for i in 33:
+		sim.step()
+	runner.check_near(target.health, hp - 12.0 - 10.0 - 1.5, "12 beam damage per second, the 10 splash (it is rooted too) and a root tick")
+	runner.check_near(near.health, near_hp - 10.0 - 1.5, "10 splash to rooted enemies within 3 of the target, plus its own root tick")
+	runner.check_near(far.health, 265.0, "far unit untouched")
+
+
+func test_heart_of_the_forest() -> void:
+	var sim := Simulation.new(7, 4)
+	sim.spawn_bases()
+	var heart := sim.spawn("Units/Green/HeartOfTheForest", Simulation.TEAM_BLUE, Vector2(-60, -23))
+	var a := sim.spawn("Units/White/Footman", Simulation.TEAM_BLUE, Vector2(-58, -23))
+	var b := sim.spawn("Units/White/Footman", Simulation.TEAM_BLUE, Vector2(-56, -23))
+	a.base_speed = 0.0
+	b.base_speed = 0.0
+	runner.check_eq(heart.mana, 3, "starts with 3 mana")
+	while not (a.has("upBlessedStrength") or b.has("upBlessedStrength")) and sim.time_ms < 3000:
+		sim.step()
+	var first := a if a.has("upBlessedStrength") else b
+	runner.check(first.has("upBlessedStrength"), "marks its target at once")
+	runner.check_eq(heart.mana, 0, "spends 3 mana")
+	for i in 40:
+		sim.step()
+	runner.check(first.has("upBlessed"), "the projectile delivers Blessing of Strength")
+	runner.check_near(first.max_health, 32.0 + 40.0, "+40 max hp")
+	runner.check_near(first.damage(), 13.0 + 8.0, "+8 damage")
+	var t := sim.time_ms
+	while heart.mana < 3 and sim.time_ms < t + 12000:
+		sim.step()
+	runner.check(sim.time_ms - t >= 6800 and sim.time_ms - t < 8200, "+1 mana per 3 s, timer running since the cast (got %d)" % (sim.time_ms - t))
+	var enemy := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(heart.position.x + 6, -23))
+	enemy.locked_until = 1 << 30
+	for i in 5:
+		sim.step()
+	runner.check(not heart.moving, "waits while an enemy is within 10")
+
+
+func test_spore_field() -> void:
+	var sim := Simulation.new(7, 4)
+	var spore := sim.spawn("Units/Green/Spore", Simulation.TEAM_BLUE, Vector2(0, -23))
+	var hurt := sim.spawn("Units/White/Monk", Simulation.TEAM_BLUE, Vector2(2, -23))
+	hurt.base_speed = 0.0
+	hurt.health = 100.0
+	var flyer := sim.spawn("Units/Green/Wisp", Simulation.TEAM_RED, Vector2(-2, -23))
+	flyer.locked_until = 1 << 30
+	sim._kill(spore)
+	var fields := sim.alive_entities(Simulation.TEAM_BLUE).filter(func(e): return e.unit_id == "Effects/SporeField")
+	runner.check_eq(fields.size(), 1, "death rattle spawns a spore field")
+	sim.step()
+	runner.check(flyer.has("upGrounded") and not flyer.has("upFlying") and flyer.has("upGround"), "flying enemies in 4 are grounded")
+	for i in 32:
+		sim.step()
+	runner.check_near(hurt.health, 130.0, "injured allies heal 30 per second")
+	while fields[0].alive and sim.time_ms < 12000:
+		sim.step()
+	runner.check(sim.time_ms >= 10000 and sim.time_ms < 10100, "field lasts 10 s (got %d)" % sim.time_ms)
+	runner.check(not hurt.linked_from(fields[0].id), "heal link breaks with the field")
+	while flyer.has("upGrounded") and sim.time_ms < 20000:
+		sim.step()
+	runner.check(sim.time_ms >= 15000 and sim.time_ms < 15100, "grounded for 15 s (got %d)" % sim.time_ms)
+	runner.check(flyer.has("upImmobilized") and flyer.has("upFlying"), "take-off: immobilized briefly, flying again")
