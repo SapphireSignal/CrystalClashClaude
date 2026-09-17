@@ -110,6 +110,14 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
   game-start reference within ~5 levels. The terrain and vegetation heights were already right (the jungle ring
   rises up to 18 units); the "flat" look was the light balance. Fix-list item 3 (lane brightness) is thereby done.
 
+- **Checkpoint 43: camera finally matched by render sweeps.** Pitch 48.4 / yaw 47.9 / distance 33.5 (2022 vector
+  with Y 0.67 unnormalised, `main.gd`); FOV unchanged. Window stretch `expand` + `Hud._layout()` from the viewport
+  rect (panels pinned to edges at any resolution; `FinalScreen` centred). `tools/screenshot.gd -- ... size=WxH`
+  renders at the reference window size (1679x1079) for honest comparisons. The owner's monitor is 1680x1050-ish:
+  their screenshots are 1679x1079 and use the client's *small* HUD layout (todo: port the small layout below
+  1710 px width, `docs/hud.md`). Owner's remark: where the reference looks bad (e.g. its blocky shadows) we may
+  do better, as long as it stays unnoticeable as a difference.
+
 ## FIX FIRST (owner's request, before anything else)
 1. **Done (checkpoint 37): lane node capture circle verified.** The ring renders (mesh, y 0.01, orientation:
    start +Z about +Y, gaps across the lane, arcs along it, exactly `DrawCircle` Up=UNITZ Left=UNITX); it was

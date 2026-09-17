@@ -32,19 +32,14 @@ func _ready() -> void:
 	unit_bars = UnitBars.new()   # HEALTHBARWRAPPER: behind every panel
 	add_child(unit_bars)
 	info_bar = GameInfoBar.new()
-	info_bar.position = Vector2((1920 - GameInfoBar.WIDTH) / 2.0, 0)
 	add_child(info_bar)
 	resources = ResourcePanel.new()
-	resources.position = Vector2(0, 1080 - ResourcePanel.SIZE)
 	add_child(resources)
 	minimap = Minimap.new()
-	minimap.position = Vector2(1920 - Minimap.SIZE, 1080 - Minimap.SIZE)
 	add_child(minimap)
 	info = InfoPanel.new()
-	info.position = Vector2(1920 - InfoPanel.WIDTH, 1080 * 0.4 - InfoPanel.HEIGHT / 2.0)
 	add_child(info)
 	card_hint = CardHint.new()   # .card-hint: top edge 260 px above the bottom, centred
-	card_hint.position = Vector2((1920 - CardHint.WIDTH) / 2.0, 1080 - 260)
 	add_child(card_hint)
 	deck = DeckPanel.new()
 	deck.slot_clicked.connect(func(i): slot_clicked.emit(i))
@@ -53,8 +48,9 @@ func _ready() -> void:
 	deck.spawner_jump.connect(func(): spawner_jump.emit())
 	add_child(deck)
 	announcements = Announcements.new()
-	announcements.position = Vector2((1920 - Announcements.WIDTH) / 2.0, Announcements.TOP)
 	add_child(announcements)
+	get_viewport().size_changed.connect(_layout)
+	_layout()
 	final_screen = FinalScreen.new()
 	final_screen.continue_pressed.connect(func(): match_left.emit())
 	add_child(final_screen)
@@ -76,13 +72,28 @@ func setup(sim: Simulation, own_team: int, camera: Camera3D) -> void:
 	_sim = sim
 	_own_team = own_team
 	deck.build(sim.commanders[own_team])
-	deck.position = Vector2((1920 - deck.size.x) / 2.0, 1080 - DeckPanel.HEIGHT)
+	_layout()
 	minimap.setup(sim, own_team, camera)
 	unit_bars.setup(sim, own_team, camera)
 	info.setup(own_team)
 	sim.game_event.connect(_on_game_event)
 	sim.team_lost.connect(func(team): final_screen.game_over(team, _own_team))
 	sim.game_tick.connect(_on_game_tick)
+
+
+## Panels are designed at 1920x1080 (docs/hud.md) and pinned to the window's edges / centre, so any window
+## size and aspect shows the same layout (the original client anchors its .dui panels the same way).
+func _layout() -> void:
+	var view := get_viewport_rect().size   # the canvas (1920 wide, height by the window's aspect); size is 0 under a CanvasLayer
+	var w := view.x
+	var h := view.y
+	info_bar.position = Vector2((w - GameInfoBar.WIDTH) / 2.0, 0)
+	resources.position = Vector2(0, h - ResourcePanel.SIZE)
+	minimap.position = Vector2(w - Minimap.SIZE, h - Minimap.SIZE)
+	info.position = Vector2(w - InfoPanel.WIDTH, h * 0.4 - InfoPanel.HEIGHT / 2.0)
+	card_hint.position = Vector2((w - CardHint.WIDTH) / 2.0, h - 260)
+	announcements.position = Vector2((w - Announcements.WIDTH) / 2.0, Announcements.TOP)
+	deck.position = Vector2((w - deck.size.x) / 2.0, h - DeckPanel.HEIGHT)
 
 
 func select(e: SimEntity) -> void:

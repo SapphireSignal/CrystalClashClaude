@@ -28,6 +28,9 @@ func _initialize() -> void:
 			_zoom = arg.trim_prefix("zoom=")
 		elif arg.begins_with("play="):
 			_play = int(arg.trim_prefix("play="))
+		elif arg.begins_with("size="):   # size=1679x1079: render at the reference screenshot's window size
+			var parts := arg.trim_prefix("size=").split("x")
+			DisplayServer.window_set_size(Vector2i(int(parts[0]), int(parts[1])))
 	if _targets.is_empty():
 		_targets = [3.0]
 	_targets.sort()

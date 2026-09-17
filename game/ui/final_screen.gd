@@ -48,6 +48,8 @@ func _ready() -> void:
 ## TClientEntityManagerComponent: the losing team's nexus death decides victory for everyone else.
 ## Timers run on the wall clock (TTimer) because the simulation stops stepping once it is finished.
 func game_over(losing_team: int, own_team: int) -> void:
+	var view := get_viewport_rect().size   # banner spans the window width, centred vertically
+	_panel.position = Vector2((view.x - BANNER_W) / 2.0, (view.y - BANNER_H) / 2.0)
 	if _finished_at >= 0:
 		return
 	_finished_at = Time.get_ticks_msec()

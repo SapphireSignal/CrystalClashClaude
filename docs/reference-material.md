@@ -111,11 +111,13 @@ These are current and take precedence over Codex's older captures. Facts read fr
   Upgrade"; it fires two shots at two enemies. The 2022 source lanetower has 800-1400 HP by league/level, 100 damage,
   6-18 ammo and a single target. Nexus live: 8000 HP, 25 ammo, 96 damage (source: 110-120 damage, 8-20 ammo).
   Towers and bases were reworked after the repo snapshot; the patch-notes audit must cover them first.
-- Camera (2026-09-17): fitted on `image-1789614749130.webp` (game start) from the four corners of the spawner
-  tile (7,1) at (1332,515) (1377,474) (1322,435) (1280,470) and the nexus ground centre (850,525) with the
-  original vertical FOV: pitch 52-54 deg, yaw 49 deg, distance 39, target = the nexus, 3.8 px rms. That is the
-  2022 `CAMERAOFFSET` (54.3 / 47.4, 6.3 px rms) within reading error; a 55.5 deg yaw gives 18 px. So the live
-  camera, zoom range and FOV are the 2022 constants. (An earlier sand-strip angle measurement was wrong.)
+- Camera (2026-09-17, final): our scene was rendered at the reference's 1679x1079 window for grids of pitch /
+  yaw / distance / FOV around the blue nexus and each frame's edge map was cross-correlated with
+  `image-1789614749130.webp` (game start). Best: pitch 48.4, yaw 47.9, distance 33.5, zero image shift (the
+  client starts looking at the own nexus), original FOV (FOV trades off against distance, so the 2022 value is
+  kept). The 2022 constant (54.3 / 47.4 / 38) scores clearly lower; a tile-corner fit alone could not tell the
+  pitch. Model used: CAMERAOFFSET with Y = 0.67, not renormalised (pitch 48.9, distance 33.8 at zoom 3.8).
+  The reference HUD is the client's *small* layout (window < 1710 wide); ours draws the normal layout.
   The minimap keeps the 2022 angle: its painted image is not rotated in the live client (whale shadow
   middle-left, trees top-right / left match the unrotated `map_minimap_single.png`).
   The game-start shot (blue nexus, "Game is about to begin") shows the own base
