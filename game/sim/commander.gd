@@ -22,7 +22,8 @@ var loan_duration: int = 0
 
 class DeckSlot:
 	var card: Cards.CardDef
-	var level: int = 5
+	var league: int = 4              # RGameCard.tier: the card's own league, drives charge count + recharge
+	var level: int = 5               # RGameCard.level: only shortens the recharge (CardTemplate.dws matrix)
 	var times_played: int = 0        # reCardTimesPlayed: raised before each spawn (Atlas' level)
 	var charges: int
 	var charge_cap: int
@@ -51,19 +52,35 @@ func _init(p_team: int, p_league: int = 4) -> void:
 	league = p_league
 
 
+## Sandbox/tests: every card at the commander's league, level 5 (DEFAULT_LEAGUE/DEFAULT_LEVEL behavior).
 func set_deck(unit_ids: Array) -> void:
 	slots.clear()
 	for unit_id in unit_ids:
-		var card := Cards.by_script(unit_id)
-		var s := DeckSlot.new()
-		s.card = card
-		s.cost = Cards.base_cost(card.tier, card.legendary, card.is_spell(), card.is_spawner()) + card.cost_adjust
-		s.gold_cost = 0.0 if card.is_spawner() else s.cost
-		s.wood_cost = s.cost if card.is_spawner() else 0.0
-		s.charge_cap = Cards.charge_count(card.tier, league, card.legendary)
-		s.charges = s.charge_cap
-		s.charge_cooldown_ms = int(Cards.charge_cooldown(card.tier, league, s.level, card.legendary, card.is_spawner()) * card.charge_cooldown_mult)
-		slots.append(s)
+		_add_slot(Cards.by_script(unit_id), league, 5)
+
+
+## RGameCard: a validated Deck where each slot carries its card's own league and level.
+## In this snapshot they only change charge count and recharge time (CardTemplate.dws); card cost
+## and unit stats are league-independent, so spawned units keep using the game league.
+func set_deck_from(deck: Deck) -> void:
+	slots.clear()
+	for dc in deck.slots:
+		if dc != null:
+			_add_slot(dc.card, dc.league, dc.level)
+
+
+func _add_slot(card: Cards.CardDef, card_league: int, card_level: int) -> void:
+	var s := DeckSlot.new()
+	s.card = card
+	s.league = card_league
+	s.level = card_level
+	s.cost = Cards.base_cost(card.tier, card.legendary, card.is_spell(), card.is_spawner()) + card.cost_adjust
+	s.gold_cost = 0.0 if card.is_spawner() else s.cost
+	s.wood_cost = s.cost if card.is_spawner() else 0.0
+	s.charge_cap = Cards.charge_count(card.tier, card_league, card.legendary)
+	s.charges = s.charge_cap
+	s.charge_cooldown_ms = int(Cards.charge_cooldown(card.tier, card_league, card_level, card.legendary, card.is_spawner()) * card.charge_cooldown_mult)
+	slots.append(s)
 
 
 func gold_cap() -> float:

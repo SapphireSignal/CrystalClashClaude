@@ -160,7 +160,10 @@ SiegeGolem charge-and-shell artillery, boss, towers) and the 5 spells (Cataclysm
 nexus zone only; Earthquake legendary field; Echoes of the Future income loan; Petrify with overheal HoT; Stone
 Circle charm with spellshield aura). All five factions are done. Phase 3 deck rules: `game/sim/deck.gd` (TDeck replica: 12 slots, no duplicates,
 max 2 colors with colorless excluded, 1 epic, league = max card league, TCardInfo.Compare slot sort);
-sandbox decks validate through it. 791 tests pass.
+sandbox decks validate through it. Per-card league/level (TCardInstance/RGameCard): slots carry their card's
+own league/level via `Commander.set_deck_from`; in-match these change only charge count and recharge time
+(CardTemplate.dws tables) — cost is league-independent, no 2022-snapshot player unit scales stats by league,
+skins are cosmetic. Phase 3 done (deck presets/persistence wait for the lobby). 799 tests pass.
 `docs/reference-material.md` lists the owner's live-client screenshots and the balance deltas seen so far
 (towers/nexus reworked after 2022). `game/main.tscn` is a sandbox with capsule
 units on the Compatibility renderer: keys 1-9,0,-,= play the 12 deck slots, a simple red AI plays back.

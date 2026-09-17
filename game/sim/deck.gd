@@ -158,7 +158,8 @@ func card_ids() -> Array:
 
 
 ## Build a deck from unit_id strings (sandbox/tests). Asserts every card obeys the rules.
-static func from_scripts(unit_ids: Array, card_league: int = 1, card_level: int = 1) -> Deck:
+## Defaults are the original's DEFAULT_LEAGUE (4) / DEFAULT_LEVEL (5).
+static func from_scripts(unit_ids: Array, card_league: int = 4, card_level: int = 5) -> Deck:
 	var deck := Deck.new()
 	for unit_id in unit_ids:
 		var added := deck.add_card(Cards.by_script(unit_id), card_league, card_level)

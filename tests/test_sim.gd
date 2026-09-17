@@ -2715,3 +2715,27 @@ func test_deck_sort_order() -> void:
 	gap.add_card(Cards.by_script("Units/White/FootmanSpawner"))
 	runner.check(gap.slots[0] != null and gap.slots[11] != null and gap.slots[5] == null,
 		"empty slots sit between units and spawners (TCardInfo.Compare nil rule)")
+
+
+func test_deck_card_league_level() -> void:
+	# RGameCard: each commander slot uses its card's own league/level for charge count and recharge.
+	var deck := Deck.new()
+	deck.add_card(Cards.by_script("Units/White/FootmanDrop"), 1, 1)
+	deck.add_card(Cards.by_script("Units/White/ArcherDrop"), 5, 5)
+	var c := Commander.new(1)
+	c.set_deck_from(deck)
+	runner.check_eq(c.slots.size(), 2, "two slots from the deck")
+	for s in c.slots:
+		if s.card.unit_id == "Units/White/FootmanDrop":
+			runner.check_eq(s.league, 1, "footman keeps its own league")
+			runner.check_eq(s.charge_cap, 1, "tier 1 league 1: 1 charge")
+			runner.check_eq(s.charge_cooldown_ms, 37000, "league 1 level 1 recharge")
+		elif s.card.unit_id == "Units/White/ArcherDrop":
+			runner.check_eq(s.charge_cap, 5, "tier 1 league 5: 5 charges")
+			runner.check_eq(s.charge_cooldown_ms, 22000, "league 5 level 5 recharge")
+	var legacy := Commander.new(1)
+	legacy.set_deck(["Units/White/FootmanDrop"])
+	runner.check_eq(legacy.slots[0].charge_cap, Cards.charge_count(1, 4, false),
+		"set_deck keeps the commander league (DEFAULT_LEAGUE)")
+	runner.check_eq(legacy.slots[0].charge_cooldown_ms, Cards.charge_cooldown(1, 4, 5, false, false),
+		"set_deck uses level 5 (DEFAULT_LEVEL)")

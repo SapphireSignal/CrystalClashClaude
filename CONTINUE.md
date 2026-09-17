@@ -2,7 +2,15 @@
 
 Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
 
-## State (2026-09-17, checkpoint 22)
+## State (2026-09-17, checkpoint 24)
+- Phase 3 card league/level: per research of the original (`BaseConflict.Api.Cards.pas` TCardInstance,
+  `RGameCard`, `CardTemplate.dws`), in-match a card's league/level change ONLY charge count (league-indexed
+  table) and recharge time (5x5 matrix, 37000 -> 22000 ms); card cost is league-independent and no player
+  unit `.ets` scales stats by league in the 2022 snapshot (only neutral towers/nexus scale, by game league).
+  Skins are cosmetic. Implemented: `Commander.DeckSlot.league/level`, `Commander.set_deck_from(deck)`
+  (each slot keeps its card's own league/level), `Deck.from_scripts` defaults 4/5 (DEFAULT_LEAGUE/LEVEL),
+  sandbox uses `set_deck_from`. Phase 3 is done; deck presets + persistence wait for the lobby (phase 7).
+
 - Phase 2 core sim works and is tested (757 tests). **All five factions are complete**: White, Black, Green, Blue and
   Golems / Crystal Legion (`docs/factions/*.md` are the specs; Golems: `docs/factions/golems.md`).
 - Golems done this checkpoint: BigMeleeGolem Splinter (`checks_damage_threshold` on on-hit chains, `chain_to_ground` +
@@ -38,14 +46,7 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
   (spells target a random unit of the side the card is for, epics the own nexus, two-point spells press the key twice).
 
 ## Next step (in order, one at a time, test after each)
-1. Phase 3 deck rules: DONE (`game/sim/deck.gd` = `BaseConflict.Api.Deckbuilding.pas` TDeck — 12 slots,
-   no duplicates, <= 2 colors with `ecColorless` excluded (Crystal Legion fits any deck), max 1 epic
-   (only Cataclysm in the 2022 snapshot), deck league = max card league, slot sort = `TCardInfo.Compare`
-   with nil slots between units and spawners; sandbox decks go through `Deck.from_scripts`).
-   Remaining phase 3: deck presets (`TUTORIAL_DECK_UIDS`, `deck_preset_title_*` in Lang) and per-player
-   deck persistence can wait for the lobby (phase 7). Next: check what else phase 3 needs (card
-   levels/leagues per player card, `TCardInstance`) or move to phase 4 HUD.
-2. Phase 4 HUD (card bar, resources, tier button, minimap) replicating the live-client screenshots in `reference/media/`.
+1. Phase 4 HUD (card bar, resources, tier button, minimap) replicating the live-client screenshots in `reference/media/`.
 3. Late phase: audit Crystal Clash Steam patch notes newer than the repo snapshot (2022-01-19) and apply
    balance changes via the extractor (see CLAUDE.md Decisions).
 
