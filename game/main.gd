@@ -25,7 +25,7 @@ var _red_next_play_at: int = 15000
 @onready var _camera: Camera3D = $Camera3D
 var _look_at := Vector2(-40, -23)   # ground point the camera looks at
 var _camera_distance := 70.0
-var _drag_anchor: Variant = null    # ground point under the mouse when the left drag started
+var _drag_anchor: Variant = null    # ground point under the mouse when the right drag started
 
 
 func _ready() -> void:
@@ -59,7 +59,7 @@ func _process(delta: float) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
-		if event.button_index == MOUSE_BUTTON_LEFT:
+		if event.button_index == MOUSE_BUTTON_RIGHT:
 			_drag_anchor = _mouse_world_2d() if event.pressed else null
 		elif event.pressed and event.button_index == MOUSE_BUTTON_WHEEL_UP:
 			_camera_distance = maxf(25.0, _camera_distance - 5.0)
