@@ -130,7 +130,10 @@ Act as two people at once:
   `SimMap.legacy_sides = true` (2022 layout, blue at -x) so their coordinates stay the scripts'.
 - 2026-09-17 The developers may hand over the live **Crystal Clash** files (owner, 2026-09-17). When they arrive,
   put them read-only in `reference/crystal-clash/` (gitignored, `.gdignore`), point the extractors/converters at
-  it (scripts, maps, graphics, GUI, settings) and drop the Steam patch-notes audit. Until then the 2022 repo rules.
+  it (scripts, maps, graphics, GUI, settings) and drop the Steam patch-notes audit. Until then the 2022 repo rules:
+  build Rise of Legions as it is in the repo; live-only differences seen in the owner's screenshots (capture disc,
+  causeway beaches, reworked tower stats, no hotkey badge) are recorded in `docs/reference-material.md` but not
+  hand-built. Screenshots stay valid for engine-level checks (camera, lighting, HUD pixels, effect scale).
 - 2026-09-17 **No camera zoom**: the live client has no mouse-wheel zoom (owner). The camera stays at zoom 3.8
   (distance 38 along CAMERAOFFSET); `tools/screenshot.gd zoom=` close-ups are for detail checks only.
 - 2026-09-16 `reference/media/` is filled by the owner only (lobby/ and ingame/ screenshots). Never read or
