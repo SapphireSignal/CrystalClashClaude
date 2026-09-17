@@ -57,12 +57,12 @@ func spawn_bases() -> void:
 		spawn("Units/Neutral/LaneNode", 0, p)
 
 
-func spawn(unit_id: String, team: int, pos: Vector2, front: Vector2 = Vector2.ZERO) -> SimEntity:
+func spawn(unit_id: String, team: int, pos: Vector2, front: Vector2 = Vector2.ZERO, level: int = 0) -> SimEntity:
 	var e := SimEntity.new()
 	e.id = _next_id
 	_next_id += 1
 	e.team = team
-	e.setup(unit_id, league)
+	e.setup(unit_id, league, level)
 	for g in e.bb.groups_of("eiCooldown"):   # SaplingchargeSapling: eiCooldown 'round(random * 500)'
 		var v: Variant = e.bb.get_value("eiCooldown", g)
 		if v is String:
@@ -186,19 +186,19 @@ static func spawning_pattern(pos: Vector2, front: Vector2, is_spawner: bool, ind
 
 ## TWelaEffectFactoryComponent.SpreadSpawns without an area of effect: units spawn in formation and get
 ## Modifiers/SummoningSickness.dws for 1000 ms.
-func spawn_squad(unit_id: String, team: int, pos: Vector2, count: int, is_spawner: bool) -> Array[SimEntity]:
+func spawn_squad(unit_id: String, team: int, pos: Vector2, count: int, is_spawner: bool, level: int = 0) -> Array[SimEntity]:
 	var result: Array[SimEntity] = []
 	var front := Vector2(-1.0 if team == TEAM_RED else 1.0, 0.0)
 	for i in count:
-		var e := spawn(unit_id, team, spawning_pattern(pos, front, is_spawner, i, count), front)
+		var e := spawn(unit_id, team, spawning_pattern(pos, front, is_spawner, i, count), front, level)
 		apply_buff(e, "SummoningSickness", {"Duration": SimConstants.SUMMONING_SICKNESS_MS})
 		result.append(e)
 	return result
 
 
 ## Drop card: squad appears in formation at the drop point.
-func drop_squad(unit_id: String, team: int, pos: Vector2, count: int) -> Array[SimEntity]:
-	return spawn_squad(unit_id, team, pos, count, false)
+func drop_squad(unit_id: String, team: int, pos: Vector2, count: int, level: int = 0) -> Array[SimEntity]:
+	return spawn_squad(unit_id, team, pos, count, false, level)
 
 
 # ---------------------------------------------------------------- buffs (modifier scripts)
@@ -405,11 +405,13 @@ func play_card(team: int, slot_index: int, target: Variant) -> PlayResult:
 	if not (target is Vector2) or not _in_drop_zone(team, target):
 		return PlayResult.BAD_TARGET
 	c.pay(slot, time_ms)
+	slot.times_played += 1   # TWelaEffectIncreaseResourceComponent(reCardTimesPlayed) fires before the factory
+	var level := mini(slot.times_played, int(UnitDb.raw(pattern)["values"].get("eiResourceCap.reLevel", {}).get("*", 0)))
 	if card.is_building():
-		spawn(pattern, team, target)
+		spawn(pattern, team, target, Vector2.ZERO, level)
 	else:
 		var count: int = int(unit_data["values"].get("eiWelaCount", {}).get("0", 1))
-		drop_squad(pattern, team, target, count)
+		drop_squad(pattern, team, target, count, level)
 	return PlayResult.OK
 
 
@@ -720,7 +722,7 @@ func _think_passives(e: SimEntity) -> void:
 			continue
 		if w.kind == Wela.Kind.LINK:
 			_think_link(e, w)
-		elif w.kind == Wela.Kind.FIGHT and w.passive:
+		elif w.kind == Wela.Kind.FIGHT and w.passive and not w.think_local:
 			_think_passive(e, w)
 		elif w.kind == Wela.Kind.SELF_PASSIVE:
 			_think_self_passive(e, w)
@@ -786,6 +788,11 @@ func _wela_ready(e: SimEntity, w: Wela) -> bool:
 		return false
 	if w.charge_cost > 0 and e.charges_of(w.group) < w.charge_cost:
 		return false
+	if w.ready_nearby_group >= 0:   # TWelaReadyEntityNearbyComponent: ObserverDrone cloaks while no enemy is within 15
+		var nearby := e.wela(w.ready_nearby_group)
+		var found := nearby != null and not _pick_targets(e, nearby, e.range_of(nearby.group), 1).is_empty()
+		if found == w.ready_if_no_targets:
+			return false
 	return w.owner_ready(e)
 
 
@@ -836,13 +843,19 @@ func _think_link(e: SimEntity, w: Wela) -> void:
 			w.link_paid_until = time_ms + 1000
 	if w.link_pay_cost and links == 0 and e.mana < w.mana_cost:
 		return
+	if not _wela_ready(e, w):   # TBrainWelaLinkComponent: an unready weapon breaks all its links
+		if links > 0:
+			for other: SimEntity in entities.values():
+				_break_link_key(other, key)
+		return
 	if w.next_at > time_ms and links == 0:
 		return   # LinkTime: re-acquire cadence
-	for other: SimEntity in entities.values():
+	var candidates: Array = [e] if w.target_self else entities.values()
+	for other: SimEntity in candidates:
 		var linked: bool = other.link_buffs.has(key)
 		var allies := w.target_allies or not w.team_constraint_set   # auras link allies unless told otherwise
-		var in_range := other.alive and (other.team == e.team) == allies and other.team != 0 and other != e \
-			and other.position.distance_to(e.position) - other.collision_radius <= range
+		var in_range := other.alive and (w.target_self or ((other.team == e.team) == allies and other.team != 0 and other != e \
+			and other.position.distance_to(e.position) - other.collision_radius <= range))
 		var validator: Wela = e.wela(w.validate_group) if w.validate_group >= 0 else null
 		if linked and (not in_range or (validator != null and not validator.target_allowed(other, e))):
 			_break_link_key(other, key)
@@ -1000,7 +1013,7 @@ func _fire_group(e: SimEntity, group: int, target: SimEntity) -> void:
 			e.charges[group] = 0 if w.charge_consumes_all else e.charges_of(group) - w.charge_cost
 		else:   # the entity-wide charge pool (On the Edge field: 10 enchantments)
 			e.ammo = 0 if w.charge_consumes_all else e.ammo - w.charge_cost
-	if w.damage_percent_of_max:
+	if w.damage_percent_of_max or w.heal_percent_of_max:
 		amount *= target.max_health
 	for t in w.removes_buff_types_any:   # TWarheadSpottyRemoveBuffComponent.MustHaveAny (Frenzy: strip state effects)
 		for b in target.buffs.duplicate():
@@ -1011,6 +1024,12 @@ func _fire_group(e: SimEntity, group: int, target: SimEntity) -> void:
 			if _has_any_in(b.properties + b.late_properties, w.remove_beacon_props):
 				target.remove_buff(b)
 	var dtype := e.damage_type(group)
+	if w.teleport_to_target and target != e:   # PhaseDrone's Teleport Strike: blink to the near side of the target
+		var away := (e.position - target.position).normalized()
+		if away == Vector2.ZERO:
+			away = -e.front
+		_teleport(e, target.position + away * (w.teleport_offset + target.collision_radius + e.collision_radius))
+		_face(e, target.position)
 	if group == e.fire_group or w.kind == Wela.Kind.FIGHT:
 		attack_fired.emit(e, target, amount)
 	if w.chain_first:
@@ -1194,6 +1213,8 @@ func deal_damage(target: SimEntity, amount: float, damage_type: int, source: Sim
 		_on_dealt_damage(source, target)
 	if target.health <= 0.0:
 		_kill(target, source)
+	elif done > 0.0:
+		_fire_on_hit(target, source, true)
 	return done
 
 
@@ -1258,6 +1279,7 @@ func _on_take_damage(target: SimEntity, amount: float, _damage_type: int, source
 				w.cooldown_ready_at = time_ms + target.cooldown(w.group)
 				_fire_group(target, pair[1], source)
 				break
+	_fire_on_hit(target, source, false)
 	for b in target.buffs.duplicate():   # Shieldblock granted by a buff (Shields Up): one block, then spent
 		if b.block_threshold >= 0.0 and amount >= b.block_threshold:
 			amount *= b.block_factor
@@ -1284,6 +1306,33 @@ func _on_take_damage(target: SimEntity, amount: float, _damage_type: int, source
 		if w.dodge_chance > 0.0 and rng.randf() < w.dodge_chance:
 			amount = 0.0
 	return amount
+
+
+## TAutoBrainOnTakeDamageComponent.FireSelfInGroup: the group fires on the owner when hit, or (with
+## TThinkImpulseFireComponent.TargetGroup) its target groups pick a victim (Atlas' Active Armor shoots back,
+## PhaseDrone's Shield Overload goes invincible). TriggersAfterDamage groups run once the health dropped.
+func _fire_on_hit(target: SimEntity, source: SimEntity, after_damage: bool) -> void:
+	for w in target.welas:
+		if w.kind != Wela.Kind.ON_TAKE_DAMAGE or not w.fires_on_hit or w.used or w.triggers_after_damage != after_damage:
+			continue
+		if w.modifies_amount or not w.mirror_pairs.is_empty():
+			continue   # Shieldblock / Soul Armor / VoidSlime mirrors are handled in _on_take_damage
+		if time_ms < w.cooldown_ready_at or not _wela_ready(target, w):
+			continue
+		if w.trigger_not_self and (source == null or source == target):
+			continue
+		if w.passive_if_conscious and not target.can_think(time_ms):
+			continue
+		w.cooldown_ready_at = time_ms + target.cooldown(w.group)
+		if w.chain_groups.is_empty():
+			_fire_group(target, w.group, target)
+		for cg in w.chain_groups:
+			var cw := target.wela(cg)
+			if cw == null or not _wela_ready(target, cw):
+				continue
+			var victim := _pick_target(target, cw, target.range_of(cg))
+			if victim != null:
+				_fire_group(target, cg, victim)
 
 
 ## THealthComponent.OnHeal: heal up to max health; with dtOverheal the rest becomes overheal, capped at
@@ -1606,6 +1655,8 @@ func _think_lane_node(node: SimEntity) -> void:
 	var near_teams := {}
 	for e: SimEntity in entities.values():
 		if not e.alive or e.team == 0 or e.is_spawner() or e.has("upBase") or not (e.has("upUnit") or e.has("upBuilding")):
+			continue
+		if e.has("upInvisible") or e.has("upBanished"):   # stealthed / banished units don't affect capture points
 			continue
 		if e.position.distance_to(node.position) - e.collision_radius <= range:
 			near_teams[e.team] = true

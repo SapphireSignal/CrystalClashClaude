@@ -6,6 +6,7 @@ var id: int = 0
 var unit_id: String = ""
 var team: int = 0
 var league: int = 4
+var level: int = 0                  # reLevel: Atlas "Supreme" = min(times the card was played, 10)
 var position: Vector2 = Vector2.ZERO
 var front: Vector2 = Vector2.RIGHT
 var collision_radius: float = 0.5
@@ -85,10 +86,11 @@ func linked_from(source_id: int) -> bool:
 	return false
 
 
-func setup(p_unit_id: String, p_league: int) -> void:
+func setup(p_unit_id: String, p_league: int, p_level: int = 0) -> void:
 	unit_id = p_unit_id
 	league = p_league
-	UnitDb.fill_blackboard(bb, unit_id, league)
+	level = p_level
+	UnitDb.fill_blackboard(bb, unit_id, league, level)
 	collision_radius = bb.get_float("collision_radius", Blackboard.ANY_GROUP, 0.5)
 	for p in bb.get_value("eiUnitProperties", Blackboard.ANY_GROUP, []):
 		properties[p] = true

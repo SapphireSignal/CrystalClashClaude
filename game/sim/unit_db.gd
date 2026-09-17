@@ -28,9 +28,18 @@ static func raw(unit_id: String) -> Dictionary:
 
 
 ## Resolve league-dependent arrays ([v1..v5] indexed by league 1..5) to a scalar.
-static func resolve(value: Variant, league: int) -> Variant:
+static func resolve(value: Variant, league: int, level: int = 0) -> Variant:
 	if value is Array and value.size() == 5 and (value[0] is float or value[0] is int):
 		return value[clampi(league, 1, 5) - 1]
+	if value is Dictionary and value.has("by_level"):   # Atlas armor: 'if CurrentLevel < N then ...' bands
+		for band in value["by_level"]:
+			if level < int(band[0]):
+				return band[1]
+		return value["else"]
+	if value is Dictionary and value.has("level_expr"):   # Atlas health: 155 + 70 * max(0, level - 1)
+		var ex := Expression.new()
+		assert(ex.parse(value["level_expr"], ["level"]) == OK, "bad level expression %s" % value["level_expr"])
+		return ex.execute([level])
 	return value
 
 
@@ -66,7 +75,7 @@ static func group_id(g: Variant, map: Dictionary) -> int:
 
 
 ## Fill a blackboard with the CreateData values of a unit script.
-static func fill_blackboard(bb: Blackboard, unit_id: String, league: int) -> void:
+static func fill_blackboard(bb: Blackboard, unit_id: String, league: int, level: int = 0) -> void:
 	var data := raw(unit_id)
 	var values: Dictionary = data["values"]
 	var map := group_map(data)
@@ -74,7 +83,7 @@ static func fill_blackboard(bb: Blackboard, unit_id: String, league: int) -> voi
 		var by_group: Dictionary = values[event]
 		for g in by_group:
 			var group := Blackboard.ANY_GROUP if g == "*" else group_id(g, map)
-			bb.set_value(event, group, resolve(by_group[g], league))
+			bb.set_value(event, group, resolve(by_group[g], league, level))
 	bb.set_value("collision_radius", Blackboard.ANY_GROUP, data.get("collision_radius", 0.5))
 	if data.has("tier"):
 		bb.set_value("card_tier", Blackboard.ANY_GROUP, data["tier"])

@@ -35,6 +35,9 @@ var ready_reference: float = 0.0
 var ready_absolute: bool = false
 var ready_props: Array = []        # TWelaReadyUnitPropertyComponent.MustHave on the owner
 var ready_not_props: Array = []
+var ready_nearby_group: int = -1       # TWelaReadyEntityNearbyComponent.TargetingGroup: ready depends on that group's targets
+var ready_if_no_targets: bool = false  # .ReadyIfNoTargets (else ReadyIfTargets)
+var target_self: bool = false          # TWelaTargetingSelfComponent: the only target is the owner
 var target_health_full: bool = false   # TWelaTargetConstraintResourceComponent.CheckFull
 var target_mana_not_full: bool = false # TWelaTargetConstraintResourceComponent.CheckResource(reMana).CheckNotFull
 var target_any_team: bool = false      # SetTargetTeamConstraint(tcAll)
@@ -52,6 +55,14 @@ var dodge_chance: float = 0.0          # TBuffTakenDamageMultiplierComponent.Dod
 var cap_op: String = ""                # TWelaTargetConstraintResourceComponent.CompareCapToReference (VoidAltar: max hp <= 60)
 var cap_ref: float = 0.0
 var modifies_amount: bool = false      # TAutoBrainOnTakeDamageComponent.ModifiesAmount
+var fires_on_hit: bool = false         # TAutoBrainOnTakeDamageComponent.FireSelfInGroup: the group fires when hit
+var think_local: bool = false          # TBrainWelaFightComponent.ThinksLocal: thinks only when another group fires it
+var triggers_after_damage: bool = false   # TAutoBrainOnTakeDamageComponent.TriggersAfterDamage: hook runs once the health dropped
+var passive_if_conscious: bool = false    # .ThinksPassivelyIfConscious: not while stunned / frozen
+var teleport_to_target: bool = false   # TWarheadSpottyTeleportComponent.OffsetByCollisionRadius: blink next to the target
+var teleport_offset: float = 0.0       # .Offset(d): extra gap after both collision radii
+var trigger_not_self: bool = false     # TWelaTriggerCheckNotSelfComponent: not for self-inflicted damage
+var heal_percent_of_max: bool = false  # TWarheadSpottyHealComponent.PercentageOfMaxHealth
 var mirror_pairs: Array = []           # TAutoBrainOnTakeDamageComponent.CheckSelfForTargetsInGroup + FireTargetsInGroup: [[self, enemy]]
 var on_deal_groups: Array = []         # TAutoBrainOnDealDamageComponent.FireInGroup on a unit weapon (VoidSlime mirror)
 var apply_script_values: Array = []    # TWarheadApplyScriptComponent.PassIntValue for apply_script
@@ -207,6 +218,8 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 						w.blocking = true
 					elif c[0] == "ThinksPassively":
 						w.passive = true
+					elif c[0] == "ThinksLocal":
+						w.think_local = true
 			"TWelaEfficiencyDamageTypeComponent":
 				for c in calls:
 					if c[0] == "Prioritize":
@@ -340,6 +353,9 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 				w.heals = true
 				w.splash = comp["class"].begins_with("TWarheadSplash")
 				w.target_allies = true
+				for c in calls:
+					if c[0] == "PercentageOfMaxHealth":
+						w.heal_percent_of_max = true
 			"TWarheadSpottyDamageComponent", "TWarheadSplashDamageComponent":
 				var w: Wela = get.call(g, Kind.SUB)
 				w.damages = true
@@ -363,6 +379,12 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 					elif c[0] == "OperatorOr":
 						push_warning("TWelaTargetConstraintBooleanComponent.OperatorOr treated as And")
 				booleans.append([g, sources])
+			"TWarheadSpottyTeleportComponent":
+				var w: Wela = get.call(g, Kind.SUB)
+				w.teleport_to_target = true
+				for c in calls:
+					if c[0] == "Offset":
+						w.teleport_offset = float(c[1][0])
 			"TWarheadSpottyKillComponent":
 				var w: Wela = get.call(g, Kind.SUB)
 				w.kills = true
@@ -524,6 +546,15 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 						w.ready_props.append_array(c[1][0])
 					elif c[0] == "MustNotHave":
 						w.ready_not_props.append_array(c[1][0])
+			"TWelaReadyEntityNearbyComponent":
+				var w: Wela = get.call(g, Kind.SUB)
+				for c in calls:
+					if c[0] == "TargetingGroup":
+						w.ready_nearby_group = UnitDb.group_id(c[1][0][0], map)
+					elif c[0] == "ReadyIfNoTargets":
+						w.ready_if_no_targets = true
+			"TWelaTargetingSelfComponent":
+				get.call(g, Kind.SUB).target_self = true
 			"TWelaTargetConstraintResourceCompareComponent":
 				var w: Wela = get.call(g, Kind.SUB)
 				for c in calls:
@@ -573,6 +604,12 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 				for c in calls:
 					if c[0] == "ModifiesAmount":
 						w.modifies_amount = true
+					elif c[0] == "FireSelfInGroup":
+						w.fires_on_hit = true
+					elif c[0] == "TriggersAfterDamage":
+						w.triggers_after_damage = true
+					elif c[0] == "ThinksPassivelyIfConscious":
+						w.passive_if_conscious = true
 					elif c[0] == "CheckSelfForTargetsInGroup":
 						self_group = UnitDb.group_id(c[1][0][0], map)
 					elif c[0] == "FireTargetsInGroup":
@@ -632,8 +669,10 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 				for c in calls:
 					if c[0] == "TimesForEach":
 						w.times_for_each = int(c[1][0])
-			"TThinkImpulseFireComponent":
-				var w: Wela = get.call(g, Kind.ON_HEALED)
+			"TWelaTriggerCheckNotSelfComponent":
+				get.call(g, Kind.ON_TAKE_DAMAGE).trigger_not_self = true
+			"TThinkImpulseFireComponent":   # fires the target groups from an auto brain (healed, hit)
+				var w: Wela = by_group[g] if by_group.has(g) else get.call(g, Kind.ON_HEALED)
 				for c in calls:
 					if c[0] == "TargetGroup":
 						w.chain_groups.append(UnitDb.group_id(c[1][0][0], map))

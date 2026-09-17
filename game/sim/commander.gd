@@ -19,6 +19,7 @@ var free_cards: bool = false        # sandbox: NOT_PAYED_RESOURCES includes gold
 class DeckSlot:
 	var card: Cards.CardDef
 	var level: int = 5
+	var times_played: int = 0        # reCardTimesPlayed: raised before each spawn (Atlas' level)
 	var charges: int
 	var charge_cap: int
 	var charge_cooldown_ms: int

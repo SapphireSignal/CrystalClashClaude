@@ -42,8 +42,51 @@ def create_data_body(text: str) -> str:
     return body
 
 
+RE_ASSIGN = re.compile(r"^\s*(\w+)\s*:=\s*(.+?);\s*$")
+RE_LEVEL_CHAIN = re.compile(
+    r"if\s+(\w+)\s*<\s*(\d+)\s+then\s*Entity\.Blackboard\.SetValue\((\w+),\s*\[\],\s*(\w+)\)"
+    r"((?:\s*else\s+if\s+\1\s*<\s*\d+\s+then\s*Entity\.Blackboard\.SetValue\(\3,\s*\[\],\s*\w+\))*)"
+    r"\s*else\s*Entity\.Blackboard\.SetValue\(\3,\s*\[\],\s*(\w+)\);",
+    re.S,
+)
+RE_LEVEL_BAND = re.compile(r"<\s*(\d+)\s+then\s*Entity\.Blackboard\.SetValue\(\w+,\s*\[\],\s*(\w+)\)")
+
+
+def resolve_level_logic(body: str) -> str:
+    """Atlas: 'if CurrentLevel < N then SetValue(...) else if ... else SetValue(...)' chains become one
+    SetValue with a '<level:2=a;4=b;*=c>' value, and CreateData local variables (CurrentLevel := Entity.BalanceInt(reLevel);
+    AdjustedHealth := AdjustedHealth + 70.0 * Max(0, CurrentLevel - 1)) are substituted into the SetValue lines."""
+
+    def chain(m: re.Match) -> str:
+        bands = [f"{m.group(2)}={m.group(4)}"] + [f"{t}={v}" for t, v in RE_LEVEL_BAND.findall(m.group(5))]
+        return f"Entity.Blackboard.SetValue({m.group(3)}, [], <level:{';'.join(bands)};*={m.group(6)}>);"
+
+    body = RE_LEVEL_CHAIN.sub(chain, body)
+    subs: dict = {}
+    out = []
+    for line in body.splitlines():
+        m = RE_ASSIGN.match(line)
+        if m:
+            name, expr = m.groups()
+            for k, v in subs.items():
+                expr = re.sub(rf"\b{k}\b", f"({v})", expr)
+            subs[name] = expr
+            continue
+        for k, v in subs.items():
+            line = re.sub(rf"\b{k}\b", v, line)
+        out.append(line)
+    return "\n".join(out)
+
+
 def parse_value(raw: str):
     raw = strip_annotations(raw).strip()
+    if raw.startswith("<level:") and raw.endswith(">"):
+        bands = [b.split("=") for b in raw[7:-1].split(";")]
+        return {"by_level": [[int(t), parse_value(v)] for t, v in bands if t != "*"],
+                "else": parse_value(dict(bands)["*"])}
+    if "Entity.BalanceInt(reLevel)" in raw:
+        expr = raw.replace("Entity.BalanceInt(reLevel)", "level").replace("Max(", "max(").replace("Min(", "min(")
+        return {"level_expr": re.sub(r"\s+", " ", expr)}
     m = RE_LEAGUE_ARR.match(raw)
     if m:
         scale = float(m.group(1)) if m.group(1) else 1.0
@@ -171,6 +214,9 @@ def _parse_components_plain(body: str) -> list:
     out = []
     for stmt in body.split(";"):
         stmt = " ".join(stmt.split())
+        skin = re.match(r"^if Entity\.SkinID\s*=.*?\bthen\b(.*?)\belse\b(.*)$", stmt)
+        if skin:  # skins only change visuals: keep the default (else) branch (PhaseDrone's Invincibility ApplyBlue)
+            stmt = skin.group(2)
         # drop leading control flow such as "if Game.IsPvP then" or "begin"
         stmt = re.sub(r"^(?:.*?\bthen\b\s*)?(?:begin\s*)?(?:else\s*)?", "", stmt, count=1) if "then" in stmt or stmt.startswith(("begin", "else")) else stmt
         m = RE_COMPONENT.match(stmt.strip())
@@ -342,7 +388,7 @@ def parse_script(path: Path) -> dict:
         data["card_kind"] = m.group(1)
         data["legendary"] = m.group(2) == "True"
         data["tier"] = int(m.group(3))
-    parse_set_lines(body, data["values"])
+    parse_set_lines(resolve_level_logic(body), data["values"])
     entity_body = create_entity_body(text)
     parse_set_lines(re.sub(r"\{\$IFDEF CLIENT\}.*?\{\$ENDIF\}", "", entity_body, flags=re.S), data["values"])
     data["components"] = data.get("components", []) + parse_components(create_meta_body(text)) + parse_components(entity_body)

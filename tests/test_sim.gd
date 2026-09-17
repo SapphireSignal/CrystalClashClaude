@@ -1773,3 +1773,117 @@ func test_induction() -> void:
 	monk.base_speed = 0.0
 	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 0, monk.id), Simulation.PlayResult.OK, "cast frenzy near the drone")
 	runner.check_eq(drone.mana, 1, "induction: +1 energy per allied spell within 12")
+
+
+func test_observer_drone_range_aura_and_cloak() -> void:
+	var sim := Simulation.new(9, 4)
+	var drone := sim.spawn("Units/Blue/ObserverDrone", Simulation.TEAM_BLUE, Vector2(0, -23))
+	var archer := sim.spawn("Units/White/Archer", Simulation.TEAM_BLUE, Vector2(2, -23))
+	var turret := sim.spawn("Units/Blue/GatlingTurret", Simulation.TEAM_BLUE, Vector2(-2, -23))
+	var footman := sim.spawn("Units/White/Footman", Simulation.TEAM_BLUE, Vector2(0, -21))
+	archer.locked_until = 1 << 30
+	var base_range := archer.range_of()
+	var turret_range := turret.range_of()
+	sim.step()
+	runner.check(drone.has("upInvisible"), "cloaked while no enemy is near")
+	runner.check(not archer.linked_from(drone.id), "the range aura activates only after 1 s")
+	while sim.time_ms < 1200:
+		sim.step()
+	runner.check_near(archer.range_of(), base_range + 3.0, "+3 range for ranged units")
+	runner.check_near(turret.range_of(), turret_range + 5.0, "+5 range for ranged buildings")
+	runner.check(not footman.linked_from(drone.id), "melee units are not linked")
+	var monk := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(10, -23))
+	monk.locked_until = 1 << 30
+	for i in 3:
+		sim.step()
+	runner.check(drone.has("upInvisible"), "a ground enemy does not reveal a flyer")
+	var wisp := sim.spawn("Units/Green/Wisp", Simulation.TEAM_RED, Vector2(10, -23))
+	wisp.locked_until = 1 << 30
+	for i in 3:
+		sim.step()
+	runner.check(not drone.has("upInvisible"), "a flying enemy within 15 reveals it")
+	sim._kill(wisp)
+	for i in 12:
+		sim.step()
+	runner.check(drone.has("upInvisible"), "cloaks again once the enemy is gone")
+
+
+func test_atlas_supreme_levels() -> void:
+	var sim := Simulation.new(2, 4)
+	var lvl1 := sim.spawn("Units/Blue/Atlas", Simulation.TEAM_BLUE, Vector2(-50, -23), Vector2.ZERO, 1)
+	runner.check_near(lvl1.max_health, 155.0, "level 1: 155 hp")
+	runner.check_eq(lvl1.base_armor, SimConstants.ArmorType.UNARMORED, "level 1: unarmored")
+	var lvl5 := sim.spawn("Units/Blue/Atlas", Simulation.TEAM_BLUE, Vector2(-50, -20), Vector2.ZERO, 5)
+	runner.check_near(lvl5.max_health, 155.0 + 70.0 * 4, "level 5: +70 hp per level above 1")
+	runner.check_eq(lvl5.base_armor, SimConstants.ArmorType.MEDIUM, "level 5: medium armor")
+	var lvl10 := sim.spawn("Units/Blue/Atlas", Simulation.TEAM_BLUE, Vector2(-50, -17), Vector2.ZERO, 10)
+	runner.check_eq(lvl10.base_armor, SimConstants.ArmorType.HEAVY, "level 6+: heavy armor")
+	sim.spawn_bases()
+	var c: Commander = sim.commanders[Simulation.TEAM_BLUE]
+	c.set_deck(["Units/Blue/AtlasDrop"])
+	c.free_cards = true
+	for a in [lvl1, lvl5, lvl10]:
+		sim._kill(a)
+	var levels := []
+	for i in 12:
+		runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 0, Vector2(-50, -23)), Simulation.PlayResult.OK, "play atlas %d" % (i + 1))
+		var atlas: SimEntity = sim.alive_entities(Simulation.TEAM_BLUE).filter(func(e): return e.has("upLegendary"))[0]
+		levels.append(atlas.level)
+		sim._kill(atlas)
+	runner.check_eq(levels, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10], "level = times played, capped at 10")
+
+
+func test_atlas_active_armor_and_induction_repair() -> void:
+	var sim := _black_spell_sim()
+	var atlas := sim.spawn("Units/Blue/Atlas", Simulation.TEAM_BLUE, Vector2(-40, -23), Vector2.ZERO, 1)
+	atlas.locked_until = 1 << 30
+	var monk := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(-36, -23))
+	monk.locked_until = 1 << 30
+	var t := sim.time_ms
+	while sim.time_ms < t + 2300:   # legendary spawn lockout
+		sim.step()
+	var hp := atlas.health
+	var dealt := sim.deal_damage(atlas, 20.0, SimConstants.DamageType.MELEE, monk)
+	runner.check_near(atlas.health, hp - dealt - 10.0, "active armor: 10 true feedback damage per hit taken")
+	var monk_hp := monk.health
+	for i in 40:
+		sim.step()
+	runner.check(monk.health < monk_hp, "a 10-damage projectile flies at a random enemy within 6.5")
+	hp = atlas.health
+	sim.deal_damage(atlas, 5.0, SimConstants.DamageType.TRUE, atlas)
+	runner.check_near(atlas.health, hp - 5.0, "self-inflicted damage does not trigger it")
+	atlas.health = 100.0
+	var ally := sim.spawn("Units/White/Monk", Simulation.TEAM_BLUE, Vector2(-45, -23))
+	ally.base_speed = 0.0
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 0, ally.id), Simulation.PlayResult.OK, "cast frenzy near atlas")
+	runner.check_near(atlas.health, 100.0 + 15.5, "induction repair: 10 % of max hp per allied spell within 12")
+
+
+func test_phase_drone_teleport_strike_and_shield_overload() -> void:
+	var sim := Simulation.new(2, 4)
+	var drone := sim.spawn("Units/Blue/PhaseDrone", Simulation.TEAM_BLUE, Vector2(-40, -23))
+	var monk := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(-34, -23))
+	monk.locked_until = 1 << 30
+	var hp := monk.health
+	var t := sim.time_ms
+	while monk.health == hp and sim.time_ms < t + 2000:
+		sim.step()
+	runner.check_near(monk.health, hp - 100.0, "teleport strike: 100 ability damage (armor does not apply)")
+	runner.check_near(drone.position.distance_to(monk.position), drone.collision_radius + monk.collision_radius - 0.1, "blinked next to its victim", 0.05)
+	runner.check_eq(drone.mana, 0, "costs its 2 energy")
+	drone.locked_until = 1 << 30
+	sim.deal_damage(drone, 10.0, SimConstants.DamageType.MELEE, monk)
+	runner.check(drone.has("upInvincible"), "shield overload: invincible after taking damage")
+	var shielded := drone.health
+	sim.deal_damage(drone, 10.0, SimConstants.DamageType.MELEE, monk)
+	runner.check_near(drone.health, shielded, "no damage while invincible")
+	t = sim.time_ms
+	while sim.time_ms < t + 2100:
+		sim.step()
+	runner.check(not drone.has("upInvincible"), "invincibility lasts 2 s")
+	sim.deal_damage(drone, 10.0, SimConstants.DamageType.MELEE, monk)
+	runner.check(not drone.has("upInvincible"), "shield overload has an 8 s cooldown")
+	while sim.time_ms < t + 8100:
+		sim.step()
+	sim.deal_damage(drone, 10.0, SimConstants.DamageType.MELEE, monk)
+	runner.check(drone.has("upInvincible"), "ready again after 8 s")
