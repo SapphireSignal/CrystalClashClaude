@@ -2398,3 +2398,39 @@ func test_golems_small_caster_crystal_speed() -> void:
 	sim._kill(caster)
 	sim.step()
 	runner.check(not a.has("upHasCrystalSpeed"), "the buff ends with the link")
+
+
+func test_golems_big_caster_beam() -> void:
+	var sim := Simulation.new(2, 4)
+	var caster := sim.spawn("Units/Golems/GolemsBigCasterGolem", Simulation.TEAM_BLUE, Vector2(-40, -23))
+	var victim := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(-34, -23))
+	victim.locked_until = 1 << 30
+	victim.max_health = 100000.0
+	victim.health = 100000.0
+	runner.check(caster.has("upImmuneToBlinded") and caster.has("upLinkWeapon"), "big caster golem: link weapon, can't be blinded")
+	var next_hit := func(until: int) -> float:
+		var hp: float = victim.health
+		while victim.health == hp and sim.time_ms < until:
+			sim.step()
+		return hp - victim.health
+	var t := sim.time_ms
+	runner.check_near(next_hit.call(t + 2000), 21.0, "beam: 14 x 1.5 x 1 charge per tick")
+	var t0 := sim.time_ms
+	next_hit.call(t0 + 1000)
+	runner.check(sim.time_ms - t0 <= 512, "every 500 ms")
+	runner.check(sim.projectiles.is_empty(), "no projectiles: it is a beam")
+	while sim.time_ms < t + 3500:
+		sim.step()
+	runner.check_near(next_hit.call(t + 4500), 42.0, "x2 charges after 3 s")
+	while sim.time_ms < t + 6600:
+		sim.step()
+	runner.check_near(next_hit.call(t + 7500), 63.0, "x3 charges after 6 s (cap)")
+	while sim.time_ms < t + 10000:
+		sim.step()
+	runner.check_near(next_hit.call(t + 11000), 63.0, "stays at x3")
+	sim._teleport(victim, Vector2(-20, -23))
+	while sim.time_ms < t + 12000:
+		sim.step()
+	runner.check(victim.link_buffs.is_empty(), "the beam breaks out of range")
+	sim._teleport(victim, Vector2(-34, -23))
+	runner.check_near(next_hit.call(t + 14000), 21.0, "and restarts at x1")

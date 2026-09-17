@@ -956,15 +956,29 @@ func _think_link(e: SimEntity, w: Wela) -> void:
 				b.link_leech = b.link_bb.get_float("eiWelaModifier", 1, 0.0)
 				b.tick_interval = b.link_bb.get_int("eiCooldown", 0, e.bb.get_int("eiCooldown", w.group, 1000))
 				b.next_tick_at = time_ms + b.tick_interval
+				b.link_charge = b.link_bb.get_int("eiResourceBalance.reWelaCharge", Blackboard.ANY_GROUP, 0)
+				b.link_charge_cap = b.link_bb.get_int("eiResourceCap.reWelaCharge", Blackboard.ANY_GROUP, 0)
+				for lw in b.link_welas:
+					if lw.resource == "reWelaCharge" and lw.group != 0:   # the ramp group: +1 charge per cooldown
+						b.link_charge_interval = b.link_bb.get_int("eiCooldown", lw.group, 0)
+						b.link_charge_next_at = time_ms + b.link_charge_interval
+					elif lw.group == 0 and lw.damage_scales_with_charges_of >= 0:
+						b.link_damage_mult = b.link_bb.get_float("eiWelaModifier", lw.damage_scale_group, 1.0)
 				for lw in b.link_welas:
 					if lw.fires_at_create_group >= 0:   # FiresAtCreate: root once when the beam forms
 						_fire_link_group(e, other, b, lw.fires_at_create_group)
 			other.link_buffs[key] = b
 		elif linked:
 			var b: Buff = other.link_buffs[key]
+			if b.link_charge_interval > 0 and b.link_charge < b.link_charge_cap and time_ms >= b.link_charge_next_at:
+				b.link_charge += 1   # Intensify: the beam ramps up while it holds
+				b.link_charge_next_at += b.link_charge_interval
 			if b.link_damage > 0.0 and time_ms >= b.next_tick_at:   # TLinkBrainComponent: hurt the target, leech to the owner
 				b.next_tick_at += b.tick_interval
-				var dealt := deal_damage(other, b.link_damage, b.link_damage_type, e)
+				var tick_damage := b.link_damage
+				if b.link_charge_cap > 0:
+					tick_damage *= b.link_damage_mult * b.link_charge
+				var dealt := deal_damage(other, tick_damage, b.link_damage_type, e)
 				if dealt > 0.0 and b.link_leech > 0.0:
 					heal(e, dealt * b.link_leech, SimConstants.DamageType.HOT, e)
 				for lw in b.link_welas:

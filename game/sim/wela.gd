@@ -593,6 +593,7 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 						value_group = UnitDb.group_id(c[1][0][0], map)
 				if scales:
 					w.damage_scales_with_charges_of = res_group
+					w.damage_scale_group = value_group   # link beams: eiWelaModifier of that group x charges
 				elif resource != "":
 					w.damage_scale_resource = resource   # Brratu: +0.2 x current health; DamperDrone: +15 x energy
 					w.damage_scale_group = value_group
