@@ -103,6 +103,7 @@ var ready_not_full: bool = false       # TWelaReadyResourceCompareComponent.Chec
 var damage_scale_resource: String = ""   # TModifierWelaDamageComponent.ScaleWithResource on a unit weapon (Brratu)
 var damage_scale_group: int = -1
 var timer_period: int = -1             # TThinkImpulseTimerCooldownComponent: fires every eiCooldown of the group
+var timer_ready: bool = false          # .TimerIsReady: the first timer think happens at creation (Earthquake's first wave)
 var nth: int = 0                       # TWelaReadyNthComponent.Nth: ready on the nth think
 var think_count: int = 0
 var produced_fire_group: int = -1      # TAutoBrainWelaTargetProducedUnitComponent.FireInGroup
@@ -167,6 +168,8 @@ var damage_scales_with_charges_of: int = -1   # TModifierWelaDamageComponent.Mul
 var suicide_when_empty: bool = false # TWelaReadyResourceCompareComponent(reWelaCharge).CheckEmpty + suicide
 # spell effect entities
 var commander_cast: bool = false     # TBrainWelaCommanderComponent: cast by the player, not auto
+var override_target_to_owner: bool = false   # .OverrideTargetToOwner: the spell hits the commander itself (Echoes of the Future)
+var range_scales_with_stage: bool = false    # TModifierWelaRangeComponent.ScaleWithStage: modifier x tier of the first commander
 var suicide: bool = false            # TWelaEffectSuicideComponent
 # TWelaEffectFactoryComponent: spawn eiWelaUnitPattern x eiWelaCount at the target position
 var spawns: bool = false
@@ -222,6 +225,10 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 			"TBrainWelaCommanderComponent":
 				for gg in groups:
 					get.call(gg, Kind.SUB).commander_cast = true
+				for c in calls:
+					if c[0] == "OverrideTargetToOwner":
+						for gg in groups:
+							get.call(gg, Kind.SUB).override_target_to_owner = true
 			"TWelaEffectSuicideComponent":
 				get.call(g, Kind.SUB).suicide = true
 			"TWelaTargetConstraintZoneComponent":
@@ -272,8 +279,13 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 					if bb.has_value("eiCooldown", gg):
 						period = bb.get_int("eiCooldown", gg, 0)
 						break
+				var ready := false
+				for c in calls:
+					if c[0] == "TimerIsReady":
+						ready = true
 				for gg in groups:
 					get.call(gg, Kind.SUB).timer_period = period
+					get.call(gg, Kind.SUB).timer_ready = ready
 			"TWelaReadyNthComponent":
 				for c in calls:
 					if c[0] == "Nth" or c[0] == "Times":
@@ -675,6 +687,7 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 						"SetValueGroup": w.range_modifier_group = UnitDb.group_id(c[1][0][0], map)
 						"ReadyGroup": w.range_ready_group = UnitDb.group_id(c[1][0][0], map)
 						"ScaleWithTime": w.range_scales_with_time = true
+						"ScaleWithStage": w.range_scales_with_stage = true
 			"TAutoBrainOnTakeDamageComponent":
 				var w: Wela = get.call(g, Kind.ON_TAKE_DAMAGE)
 				w.kind = Kind.ON_TAKE_DAMAGE

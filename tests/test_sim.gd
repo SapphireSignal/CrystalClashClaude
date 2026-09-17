@@ -2480,3 +2480,189 @@ func test_golems_siege_golem_artillery() -> void:
 		sim.step()
 	runner.check_near(victim.health, 265.0 - 68.0, "68 melee siege damage")
 	runner.check_eq(golem.ammo, 0, "and the swing dumps the charges")
+
+
+func _golems_spell_sim() -> Simulation:
+	var sim := Simulation.new(41, 4)
+	sim.spawn_bases()
+	var c: Commander = sim.commanders[Simulation.TEAM_BLUE]
+	c.set_deck(["Spells/Golems/Cataclysm.sps", "Spells/Golems/EchoesOfTheFuture.sps", "Spells/Golems/Petrify.sps",
+		"Spells/Golems/StoneCircle.sps", "Spells/Golems/Earthquake.sps"])
+	c.gold = 1000.0
+	c.raise_tier(3)
+	c.free_cards = true
+	while not sim.game_started:
+		sim.step()
+	return sim
+
+
+func test_petrify() -> void:
+	var sim := _golems_spell_sim()
+	var enemy := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(1, -23))
+	var ally := sim.spawn("Units/White/Monk", Simulation.TEAM_BLUE, Vector2(-1, -23))
+	var far := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(8, -23))
+	for m in [enemy, ally, far]:
+		m.base_speed = 0.0
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 2, Vector2(0, -23)), Simulation.PlayResult.OK, "cast petrify")
+	for i in 3:
+		sim.step()
+	runner.check(enemy.has("upPetrified") and ally.has("upPetrified"), "units of both teams in radius 4 are petrified")
+	runner.check(not far.has("upPetrified"), "not beyond 4")
+	runner.check(not enemy.can_think(sim.time_ms), "petrified units can't act")
+	runner.check_eq(sim.alive_entities(Simulation.TEAM_BLUE).filter(func(e): return e.is_spell_effect()).size(), 0, "the field vanishes at once")
+	var t := sim.time_ms
+	while sim.time_ms < t + 2100:
+		sim.step()
+	runner.check_near(ally.overheal, 20.0, "10 hp per second as overheal")
+	while sim.time_ms < t + 12500:
+		sim.step()
+	runner.check(not enemy.has("upPetrified"), "stone crumbles after 12 s")
+	runner.check(enemy.has("upImmuneToPetrified"), "then immune")
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 2, Vector2(0, -23)), Simulation.PlayResult.OK, "cast again")
+	for i in 3:
+		sim.step()
+	runner.check(not enemy.has("upPetrified"), "immune units are skipped")
+	while sim.time_ms < t + 22500:
+		sim.step()
+	runner.check(not enemy.has("upImmuneToPetrified"), "immunity ends 10 s later")
+
+
+func test_stone_circle() -> void:
+	var sim := _golems_spell_sim()
+	var allies: Array = []
+	for i in 10:
+		var f := sim.spawn("Units/White/Footman", Simulation.TEAM_BLUE, Vector2((i % 5) * 1.2, -23 + (i / 5) * 1.2))
+		f.base_speed = 0.0
+		allies.append(f)
+	var archer := sim.spawn("Units/White/Archer", Simulation.TEAM_BLUE, Vector2(0, -20))
+	archer.base_speed = 0.0
+	var base_damage: float = allies[0].damage(1)
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 3, Vector2(0, -23)), Simulation.PlayResult.OK, "cast stone circle")
+	for i in 5:
+		sim.step()
+	runner.check(archer.has("upSpellshieldAuraBuffed"), "allies in radius 4.5 get the spellshield aura")
+	var hp := archer.health
+	sim.deal_damage(archer, 50.0, SimConstants.DamageType.SPELL, null)
+	runner.check_near(archer.health, hp - 10.0, "spell damage x0.2")
+	var blessed := allies.filter(func(f): return f.has("upBlessedStonefist"))
+	runner.check_eq(blessed.size(), 1, "one melee ally enchanted at once")
+	if not blessed.is_empty():
+		runner.check_near(blessed[0].damage(1), base_damage + 15.0, "stonefist: +15 damage")
+	runner.check(not archer.has("upBlessedStonefist"), "ranged allies are never enchanted")
+	var t := sim.time_ms
+	while sim.time_ms < t + 6200:
+		sim.step()
+	runner.check_eq(allies.filter(func(f): return f.has("upBlessedStonefist")).size(), 4, "one more every 2 s")
+	while sim.time_ms < t + 21000:
+		sim.step()
+	runner.check_eq(allies.filter(func(f): return f.has("upBlessedStonefist")).size(), 10, "all ten enchanted")
+	runner.check_eq(sim.alive_entities(Simulation.TEAM_BLUE).filter(func(e): return e.has("upCharm")).size(), 0, "field gone after 10 enchantments")
+	runner.check(not archer.has("upSpellshieldAuraBuffed"), "aura gone with the field")
+
+
+func test_earthquake() -> void:
+	var sim := _golems_spell_sim()
+	var enemy := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(1, -23))
+	var flyer := sim.spawn("Units/Golems/GolemsSmallFlyingGolem", Simulation.TEAM_RED, Vector2(-1, -23))
+	var ally := sim.spawn("Units/White/Monk", Simulation.TEAM_BLUE, Vector2(2, -23))
+	for m in [enemy, flyer, ally]:
+		m.base_speed = 0.0
+		m.locked_until = 1 << 30
+	enemy.max_health = 1000.0
+	enemy.health = 1000.0
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 4, Vector2(0, -23)), Simulation.PlayResult.OK, "cast earthquake")
+	for i in 3:
+		sim.step()
+	runner.check_near(enemy.health, 1000.0 - 35.0, "first wave at once: 35 siege spell splash")
+	runner.check(enemy.has("upStunned"), "and a stun")
+	runner.check_near(flyer.health, 97.0, "flying enemies untouched")
+	runner.check_near(ally.health, 265.0, "allies untouched")
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 4, Vector2(0, -23)), Simulation.PlayResult.LEGENDARY_ALIVE, "counts as the legendary")
+	var t := sim.time_ms
+	while sim.time_ms < t + 4800:
+		sim.step()
+	runner.check_near(enemy.health, 1000.0 - 35.0, "nothing in between")
+	while sim.time_ms < t + 5200:
+		sim.step()
+	runner.check_near(enemy.health, 1000.0 - 70.0, "second wave after 5 s")
+	while sim.time_ms < t + 26000:
+		sim.step()
+	runner.check_near(enemy.health, 1000.0 - 6 * 35.0, "six waves in all")
+	runner.check_eq(sim.alive_entities(Simulation.TEAM_BLUE).filter(func(e): return e.is_spell_effect()).size(), 0, "field gone after the sixth")
+
+
+func test_cataclysm() -> void:
+	var sim := _golems_spell_sim()
+	var c: Commander = sim.commanders[Simulation.TEAM_BLUE]
+	var nexus: Vector2 = sim.map.base_layout(Simulation.TEAM_BLUE)["nexus"]
+	var at := nexus + Vector2(8, 0)
+	var enemy := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, at + Vector2(2, 0))
+	var ally := sim.spawn("Units/White/Footman", Simulation.TEAM_BLUE, at + Vector2(-2, 0))
+	var far := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, at + Vector2(0, 9))
+	for m in [enemy, ally, far]:
+		m.base_speed = 0.0
+		m.locked_until = 1 << 30
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 0, Vector2(0, -23)), Simulation.PlayResult.BAD_TARGET, "cataclysm: only near the own nexus")
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 0, at), Simulation.PlayResult.OK, "cast in the nexus zone")
+	var field: SimEntity = null
+	for e in sim.alive_entities(Simulation.TEAM_BLUE):
+		if e.is_spell_effect():
+			field = e
+	runner.check(field != null and is_equal_approx(field.range_of(0), 6.0 + 0.5 * 3), "range 6 + 0.5 x tier (3)")
+	for i in 3:
+		sim.step()
+	runner.check(enemy.alive and ally.alive, "nothing happens for 500 ms")
+	var t := sim.time_ms
+	while sim.time_ms < t + 600:
+		sim.step()
+	runner.check(not enemy.alive and not ally.alive, "then units of both teams in range are annihilated")
+	runner.check(enemy.exiled, "exiled: no death effects")
+	runner.check(far.alive, "units beyond the range survive")
+	runner.check(sim.entities[sim.nexus_ids[Simulation.TEAM_BLUE]].alive, "the nexus (upBase) is spared")
+	runner.check_eq(sim.alive_entities(Simulation.TEAM_BLUE).filter(func(e): return e.is_spell_effect()).size(), 0, "field gone")
+	c.free_cards = false
+	c.gold = 100.0
+	c.wood = 0.0
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 0, at), Simulation.PlayResult.NOT_READY, "needs the full gold bar")
+	c.gold = c.gold_cap()
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 0, at), Simulation.PlayResult.OK, "castable at the gold cap")
+	runner.check_near(c.gold, 0.0, "consumes all gold")
+	runner.check_near(c.wood, c.gold_cap(), "refunded as wood")
+	c.gold = c.gold_cap()
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 0, at), Simulation.PlayResult.OK, "no charges: castable again at once")
+
+
+func test_echoes_of_the_future() -> void:
+	var sim := _golems_spell_sim()
+	var c: Commander = sim.commanders[Simulation.TEAM_BLUE]
+	runner.check_eq(c.slots[1].charge_cooldown_ms, Cards.charge_cooldown(1, 4, 5, false, false) * 3, "echoes: charge cooldown x3")
+	var next_tick := func() -> void:
+		var n: int = sim.tick_counter
+		while sim.tick_counter == n:
+			sim.step()
+	c.gold = 0.0
+	next_tick.call()
+	runner.check_near(c.gold, c.income(), "normal income")
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 1, Vector2(0, -23)), Simulation.PlayResult.OK, "cast echoes")
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 1, Vector2(0, -23)), Simulation.PlayResult.NOT_READY, "not while it runs")
+	var t := sim.time_ms
+	c.gold = 0.0
+	next_tick.call()
+	runner.check_near(c.gold, c.income() * 2.0, "gold income x2")
+	while sim.time_ms < t + 29000:
+		sim.step()
+	c.gold = 0.0
+	next_tick.call()
+	runner.check_near(c.gold, c.income() * 2.0, "still x2 near the end of 30 s")
+	while sim.time_ms < t + 32000:
+		sim.step()
+	c.gold = 0.0
+	next_tick.call()
+	runner.check_near(c.gold, 0.0, "then x0 for the payback")
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 1, Vector2(0, -23)), Simulation.PlayResult.NOT_READY, "still blocked during the payback")
+	while sim.time_ms < t + 62000:
+		sim.step()
+	c.gold = 0.0
+	next_tick.call()
+	runner.check_near(c.gold, c.income(), "normal income after 60 s")
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 1, Vector2(0, -23)), Simulation.PlayResult.OK, "castable again")

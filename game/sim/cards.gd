@@ -16,6 +16,8 @@ class CardDef:
 	var tier: int
 	var name: String
 	var legendary: bool = false
+	var epic: bool = false                     # upEpic (PrepareEpicSpell): costs the full gold bar, no charges, cast near the nexus
+	var charge_cooldown_mult: float = 1.0      # eiCooldown[ChargeGroup] 'GetCardBaseChargeCooldown(...) * 3' (Echoes of the Future)
 	var target_type: String = "ctCoordinate"   # spells: ctCoordinate or ctEntity (eiAbilityTargetType)
 	var cost_adjust: float = 0.0               # spells: e.g. LightPulse "base_cost-10"
 
@@ -54,6 +56,12 @@ static func load_cards() -> void:
 				var cost: Variant = values.get("eiResourceCost.reGold", {}).get("SpellGroup", "")
 				if cost is String and cost.begins_with("base_cost"):
 					c.cost_adjust = float(cost.trim_prefix("base_cost"))
+				c.epic = values.get("eiUnitProperties", {}).get("SpellGroup", []).has("upEpic")
+				var charge_cd: Variant = values.get("eiCooldown", {}).get("ChargeGroup", "")
+				if charge_cd is String:
+					var m := RegEx.create_from_string("\\*\\s*([0-9.]+)\\s*$").search(charge_cd)
+					if m != null:
+						c.charge_cooldown_mult = float(m.get_string(1))
 		_by_uid[c.uid] = c
 		_by_script[c.unit_id] = c
 

@@ -103,6 +103,9 @@ var dot_percent_of_max: bool = false   # PercentageOfMaxHealth
 var dot_scales_with_charges: bool = false
 var dot_not_props: Array = []          # tick constraint MustNotHave (Bleeding: upBanished)
 var hot_heal: float = 0.0
+var income_loan_factor: float = 0.0   # TCommanderIncomeLoanComponent.Factor (Echoes of the Future: 2.0)
+var income_loan_duration: int = 0     # .Duration (30000)
+var hot_type: int = SimConstants.DamageType.HOT   # eiDamageType of the HoT group (Petrified: dtHoT + dtOverheal)
 var mana_per_tick: int = 0
 var tick_interval: int = 0
 var tick_times: int = -1            # -1 = unlimited
@@ -153,6 +156,7 @@ static func create(script_name: String, now: int, params: Dictionary = {}) -> Bu
 			group_ids[sym] = 20 + group_ids.size()
 		return group_ids[sym]
 	var defaults: Dictionary = data.get("defaults", {})
+	var consts: Dictionary = data.get("consts", {})
 	for event in data["values"]:
 		for sym in data["values"][event]:
 			var v: Variant = data["values"][event][sym]
@@ -402,6 +406,13 @@ static func create(script_name: String, now: int, params: Dictionary = {}) -> Bu
 					for call in calls:
 						if call[0] == "PercentageOfMaxHealth":
 							b.dot_percent_of_max = true
+			"TCommanderIncomeLoanComponent":   # Echoes of the Future: gold income x2 for 30 s, then x0 for 30 s
+				for call in calls:
+					if call[0] == "Factor":
+						b.income_loan_factor = float(call[1][0])
+					elif call[0] == "Duration":
+						var d: Variant = call[1][0]
+						b.income_loan_duration = int(consts.get(d, 0)) if d is String else int(d)
 			"TWarheadSplashDamageComponent":   # OrbitalStrikeBombardement: 11 splash in 2.0 around the carrier after 174 ms
 				b.splash_damage = b._value("eiWelaDamage", g, 0.0)
 				b.splash_radius = b._value("eiWelaAreaOfEffect", g, 0.0)
@@ -416,6 +427,8 @@ static func create(script_name: String, now: int, params: Dictionary = {}) -> Bu
 					b.on_fire_heal_type = SimConstants.damage_mask(b.values.get("eiDamageType", {}).get(g, []))
 				else:
 					b.hot_heal = b._value("eiWelaDamage", g, 0.0)
+					if b.values.get("eiDamageType", {}).has(g):
+						b.hot_type = SimConstants.damage_mask(b.values["eiDamageType"][g])
 					tick_group = g
 					for call in calls:
 						if call[0] == "PercentageOfMaxHealth":

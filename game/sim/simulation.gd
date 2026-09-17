@@ -245,7 +245,7 @@ func _update_buffs(e: SimEntity) -> void:
 					dot *= b.charges
 				deal_damage(e, dot, b.dot_type, entities.get(b.source_id))
 			if b.hot_heal > 0.0:
-				heal(e, b.hot_heal * (e.max_health if b.hot_percent_of_max else 1.0), SimConstants.DamageType.HOT, entities.get(b.source_id))
+				heal(e, b.hot_heal * (e.max_health if b.hot_percent_of_max else 1.0), b.hot_type, entities.get(b.source_id))
 			if b.mana_per_tick > 0:
 				e.mana = mini(e.mana_cap, e.mana + b.mana_per_tick)
 			if b.shard_projectile != "":   # Frostspear: one shard at a random unit of the victim's team within range
@@ -485,6 +485,20 @@ func _cast_spell(team: int, c: Commander, slot: Commander.DeckSlot, target: Vari
 		_fire_group(caster, chosen.group, unit)
 		_on_commander_ability_used(team, unit.position)
 		return PlayResult.OK
+	var spell_wela: Wela = caster.wela(spell_group)
+	if spell_wela != null and spell_wela.override_target_to_owner:   # Echoes of the Future: the commander is the target
+		for p in spell_wela.ready_not_props:   # TWelaReadyUnitPropertyComponent.MustNotHave on the commander
+			if c.has_property(p, time_ms):
+				return PlayResult.NOT_READY
+		if spell_wela.apply_script == "" or not Buff.exists(spell_wela.apply_script):
+			return PlayResult.BAD_TARGET
+		c.pay(slot, time_ms)
+		var b := Buff.create(spell_wela.apply_script, time_ms)
+		for p in b.properties:
+			c.properties[p] = b.expires_at
+		if b.income_loan_factor > 0.0:
+			c.start_income_loan(b.income_loan_factor, b.income_loan_duration, time_ms)
+		return PlayResult.OK
 	var points: Array = []   # eiAbilityTargetCount coordinates (Relocate: A and B)
 	var count: int = caster.bb.get_int("eiAbilityTargetCount", spell_group, 1)
 	if count > 1:
@@ -503,7 +517,12 @@ func _cast_spell(team: int, c: Commander, slot: Commander.DeckSlot, target: Vari
 			if w.max_target_distance:
 				max_distance = caster.bb.get_float("eiAbilityTargetRange", spell_group, 0.0)
 	for p in points:
-		if not (p is Vector2) or not map.in_zone_padded("Walkzone", p, padding):
+		if not (p is Vector2):
+			return PlayResult.BAD_TARGET
+		if card.epic:   # PrepareEpicSpell: the Drop polygon inside the own nexus' dynamic zone (dzNexus)
+			if not _in_nexus_zone(team, p):
+				return PlayResult.BAD_TARGET
+		elif not map.in_zone_padded("Walkzone", p, padding):
 			return PlayResult.BAD_TARGET
 	if max_distance >= 0.0:
 		for a in points:
@@ -516,6 +535,7 @@ func _cast_spell(team: int, c: Commander, slot: Commander.DeckSlot, target: Vari
 		return PlayResult.BAD_TARGET
 	c.pay(slot, time_ms)
 	var effect := spawn(pattern, team, target)
+	effect.stage = commanders[commanders.keys().min()].tier   # ServerGame.Commanders.First (Cataclysm's range)
 	effect.saved_targets = points   # TWelaEffectFactoryComponent.PassTargets
 	_gain_field_charges(effect)
 	if not effect.think_once_waits:   # timed effects (Rip Out Soul) act from step() after their delay
@@ -606,6 +626,14 @@ func _in_drop_zone(team: int, p: Vector2) -> bool:
 		if e.position.distance_to(p) <= e.bb.get_float("eiWelaRange", 3, 0.0):
 			return true
 	return false
+
+
+## TWelaTargetConstraintDynamicZoneComponent.SetZone([dzNexus]) + ZONE_DROP: within eiWelaRange[3] of the own nexus.
+func _in_nexus_zone(team: int, p: Vector2) -> bool:
+	if not map.in_zone("Drop", p):
+		return false
+	var nexus: SimEntity = entities.get(nexus_ids.get(team, -1))
+	return nexus != null and nexus.alive and nexus.position.distance_to(p) <= nexus.bb.get_float("eiWelaRange", 3, 0.0)
 
 
 func _has_legendary_unit(team: int) -> bool:
@@ -712,7 +740,7 @@ func _update_game_tick() -> void:
 				_spawner_fire(e)
 	tick_counter += 1
 	for c: Commander in commanders.values():
-		c.pay_income()
+		c.pay_income(time_ms)
 	if tick_counter % SimConstants.WAVE_EVERY_N_TICKS == 0:   # TWelaReadyNthComponent.Nth(2)
 		_wave_spawn()
 	_fire_scheduled_events()
@@ -753,7 +781,7 @@ func _think_timers(e: SimEntity) -> void:
 		if w.timer_period < 0 or not e.alive:
 			continue
 		if w.next_at < 0:
-			w.next_at = e.created_at + w.timer_period
+			w.next_at = e.created_at if w.timer_ready else e.created_at + w.timer_period
 		if time_ms < w.next_at:
 			continue
 		w.next_at += maxi(w.timer_period, SimConstants.TICK_MS)
@@ -772,6 +800,8 @@ func _think_timers(e: SimEntity) -> void:
 
 
 func _think_passives(e: SimEntity) -> void:
+	if not e.alive:   # a field that died resolving its fire must not re-link its auras
+		return
 	for w in e.welas:
 		if not w.active and w.link_delay > 0 and time_ms >= e.created_at + w.link_delay:
 			w.active = true   # TWelaHelperActivateTimerComponent

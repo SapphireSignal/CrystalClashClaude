@@ -46,6 +46,7 @@ var locked_until: int = 0        # action duration lock
 
 # Ammo (reWelaCharge) for nexus / lanetower weapons: cost per shot, recharge one per cooldown of the
 # ammo group (group 6 in Nexus.ets, group 5 in Lanetower.ets), active after game start.
+var stage: int = 1                   # ServerGame.Commanders.First tier at creation (Cataclysm's ScaleWithStage range)
 var ammo: int = 0
 var ammo_cap: int = 0
 var ammo_cost: int = 0
@@ -273,6 +274,8 @@ func range_of(group: int = SimConstants.GROUP_MAINWEAPON, now: int = -1) -> floa
 			return r
 		var ramp := float(bb.get_int("eiCooldown", w.range_modifier_group, 1))
 		bonus *= clampf(float(now - stand_since) / ramp, 0.0, 1.0)
+	if w.range_scales_with_stage:
+		bonus *= stage
 	return r + bonus
 
 
