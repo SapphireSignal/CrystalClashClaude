@@ -2434,3 +2434,49 @@ func test_golems_big_caster_beam() -> void:
 	runner.check(victim.link_buffs.is_empty(), "the beam breaks out of range")
 	sim._teleport(victim, Vector2(-34, -23))
 	runner.check_near(next_hit.call(t + 14000), 21.0, "and restarts at x1")
+
+
+func test_golems_siege_golem_artillery() -> void:
+	var sim := Simulation.new(2, 4)
+	var golem := sim.spawn("Units/Golems/GolemsSiegeGolem", Simulation.TEAM_BLUE, Vector2(-40, -23))
+	var tower := sim.spawn("Units/Neutral/LanetowerLevel1", Simulation.TEAM_RED, Vector2(-22, -23))
+	tower.locked_until = 1 << 30
+	var start := golem.position
+	var t := sim.time_ms
+	while golem.ammo < 16 and sim.time_ms < t + 9000:
+		sim.step()
+	runner.check(sim.time_ms - t >= 7000 and sim.time_ms - t <= 8100, "siege golem: 16 charges after 8 s near an enemy building")
+	runner.check(golem.position == start, "it stands still while charging")
+	var t2 := sim.time_ms
+	while sim.projectiles.is_empty() and sim.time_ms < t2 + 1000:
+		sim.step()
+	runner.check_eq(sim.projectiles.size(), 1, "then hurls a stone at the building")
+	runner.check_eq(golem.ammo, 0, "spending all charges")
+	var hp := tower.health
+	while tower.health == hp and sim.time_ms < t2 + 6000:
+		sim.step()
+	runner.check_near(tower.health, hp - 50.0 * 4.0, "50 siege damage, x4 on fortified")
+	sim._kill(tower)
+	golem.ammo = 5
+	for i in 3:
+		sim.step()
+	runner.check_eq(golem.ammo, 0, "walking without a building in range dumps the charges")
+	var far_tower := sim.spawn("Units/Neutral/LanetowerLevel1", Simulation.TEAM_RED, Vector2(-22, -23))
+	far_tower.locked_until = 1 << 30
+	golem.ammo = 5
+	var b := sim.apply_buff(golem, "Stun", {}, null)
+	runner.check_eq(golem.ammo, 0, "being stunned dumps the charges")
+	golem.remove_buff(b)
+	sim._kill(far_tower)
+	sim._teleport(golem, Vector2(-40, -10))
+	var victim := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(-38.5, -10))
+	victim.locked_until = 1 << 30
+	golem.ammo = 5
+	sim.step()
+	sim.step()
+	runner.check_eq(golem.ammo, 5, "charges are kept while it winds up a melee swing")
+	var t3 := sim.time_ms
+	while victim.health == 265.0 and sim.time_ms < t3 + 3000:
+		sim.step()
+	runner.check_near(victim.health, 265.0 - 68.0, "68 melee siege damage")
+	runner.check_eq(golem.ammo, 0, "and the swing dumps the charges")

@@ -23,6 +23,9 @@ var efficiency_max_health: int = 0   # 1 = prefer highest max health, -1 = lowes
 var picks_random_targets: bool = false
 var picks_with_repetition: bool = false   # PicksRandomTargetsWithRepetition
 var blocking: bool = false         # TBrainWelaFightComponent.Blocking: attack does not run while this is busy
+var preemptive: bool = false       # TBrainWelaFightComponent.Preemptive: with a target the think chain stops here (stand and wait)
+var fire_at_self: bool = false     # .ChangeTargetToMyself: the picked target only gates, the group fires at the owner (SiegeGolem charging)
+var ready_cost: bool = false       # TWelaReadyCostComponent present: the group needs its resource cost to be ready
 var passive: bool = false          # ThinksPassively: never claims the unit / no stand
 # resource compare constraint (own vs target): "coGreater" etc, factor applied to the target value
 var compare_resource: String = ""
@@ -244,6 +247,10 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 				for c in calls:
 					if c[0] == "Blocking":
 						w.blocking = true
+					elif c[0] == "Preemptive":
+						w.preemptive = true
+					elif c[0] == "ChangeTargetToMyself":
+						w.fire_at_self = true
 					elif c[0] == "ThinksPassively":
 						w.passive = true
 					elif c[0] == "ThinksPassivelyIfConscious":
@@ -528,12 +535,17 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 						w.apply_script_same_team = same_team
 			"TBrainWelaSelftargetComponent":
 				var passive := false
+				var blocking := false
 				for c in calls:
 					if c[0] == "ThinksPassively":
 						passive = true
+					elif c[0] == "Blocking":
+						blocking = true
 				var w: Wela = get.call(g, Kind.SELF_PASSIVE if passive else Kind.SELF_GROUND)
 				if w.kind == Kind.SUB:
 					w.kind = Kind.SELF_PASSIVE if passive else Kind.SELF_GROUND   # Blocking self-target acts like a self-ground action
+				if blocking:
+					w.blocking = true
 			"TWelaEffectRemoveAfterUseComponent":
 				var w: Wela = get.call(g, Kind.SUB)
 				w.remove_after_use = true
@@ -557,6 +569,7 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 			"TWelaReadyCostComponent":
 				for gg in groups:
 					var w: Wela = get.call(gg, Kind.SUB)
+					w.ready_cost = true
 					w.mana_cost = bb.get_int("eiResourceCost.reMana", gg, 0)
 					w.charge_cost = bb.get_int("eiResourceCost.reWelaCharge", gg, 0) if bb.has_value("eiResourceCost.reWelaCharge", gg) and gg != SimConstants.GROUP_MAINWEAPON else 0
 			"TWelaEffectPayCostComponent":
@@ -841,6 +854,8 @@ func owner_ready(owner: SimEntity) -> bool:
 	if ready_resource == "reMana" and ready_not_empty and owner.mana <= 0:
 		return false
 	if ready_resource == "reWelaChargeCapacity" and ready_not_full and owner.charge_capacity >= owner.charge_capacity_cap:
+		return false
+	if ready_resource == "reWelaCharge" and ready_not_full and owner.ammo >= owner.ammo_cap:   # SiegeGolem: charge until full
 		return false
 	if suicide_when_empty and owner.ammo > 0:   # CheckEmpty(reWelaCharge): only once the charges are spent
 		return false

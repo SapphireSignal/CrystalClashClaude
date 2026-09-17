@@ -114,6 +114,9 @@ func setup(p_unit_id: String, p_league: int, p_level: int = 0) -> void:
 	var data := UnitDb.raw(unit_id)
 	var map := UnitDb.group_map(data)
 	welas = Wela.parse(data.get("components", []), bb, map)
+	var main := wela(SimConstants.GROUP_MAINWEAPON)
+	if main != null and not main.ready_cost:   # a cost without TWelaReadyCostComponent is only paid (SiegeGolem melee dumps charges)
+		ammo_cost = 0
 	for g in bb.groups_of("eiResourceBalance.reWelaCharge"):
 		if g != Blackboard.ANY_GROUP:
 			charges[g] = bb.get_int("eiResourceBalance.reWelaCharge", g)

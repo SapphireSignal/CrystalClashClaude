@@ -793,6 +793,9 @@ func _think(e: SimEntity) -> void:
 		if w.passive or not w.active or w.used or w.timer_period >= 0 or not _wela_ready(e, w):
 			continue   # timer-driven groups think from _think_timers only
 		if w.kind == Wela.Kind.SELF_GROUND:
+			if not w.blocking and e.actionpoint(w.group) <= 0 and e.cooldown(w.group) <= 0:
+				_fire_group(e, w.group, e)   # a plain self-target brain fires and lets the chain go on (SiegeGolem dumps charges while walking)
+				continue
 			if time_ms >= w.cooldown_ready_at and e.fire_at < 0:
 				_prefire(e, w, e)
 				return
@@ -807,8 +810,10 @@ func _think(e: SimEntity) -> void:
 		if e.moving:
 			_stand(e)
 		if time_ms >= w.cooldown_ready_at and e.fire_at < 0:
-			_prefire(e, w, target)
+			_prefire(e, w, e if w.fire_at_self else target)
 			return
+		if w.preemptive:
+			return   # TBrainWelaFightComponent.Preemptive: stand and wait for the cooldown, later brains don't think
 		waiting = true
 	if waiting:
 		return
@@ -1100,12 +1105,12 @@ func _fire_group(e: SimEntity, group: int, target: SimEntity) -> void:
 	if w == null:
 		return
 	if group == SimConstants.GROUP_MAINWEAPON:
-		e.ammo -= e.ammo_cost   # TWelaEffectPayCostComponent for reWelaCharge
+		e.ammo = 0 if w.charge_consumes_all else e.ammo - e.ammo_cost   # TWelaEffectPayCostComponent for reWelaCharge
 	e.mana -= w.mana_cost
 	var amount := e.damage(group)
 	if w.damage_scales_with_charges_of >= 0:   # Surge of Light: damage x stored charges
 		amount *= e.charges_of(w.damage_scales_with_charges_of)
-	if w.charge_cost > 0:
+	if w.charge_cost > 0 or (w.charge_consumes_all and group != SimConstants.GROUP_MAINWEAPON):
 		if e.charges.has(group):
 			e.charges[group] = 0 if w.charge_consumes_all else e.charges_of(group) - w.charge_cost
 		else:   # the entity-wide charge pool (On the Edge field: 10 enchantments)
@@ -1167,6 +1172,8 @@ func _fire_group(e: SimEntity, group: int, target: SimEntity) -> void:
 		if w.resource_percentage:   # AmmoRefill: a share of the cap, rounded (TWarheadSpottyResourceComponent.AmountIsPercentage)
 			amount = roundf(amount * target.mana_cap)
 		gain_mana(target, int(amount))   # induction energy, ammo transfers
+	elif w.resource == "reWelaCharge" and not w.changes_max and w.charge_gain_group < 0:   # SiegeGolem: +1 charge per 500 ms
+		target.ammo = mini(target.ammo_cap, target.ammo + int(amount))
 	elif w.resource == "reWelaChargeCapacity":
 		var who := e if w.warhead_to_self else target
 		who.charge_capacity = mini(who.charge_capacity_cap, who.charge_capacity + int(amount))
