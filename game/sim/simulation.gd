@@ -82,6 +82,8 @@ func spawn(unit_id: String, team: int, pos: Vector2, front: Vector2 = Vector2.ZE
 		_stand(e)
 	if e.has("upCharm") and commanders.has(team):
 		_register_charm(e)
+	if e.has("upGadget") and commanders.has(team):
+		_register_gadget(e)
 	for w in e.welas:
 		if not w.ready_at_start:   # TWelaReadyCooldownComponent(false): the first use waits a full cooldown
 			w.cooldown_ready_at = time_ms + e.cooldown(w.group)
@@ -105,6 +107,21 @@ func _script_params(script: String, values: Array) -> Dictionary:
 	for i in mini(names.size(), values.size()):
 		params[names[i]] = values[i]
 	return params
+
+
+## Gadget building cards: TWelaReadyResourceCompareComponent(reGadgetCount).CheckFull -> the oldest gadget is
+## sacrificed (a real death) when a 6th one is placed; gadgets count themselves in and out (groups 3/4).
+func _register_gadget(e: SimEntity) -> void:
+	var c: Commander = commanders[e.team]
+	if c.gadget_count >= SimConstants.GADGET_COUNT_CAP:
+		var oldest: SimEntity = null
+		for other: SimEntity in entities.values():
+			if other != e and other.alive and other.team == e.team and other.has("upGadget"):
+				if oldest == null or other.created_at < oldest.created_at or (other.created_at == oldest.created_at and other.id < oldest.id):
+					oldest = other
+		if oldest != null:
+			_kill(oldest)
+	c.gadget_count += 1
 
 
 ## PromiseOfLifeSpell.ets groups 5-7: a new charm takes a commander charm slot; when the cap (3) is
@@ -432,6 +449,7 @@ func _cast_spell(team: int, c: Commander, slot: Commander.DeckSlot, target: Vari
 		c.pay(slot, time_ms)
 		caster.position = unit.position
 		_fire_group(caster, chosen.group, unit)
+		_on_commander_ability_used(team, unit.position)
 		return PlayResult.OK
 	if not (target is Vector2) or not map.in_zone("Walkzone", target):
 		return PlayResult.BAD_TARGET
@@ -443,7 +461,19 @@ func _cast_spell(team: int, c: Commander, slot: Commander.DeckSlot, target: Vari
 	_gain_field_charges(effect)
 	if not effect.think_once_waits:   # timed effects (Rip Out Soul) act from step() after their delay
 		_think_once(effect)
+	_on_commander_ability_used(team, target)
 	return PlayResult.OK
+
+
+## TAutoBrainOnCommanderAbilityUsedComponent.ConstraintOnSameTeamID.ConstraintOnInWelaRange.FireAtSelf:
+## Blue "Induction": every own unit with the group within eiWelaRange of the spell target fires it at itself.
+func _on_commander_ability_used(team: int, at: Vector2) -> void:
+	for e: SimEntity in entities.values():
+		if not e.alive or e.team != team:
+			continue
+		for w in e.welas:
+			if w.kind == Wela.Kind.ON_ABILITY_USED and not w.used and e.position.distance_to(at) <= e.range_of(w.group):
+				_fire_group(e, w.group, e)
 
 
 ## TThinkImpulseOnceComponent: every fight group fires at up to eiWelaTargetCount targets in range right
@@ -796,6 +826,16 @@ func _think_link(e: SimEntity, w: Wela) -> void:
 	var key := SimEntity.link_key(e.id, w.group)
 	var max_links := e.bb.get_int("eiWelaTargetCount", w.group, 1)
 	var links := _link_count(e, w)
+	if w.link_pay_cost and links > 0:   # TWelaEffectLinkPayCostMyselfComponentServer: 1 energy per second of uptime
+		if time_ms >= w.link_paid_until:
+			if e.mana < w.mana_cost:
+				for other: SimEntity in entities.values():
+					_break_link_key(other, key)
+				return
+			e.mana -= w.mana_cost
+			w.link_paid_until = time_ms + 1000
+	if w.link_pay_cost and links == 0 and e.mana < w.mana_cost:
+		return
 	if w.next_at > time_ms and links == 0:
 		return   # LinkTime: re-acquire cadence
 	for other: SimEntity in entities.values():
@@ -807,6 +847,9 @@ func _think_link(e: SimEntity, w: Wela) -> void:
 		if linked and (not in_range or (validator != null and not validator.target_allowed(other, e))):
 			_break_link_key(other, key)
 		elif not linked and in_range and links < max_links and other.is_targetable() and w.target_allowed(other, e):
+			if w.link_pay_cost and links == 0:   # the first link costs one energy at once
+				e.mana -= w.mana_cost
+				w.link_paid_until = time_ms + 1000
 			links += 1
 			w.next_at = time_ms + w.link_time
 			var payload := "Links/" + w.link_pattern.get_file().replace("Aura", "")
@@ -846,6 +889,8 @@ func _think_link(e: SimEntity, w: Wela) -> void:
 					if lw.group == 0:
 						for cg in lw.chain_groups:
 							_fire_link_group(e, other, b, cg)
+					elif lw.link_brain:   # TLinkBrainComponent([0,1,2]): the other groups fire too (gatling splash)
+						_fire_link_group(e, other, b, lw.group)
 
 
 func _link_count(e: SimEntity, w: Wela) -> int:
@@ -1230,6 +1275,8 @@ func _on_take_damage(target: SimEntity, amount: float, _damage_type: int, source
 	for w in target.welas:   # TBuffTakenDamageMultiplierComponent on a unit group (Vecra's prison, Thistle's evasion)
 		if w.used or (_damage_type & w.taken_mult_not_types):
 			continue
+		if w.taken_mult_types != 0 and not (_damage_type & w.taken_mult_types):
+			continue
 		if w.taken_mult != 1.0:
 			amount *= w.taken_mult
 		if w.dodge_chance > 0.0 and rng.randf() < w.dodge_chance:
@@ -1287,6 +1334,8 @@ func _kill(e: SimEntity, killer: SimEntity = null) -> void:
 	if e.is_spawner() and build_zones.has(e.build_zone_id):
 		build_zones[e.build_zone_id].release(e.build_field)
 	_release_charm(e)
+	if e.has("upGadget") and commanders.has(e.team):
+		commanders[e.team].gadget_count -= 1
 	for other: SimEntity in entities.values():   # break auras this entity provided
 		if other.linked_from(e.id):
 			_break_link(e, other)
@@ -1472,6 +1521,9 @@ func _move_projectiles() -> void:
 			p.position = p.last_target_position
 			var hit := target != null and target.alive
 			if hit:
+				for item in p.mult_vs_props:   # missiles: x2 against flying / monumental
+					if _has_any(target, item[0]) and not (p.damage_type & SimConstants.DamageType.SPELL):
+						p.damage *= item[1]
 				if p.gives_mana:
 					gain_mana(target, int(p.damage))
 				elif p.raises_max_health:   # Oracle's sapling: +60 max hp and +1 charge

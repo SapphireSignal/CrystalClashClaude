@@ -23,7 +23,7 @@ RE_SET = re.compile(
 RE_RADIUS = re.compile(r"Entity\.CollisionRadius\s*:=\s*([0-9.]+)")
 RE_INIT_CARD = re.compile(r"Init(Drop|Spawner|BuildingCard)Data\(Entity,\s*(True|False)\s*,\s*(?:\{@\w+\})?(\d)")
 RE_LEAGUE_ARR = re.compile(r"^(?:([0-9.]+)\s*\*\s*)?[fi]\(\s*\[([^\]]*)\]\s*,\s*Entity\.CardLeague(?:\([^)]*\))?\s*\)$")
-RE_INHERITS = re.compile(r"InheritsFrom\s*:\s*string\s*=\s*'([^']+)'")
+RE_INHERITS = re.compile(r"InheritsFrom(?:Preceding)?\s*:\s*string\s*=\s*'([^']+)'")
 RE_ARITH = re.compile(r"^[0-9.+\-*/() ]+$")
 
 

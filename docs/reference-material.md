@@ -113,3 +113,14 @@ These are current and take precedence over Codex's older captures. Facts read fr
   LaneNode_Red/_Blue block 40 s). Selecting an enemy squad: panel "Thistles", "40 / 40", attack "8.8", armor "0%",
   "Doubleshot, Evasion" (source Thistle: 27 HP, 14 damage x2). Enemy nexus is drawn red. Floating combat text
   such as "DODGED" appears above units.
+
+## Asset inventory of the public repo (checked 2026-09-16)
+`reference/rise-of-legions/Graphics` (6260 files): 204 `.FBX`/`.fbx` unit and building models (e.g.
+`Graphics/Units/Black/VoidSkeleton_Crusader/VoidSkeleton.FBX`, one folder per unit and skin), 204 `.msh` (engine
+mesh format), 1717 `.tex` (engine texture format) plus 913 `.png` and 797 `.tga`, 366 `.pfx` particle effects
+(`Graphics/Effects/ParticleEffects/<Faction>/*.pfx`), 139 `.dui` GUI layouts + 53 `.scss`, 86 `.fx` shaders;
+`Sound`: 10 FMOD `.bank` files; `Maps`: 312 files; `Lang`: text tables. Unit scripts name the model
+(`TMeshComponent ... .xml`), animation frame ranges (`CreateNewAnimation(ANIMATION_WALK, 0, 26)`), particle
+effects and FMOD events per ability. Converters needed for `.tex`, `.msh`, `.pfx`, `.dui` and the FMOD banks
+(phase 5); FBX and png/tga import directly. Frostgoyle spawn: dark burst on the fountain, then the goyle rises
+into its flying height (owner observation).

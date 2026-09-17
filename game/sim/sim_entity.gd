@@ -228,6 +228,8 @@ func damage(group: int = SimConstants.GROUP_MAINWEAPON) -> float:
 	for w in welas:   # TModifierWelaDamageComponent.ScaleWithResource on the unit (Brratu: + modifier x health)
 		if w.group == group and w.damage_scale_resource == "reHealth":
 			d += bb.get_float("eiWelaModifier", w.damage_scale_group, 0.0) * health
+		elif w.group == group and w.damage_scale_resource == "reMana":
+			d += bb.get_float("eiWelaModifier", w.damage_scale_group, 0.0) * mana
 	for b in buffs:
 		d = b.modify_damage(d, group, props)
 	return d

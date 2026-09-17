@@ -23,6 +23,7 @@ var on_hit_must_have: Array = []
 var on_hit_must_not_have: Array = []
 var impact_script: String = ""      # TWarheadApplyScriptComponent on the impact group itself (HeartOfTheForestProjectile)
 var damages: bool = false            # has a damage warhead
+var mult_vs_props: Array = []        # TModifierMultiplyDealtDamageComponent on the projectile: [props, factor] (missiles x2 vs air)
 var raises_max_health: bool = false  # TWarheadSpottyResourceComponent(reHealth).ChangesMax (Oracle: +60 max hp)
 var gives_charges: int = 0           # TWarheadSpottyResourceComponent(reWelaCharge): +eiWelaDamage of that group
 # TBrainProjectileComponent.Bounces: after a hit jump to a random unhit enemy within bounce_range, up to
@@ -54,6 +55,7 @@ func _init(p_unit_id: String, league: int) -> void:
 		splash_factor = bb.get_float("eiWelaSplashfactor", g, 10000.0)
 	var hit_group := ""
 	var bounce_group := ""
+	var mult_groups := {}   # value group -> factor, resolved against that group's MustHaveAny constraint
 	for comp in UnitDb.raw(unit_id).get("components", []):
 		var calls: Array = comp.get("calls", [])
 		match comp["class"]:
@@ -101,6 +103,11 @@ func _init(p_unit_id: String, league: int) -> void:
 					for c in calls:
 						if c[0] == "MustNotHave":
 							bounce_must_not_have.append_array(c[1][0])
+				for vg in mult_groups:
+					if comp["groups"].has(vg):
+						for c in calls:
+							if c[0] == "MustHaveAny":
+								mult_vs_props.append([c[1][0], mult_groups[vg]])
 			"TWarheadApplyScriptComponent":
 				if hit_group != "" and comp["groups"].has(hit_group):
 					on_hit_script = Wela.script_key(str(comp["args"][0]))
@@ -108,3 +115,8 @@ func _init(p_unit_id: String, league: int) -> void:
 					impact_script = Wela.script_key(str(comp["args"][0]))
 			"TWarheadSpottyDamageComponent", "TWarheadSplashDamageComponent":
 				damages = true
+			"TModifierMultiplyDealtDamageComponent":
+				for c in calls:
+					if c[0] == "SetValueGroup":
+						var vg: String = c[1][0][0]
+						mult_groups[vg] = bb.get_float("eiWelaModifier", int(vg), 1.0)

@@ -11,6 +11,7 @@ var spent_wood: float = 0.0
 var tier: int = SimConstants.STARTING_TIER
 var income_upgrades: int = 0
 var charm_count: int = 0            # reCharmCount: placed charms (Promise of Life), cap 3
+var gadget_count: int = 0           # reGadgetCount: living gadgets (Blue turrets, factories, drones), cap 5
 var slots: Array[DeckSlot] = []
 var free_cards: bool = false        # sandbox: NOT_PAYED_RESOURCES includes gold/wood/charge
 

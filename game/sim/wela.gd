@@ -6,7 +6,7 @@ class_name Wela
 ## (Monument of Light), on-healed triggers and cooldown resets (Defender).
 
 enum Kind { FIGHT, SUB, ON_TAKE_DAMAGE, DEALT_DAMAGE_MULT, RESOURCE_REGEN, ON_DEATH, LINK, ON_HEALED, SELF_GROUND, ON_PROPERTY,
-	PREVENT_DEATH, ON_RESOURCE, SELF_PASSIVE, WAIT }
+	PREVENT_DEATH, ON_RESOURCE, SELF_PASSIVE, WAIT, ON_ABILITY_USED }
 
 var group: int
 var kind: Kind
@@ -81,6 +81,11 @@ var produced_fire_group: int = -1      # TAutoBrainWelaTargetProducedUnitCompone
 var resource_percentage: bool = false  # TWarheadSpottyResourceComponent.AmountIsPercentage (of the target's cap)
 var resource_sets_value: bool = false  # TWarheadSpottyResourceComponent.SetsResourceToValue
 var resolve_team_id: bool = false      # TWelaHelperResolveComponent.ResolveTeamID: pattern indexed by the owner's team
+var taken_mult_types: int = 0          # TBuffTakenDamageMultiplierComponent.DamageTypeMustHave (DamperDrone: splash only)
+var link_brain: bool = false           # TLinkBrainComponent lists this group: fires every tick of the link
+var link_pay_cost: bool = false        # TWelaEffectLinkPayCostMyselfComponentServer: mana on link + per second
+var link_paid_until: int = -1
+var damage_scale_add: bool = true      # unit-level ScaleWithResource: Previous + modifier x balance
 # effects
 var heals: bool = false
 var damages: bool = false
@@ -254,10 +259,18 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 			"TBrainWaitComponent":
 				get.call(g, Kind.WAIT).kind = Kind.WAIT
 			"TLinkBrainComponent":
+				for gg in groups:
+					get.call(gg, Kind.SUB).link_brain = true
 				var w: Wela = get.call(g, Kind.SUB)
 				for c in calls:
 					if c[0] == "FiresAtCreate":
 						w.fires_at_create_group = UnitDb.group_id(c[1][0][0], map)
+			"TWelaEffectLinkPayCostMyselfComponentServer":
+				var w: Wela = get.call(g, Kind.SUB)
+				w.link_pay_cost = true
+				w.mana_cost = bb.get_int("eiResourceCost.reMana", g, 0)
+			"TAutoBrainOnCommanderAbilityUsedComponent":
+				get.call(g, Kind.ON_ABILITY_USED).kind = Kind.ON_ABILITY_USED
 			"TWelaTargetingRadialAttentionComponent":
 				for gg in groups:
 					var w: Wela = get.call(gg, Kind.SUB)
@@ -379,6 +392,8 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 				for c in calls:
 					if c[0] == "DamageTypeMustNotHave":
 						w.taken_mult_not_types = SimConstants.damage_mask(c[1][0])
+					elif c[0] == "DamageTypeMustHave":
+						w.taken_mult_types = SimConstants.damage_mask(c[1][0])
 					elif c[0] == "DodgeDamage":
 						w.dodge_chance = w.taken_mult
 						w.taken_mult = 1.0
@@ -493,7 +508,7 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 				if scales:
 					w.damage_scales_with_charges_of = res_group
 				elif resource != "":
-					w.damage_scale_resource = resource   # Brratu: +0.2 x current health
+					w.damage_scale_resource = resource   # Brratu: +0.2 x current health; DamperDrone: +15 x energy
 					w.damage_scale_group = value_group
 			"TWelaReadyCooldownComponent":
 				for gg in groups:

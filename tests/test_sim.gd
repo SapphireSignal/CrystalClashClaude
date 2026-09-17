@@ -1686,3 +1686,87 @@ func test_saplingcharge() -> void:
 	while sim.time_ms < t + 15100:
 		sim.step()
 	runner.check_eq(sim.alive_entities(Simulation.TEAM_BLUE).filter(func(e): return e.unit_id == "Spells/Green/Saplingcharge").size(), 0, "field gone after 15 s")
+
+
+func test_damper_drone_breaching_charge() -> void:
+	var sim := Simulation.new(9, 4)
+	var drone := sim.spawn("Units/Blue/DamperDrone", Simulation.TEAM_BLUE, Vector2(0, -23))
+	drone.mana = 2
+	var tower := sim.spawn("Units/Neutral/LanetowerLevel1", Simulation.TEAM_RED, Vector2(1.9, -23))
+	tower.locked_until = 1 << 30
+	var hp := tower.health
+	for i in 3:
+		sim.step()
+	runner.check(not drone.alive, "explodes at an enemy building")
+	runner.check_near(tower.health, hp - (20.0 + 2 * 15.0) * 4.0, "20 + 15 per energy siege damage (x4 on fortified)")
+	var other := sim.spawn("Units/Blue/DamperDrone", Simulation.TEAM_BLUE, Vector2(20, -23))
+	sim.deal_damage(other, 10.0, SimConstants.DamageType.SPLASH, null)
+	runner.check_near(other.health, 41.0 - 10.0 * 0.3 * 0.85, "takes 30 % of splash damage (then light armor)")
+
+
+func test_gatling_drone_beam() -> void:
+	var sim := Simulation.new(9, 4)
+	var drone := sim.spawn("Units/Blue/GatlingDrone", Simulation.TEAM_BLUE, Vector2(0, -23))
+	var target := sim.spawn("Units/White/Footman", Simulation.TEAM_RED, Vector2(4, -23))
+	var near := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(5.5, -23))
+	target.locked_until = 1 << 30
+	near.locked_until = 1 << 30
+	sim.step()
+	runner.check(target.linked_from(drone.id), "beam on the nearest enemy")
+	var hp := target.health
+	var near_hp := near.health
+	for i in 17:
+		sim.step()
+	runner.check_near(target.health, hp - 11.0 - 3.0, "11 armor-piercing beam damage plus 3 splash every 500 ms (footman: medium armor ignored, splash 3 x 0.8 = 2.4 -> shieldblock? no, below 10)")
+	runner.check_near(near.health, near_hp - 3.0, "3 splash in 2.5 around the target")
+
+
+func test_gatling_turret_energy_and_gadget_cap() -> void:
+	var sim := Simulation.new(9, 4)
+	var turret := sim.spawn("Units/Blue/GatlingTurret", Simulation.TEAM_BLUE, Vector2(0, -23))
+	runner.check_eq(sim.commanders[Simulation.TEAM_BLUE].gadget_count, 1, "gadgets are counted")
+	var monk := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(4, -23))
+	monk.locked_until = 1 << 30
+	sim.step()
+	runner.check_eq(turret.mana, 19, "linking costs one energy at once")
+	var t := sim.time_ms
+	while sim.time_ms < t + 3100:
+		sim.step()
+	runner.check_eq(turret.mana, 16, "one energy per second of uptime")
+	turret.mana = 0
+	sim.step()
+	runner.check(not monk.linked_from(turret.id), "no energy, no beam")
+	for i in 5:
+		sim.spawn("Units/Blue/MissileTurret", Simulation.TEAM_BLUE, Vector2(-20 + i * 2, -23))
+	runner.check(not turret.alive, "a 6th gadget sacrifices the oldest one")
+	runner.check_eq(sim.commanders[Simulation.TEAM_BLUE].gadget_count, 5, "cap of 5")
+
+
+func test_missile_turret_and_ammo_factory() -> void:
+	var sim := Simulation.new(9, 4)
+	var turret := sim.spawn("Units/Blue/MissileTurret", Simulation.TEAM_BLUE, Vector2(0, -23))
+	var flyer := sim.spawn("Units/Green/Wisp", Simulation.TEAM_RED, Vector2(8, -23))
+	var walker := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(9, -23))
+	flyer.locked_until = 1 << 30
+	walker.locked_until = 1 << 30
+	while flyer.health == 75.0 and sim.time_ms < 4000:
+		sim.step()
+	runner.check_near(flyer.health, 75.0 - 47.0 * 2.0, "missiles prefer flyers and deal double damage to them")
+	runner.check_near(walker.health, 265.0 - 47.0, "splash 2.5 hits the walker for the plain 47")
+	runner.check_eq(turret.mana, 12, "a missile costs 2 energy")
+	turret.mana = 0
+	var factory := sim.spawn("Units/Blue/AmmoFactory", Simulation.TEAM_BLUE, Vector2(3, -23))
+	for i in 60:
+		sim.step()
+	runner.check(turret.mana >= 1, "the ammo factory refills allies (got %d)" % turret.mana)
+	runner.check(factory.mana < 4, "and spends its own energy")
+
+
+func test_induction() -> void:
+	var sim := _black_spell_sim()
+	var drone := sim.spawn("Units/Blue/PhaseDrone", Simulation.TEAM_BLUE, Vector2(-40, -23))
+	drone.mana = 0
+	var monk := sim.spawn("Units/White/Monk", Simulation.TEAM_BLUE, Vector2(-45, -23))
+	monk.base_speed = 0.0
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 0, monk.id), Simulation.PlayResult.OK, "cast frenzy near the drone")
+	runner.check_eq(drone.mana, 1, "induction: +1 energy per allied spell within 12")
