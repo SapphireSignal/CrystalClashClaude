@@ -129,7 +129,10 @@ func _on_spawned(e: SimEntity) -> void:
 		cap.height = 1.8
 		mesh.mesh = cap
 	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Color(0.9, 0.25, 0.2) if e.team == Simulation.TEAM_RED else Color(0.2, 0.4, 0.95)
+	match e.team:
+		Simulation.TEAM_RED: mat.albedo_color = Color(0.9, 0.25, 0.2)
+		Simulation.TEAM_BLUE: mat.albedo_color = Color(0.2, 0.4, 0.95)
+		_: mat.albedo_color = Color(0.6, 0.6, 0.6)
 	mesh.material_override = mat
 	_units_root.add_child(mesh)
 	_views[e.id] = mesh

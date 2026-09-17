@@ -112,6 +112,8 @@ path following (TMovementComponent port), base spawning (nexus + lanetowers), bu
 the scenario scripts), spawner cards with wave rotation (one random field per zone every 2 ticks, spawn at
 game start and on placement), squad formations (ComputeSpawningPattern), card registry (160 cards) with
 the original cost/charge/recharge formulas, commander decks, card play with zone/tier/legendary checks,
-gold-to-wood refund and automatic income upgrades. 131 tests pass. `game/main.tscn` is a sandbox with
-capsule units: keys 1-9,0,-,= play the 12 deck slots at the mouse, a simple red AI plays back.
-See `CONTINUE.md` for the next step.
+gold-to-wood refund and automatic income upgrades, homing projectiles for ranged attacks, nexus/lanetower
+ammo with recharge, tech-up replacement of nexus and lanetowers (Level1 -> 2 -> 3, damage kept), neutral
+lane nodes with team-power capture that become the capturing team's lanetower, lanetower death leaves a
+lane node. 161 tests pass. `game/main.tscn` is a sandbox with capsule units on the Compatibility renderer:
+keys 1-9,0,-,= play the 12 deck slots at the mouse, a simple red AI plays back. See `CONTINUE.md`.

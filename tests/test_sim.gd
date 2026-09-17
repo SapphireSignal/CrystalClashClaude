@@ -319,6 +319,76 @@ func test_projectile_misses_dead_target() -> void:
 	runner.check_eq(results, [false], "projectile flew to the last position and fizzled")
 
 
+func test_tower_ammo_and_tech_up() -> void:
+	var sim := Simulation.new(6, 4)
+	sim.spawn_bases()
+	var nexus := sim.enemy_nexus(Simulation.TEAM_RED)
+	runner.check_eq(nexus.ammo, 20, "nexus starts with 20 ammo at league 4")
+	runner.check_eq(nexus.ammo_cost, 1, "nexus shot costs 1 ammo")
+	runner.check_eq(nexus.ammo_recharge_ms, 6000, "nexus recharge 6 s at league 4")
+	var tower: SimEntity = sim.alive_entities(Simulation.TEAM_RED).filter(func(e): return e.has("upLanetower"))[0]
+	runner.check_eq(tower.ammo, 9, "lanetower starts with 9 of 18 ammo at league 4")
+	runner.check_near(tower.max_health, 1200.0, "lanetower hp 1200 at league 4")
+	runner.check_eq(sim.alive_entities(0).size(), 1, "one neutral lane node on Single")
+	# damage the nexus, then tech up: NexusLevel2 keeps the taken damage
+	sim.deal_damage(nexus, 1000.0, SimConstants.DamageType.TRUE, nexus)
+	while sim.tick_counter < 241:
+		sim.step()
+	var nexus2 := sim.enemy_nexus(Simulation.TEAM_RED)
+	runner.check(nexus2 != nexus, "nexus replaced at tech 2")
+	runner.check_eq(nexus2.unit_id, "Units/Neutral/NexusLevel2", "replaced by NexusLevel2")
+	runner.check_near(nexus2.max_health - nexus2.health, 1000.0, "taken damage kept")
+	runner.check(not nexus.alive, "old nexus gone without a loss")
+	runner.check(not sim.finished, "game continues")
+	var towers := sim.alive_entities(Simulation.TEAM_RED).filter(func(e): return e.has("upLanetower"))
+	runner.check_eq(towers.size(), 1, "still one red tower")
+	runner.check_eq(towers[0].unit_id, "Units/Neutral/LanetowerLevel2", "lanetower teched to level 2")
+
+
+func test_tower_uses_ammo() -> void:
+	var sim := Simulation.new(6, 4)
+	sim.spawn_bases()
+	var tower: SimEntity = sim.alive_entities(Simulation.TEAM_RED).filter(func(e): return e.has("upLanetower"))[0]
+	tower.ammo = 1
+	tower.ammo_recharge_ms = 0   # no recharge for this test
+	for i in 3:
+		var f := sim.spawn("Units/White/Footman", Simulation.TEAM_BLUE, Vector2(40, -23 + i))
+		f.speed = 0.0
+	var shots: Array = []   # lambdas capture ints by value, so collect into an array
+	var on_fire := func(att, _t, _d): if att == tower: shots.append(sim.time_ms)
+	sim.attack_fired.connect(on_fire)
+	while sim.time_ms < 5000:
+		sim.step()
+	sim.attack_fired.disconnect(on_fire)
+	runner.check_eq(shots.size(), 1, "tower fired once and ran out of ammo")
+	runner.check_eq(tower.ammo, 0, "ammo spent")
+
+
+func test_lane_node_capture() -> void:
+	var sim := Simulation.new(6, 4)
+	sim.spawn_bases()
+	var node: SimEntity = sim.alive_entities(0)[0]
+	runner.check_eq(node.position, Vector2(0, -23), "lane node on the lane center")
+	while not sim.game_started:
+		sim.step()
+	for i in 2:
+		var f := sim.spawn("Units/White/Footman", Simulation.TEAM_BLUE, Vector2(-5, -23 + i))
+		f.speed = 0.0
+	# 15 team power at +1 per 500 ms = 7.5 s
+	var t0 := sim.time_ms
+	while node.alive and sim.time_ms < t0 + 12000:
+		sim.step()
+	runner.check(not node.alive, "node captured")
+	runner.check(sim.time_ms - t0 >= 7000 and sim.time_ms - t0 <= 8100, "capture took ~7.5 s (got %d ms)" % (sim.time_ms - t0))
+	var towers := sim.alive_entities(Simulation.TEAM_BLUE).filter(func(e): return e.has("upLanetower"))
+	runner.check_eq(towers.size(), 2, "blue now owns two lanetowers")
+	var captured: SimEntity = towers.filter(func(e): return e.position == Vector2(0, -23))[0]
+	runner.check_eq(captured.unit_id, "Units/Neutral/LanetowerLevel1", "tier 1 tower at tier 1")
+	# killing it leaves a neutral lane node again
+	sim.deal_damage(captured, 1e6, SimConstants.DamageType.TRUE, captured)
+	runner.check_eq(sim.alive_entities(0).size(), 1, "lane node respawned on tower death")
+
+
 func test_drop_formation() -> void:
 	var sim := Simulation.new(1, 4)
 	var squad := sim.drop_squad("Units/White/Footman", Simulation.TEAM_BLUE, Vector2(0, -23), 4)

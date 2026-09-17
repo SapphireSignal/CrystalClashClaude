@@ -45,13 +45,15 @@ func _init(seed: int = 1, p_league: int = 4, map_name: String = SimMap.SINGLE) -
 		_spawn_rotations[zone.id] = []
 
 
-## Spawns nexus and lanetowers for both teams (PvPRed.dws / PvPBlue.dws).
+## Spawns nexus and lanetowers for both teams (PvPRed.dws / PvPBlue.dws) and the neutral lane nodes (PvPBase.dws).
 func spawn_bases() -> void:
 	for team in [TEAM_BLUE, TEAM_RED]:
 		var layout := map.base_layout(team)
 		spawn("Units/Neutral/NexusLevel1", team, layout["nexus"])
 		for p in layout["lanetowers"]:
 			spawn("Units/Neutral/LanetowerLevel1", team, p)
+	for p in map.lane_node_positions():
+		spawn("Units/Neutral/LaneNode", 0, p)
 
 
 func spawn(unit_id: String, team: int, pos: Vector2, front: Vector2 = Vector2.ZERO) -> SimEntity:
@@ -68,11 +70,32 @@ func spawn(unit_id: String, team: int, pos: Vector2, front: Vector2 = Vector2.ZE
 		nexus_ids[team] = e.id
 	if e.is_building():
 		map.pathfinding.block_permanent_area(pos, e.collision_radius)
-	elif not e.is_spawner():
+	elif not e.is_spawner() and not e.is_lane_node():
 		_enter_tile(e)
 		_stand(e)
 	entity_spawned.emit(e)
 	return e
+
+
+## TWelaEffectReplaceComponent.KeepTakenDamage().KeepResource(reWelaCharge): the tech-up of a nexus or
+## lanetower. The old entity vanishes without dying (no loss, no lane node).
+func replace_entity(old: SimEntity, new_unit_id: String, new_team: int = -1) -> SimEntity:
+	var team := old.team if new_team < 0 else new_team
+	_remove_silently(old)
+	var e := spawn(new_unit_id, team, old.position, old.front)
+	if old.max_health > 0.0 and e.max_health > 0.0:
+		e.health = maxf(1.0, e.max_health - (old.max_health - old.health))
+	if old.ammo_cap > 0 and e.ammo_cap > 0:
+		e.ammo = mini(old.ammo, e.ammo_cap)
+	return e
+
+
+func _remove_silently(e: SimEntity) -> void:
+	e.alive = false
+	e.died_at = time_ms
+	_leave_tile(e)
+	map.pathfinding.cancel_path(e.id)
+	entity_died.emit(e)
 
 
 ## ComputeSpawningPattern (BaseConflict.Types.Target.pas:177): squad formation around a point.
@@ -208,6 +231,10 @@ func step() -> void:
 	for e: SimEntity in entities.values():
 		if not e.alive or e.is_spawner():
 			continue
+		if e.is_lane_node():
+			_think_lane_node(e)
+			continue
+		_recharge_ammo(e)
 		_resolve_pending_fire(e)
 		if not e.can_think(time_ms):
 			continue
@@ -248,10 +275,12 @@ func _fire_scheduled_events() -> void:
 			fired_events[name] = true
 			if name == "tech_level_2":
 				for c: Commander in commanders.values():
-					c.tier = maxi(c.tier, 2)
+					c.raise_tier(2)
+				_tech_up_buildings(2)
 			elif name == "tech_level_3":
 				for c: Commander in commanders.values():
-					c.tier = maxi(c.tier, 3)
+					c.raise_tier(3)
+				_tech_up_buildings(3)
 			game_event.emit(name)
 
 
@@ -267,7 +296,7 @@ func _think(e: SimEntity) -> void:
 			_face(e, target.position)
 			if e.moving:
 				_stand(e)
-			if time_ms >= e.cooldown_ready_at and e.fire_at < 0:
+			if time_ms >= e.cooldown_ready_at and e.fire_at < 0 and e.has_ammo():
 				_prefire(e)
 			return
 		if e.can_move():
@@ -306,6 +335,7 @@ func _resolve_pending_fire(e: SimEntity) -> void:
 	if target == null or not target.alive:
 		return
 	var dmg := e.attack_damage()
+	e.ammo -= e.ammo_cost   # TWelaEffectPayCostComponent for reWelaCharge
 	attack_fired.emit(e, target, dmg)
 	var pattern: String = e.bb.get_value("eiWelaUnitPattern", SimConstants.GROUP_MAINWEAPON, "").replace("\\", "/")
 	if pattern.begins_with("Projectiles/"):
@@ -378,6 +408,63 @@ func _kill(e: SimEntity) -> void:
 		finished = true
 		winner_team = TEAM_BLUE if e.team == TEAM_RED else TEAM_RED
 		team_lost.emit(e.team)
+	elif e.has("upLanetower"):
+		spawn("Units/Neutral/LaneNode", 0, e.position)   # Lanetower.ets group 2: TAutoBrainOnDeath -> LaneNode
+
+
+# ---------------------------------------------------------------- ammo, tech-ups, lane nodes
+
+## Ammo group (Nexus.ets [6], Lanetower.ets [5]): after game start, +1 charge every cooldown, capped.
+func _recharge_ammo(e: SimEntity) -> void:
+	if e.ammo_recharge_ms <= 0 or not game_started:
+		return
+	if e.ammo_next_at < 0:
+		e.ammo_next_at = time_ms + e.ammo_recharge_ms
+	elif time_ms >= e.ammo_next_at:
+		e.ammo = mini(e.ammo_cap, e.ammo + 1)
+		e.ammo_next_at += e.ammo_recharge_ms
+
+
+## NexusLevel1/LanetowerLevel1 -> Level2 at tech 2, Level2 -> Level3 at tech 3 (group 4 pattern).
+func _tech_up_buildings(level: int) -> void:
+	for e: SimEntity in entities.values():
+		if not e.alive or not e.unit_id.ends_with("Level%d" % (level - 1)):
+			continue
+		var next: String = e.bb.get_value("eiWelaUnitPattern", 4, "").replace("\\", "/")
+		if next != "":
+			replace_entity(e, next)
+
+
+## TBrainCapturePointComponent (LaneNode.ets): every 500 ms look for units/buildings of any team within
+## 16.5. Exactly one team present primes the node for that team; two teams contest it. The primed team gains
+## +1 team power per think (cap 15), the other loses 1. At 15 the node becomes that team's lanetower of the
+## team's current tier.
+func _think_lane_node(node: SimEntity) -> void:
+	if not game_started or time_ms < node.capture_next_at:
+		return
+	node.capture_next_at = time_ms + node.bb.get_int("eiCooldown", 1, 500)
+	var range := node.bb.get_float("eiWelaRange", 1, 16.5)
+	var near_teams := {}
+	for e: SimEntity in entities.values():
+		if not e.alive or e.team == 0 or e.is_spawner() or e.has("upBase") or not (e.has("upUnit") or e.has("upBuilding")):
+			continue
+		if e.position.distance_to(node.position) - e.collision_radius <= range:
+			near_teams[e.team] = true
+	if near_teams.size() == 1:
+		node.capturing_team = near_teams.keys()[0]
+	elif near_teams.size() > 1:
+		node.capturing_team = -1
+	if node.capturing_team < 0:
+		return
+	var cap := node.bb.get_float("eiResourceCap.reTeamPower1", Blackboard.ANY_GROUP, 15.0)
+	for team in [TEAM_BLUE, TEAM_RED]:
+		var power: float = node.team_power.get(team, 0.0)
+		power += 1.0 if team == node.capturing_team else -1.0
+		node.team_power[team] = clampf(power, 0.0, cap)
+	var winner: int = node.capturing_team
+	if node.team_power[winner] >= cap:
+		var tier: int = commanders[winner].tier
+		replace_entity(node, "Units/Neutral/LanetowerLevel%d" % tier, winner)
 
 
 ## Targeting priority (Server.Welas.pas:1740-1790): efficiency, then upLowPrio last, then nearest.
@@ -506,9 +593,10 @@ func _cleanup_dead() -> void:
 			entities.erase(id)
 
 
-func alive_entities(team: int = 0) -> Array[SimEntity]:
+## Alive entities of a team; team -1 = every team (0 is the neutral team).
+func alive_entities(team: int = -1) -> Array[SimEntity]:
 	var out: Array[SimEntity] = []
 	for e: SimEntity in entities.values():
-		if e.alive and (team == 0 or e.team == team):
+		if e.alive and (team == -1 or e.team == team):
 			out.append(e)
 	return out
