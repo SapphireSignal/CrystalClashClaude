@@ -41,6 +41,20 @@ func in_zone(zone_name: String, p: Vector2) -> bool:
 	return Pathfinding._point_in_multipolygon(p, zones.get(zone_name, []))
 
 
+## TWelaTargetConstraintZoneComponent.SetPadding: inside the zone and at least `padding` away from every edge.
+func in_zone_padded(zone_name: String, p: Vector2, padding: float) -> bool:
+	if not in_zone(zone_name, p):
+		return false
+	for poly in zones.get(zone_name, []):
+		var points: PackedVector2Array = poly["points"]
+		for i in points.size():
+			var a := points[i]
+			var b := points[(i + 1) % points.size()]
+			if p.distance_to(Geometry2D.get_closest_point_to_segment(p, a, b)) < padding:
+				return false
+	return true
+
+
 ## Base layout per team: {"nexus": Vector2, "lanetowers": [Vector2], "lane_nodes": [Vector2]}.
 ## Blue (team 1) sits at -x, Red (team 2) at +x. Values from PvPRed.dws / PvPBlue.dws / PvPBase.dws.
 func base_layout(team: int) -> Dictionary:

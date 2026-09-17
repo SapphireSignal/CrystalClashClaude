@@ -310,7 +310,7 @@ def parse_modifier(path: Path) -> dict:
     m = re.search(r"(?:procedure|function) Apply\((.*?)\)(?:\s*:\s*[\w ]+)?;(.*?)^end;", text, re.S | re.M)
     if not m:
         return {}
-    params = [p.split(":")[0].strip() for p in m.group(1).split(";")[1:] if ":" in p]
+    params = [n.strip() for p in m.group(1).split(";")[1:] if ":" in p for n in p.split(":")[0].split(",")]  # 'Target, Offset : RVector2'
     body = m.group(2)
     defaults: dict = {}
     delegate = re.search(r"(Apply\w+)\(Entity\s*,\s*([^)]*)\)", body)

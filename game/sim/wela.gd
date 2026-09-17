@@ -41,6 +41,8 @@ var target_self: bool = false          # TWelaTargetingSelfComponent: the only t
 var target_health_full: bool = false   # TWelaTargetConstraintResourceComponent.CheckFull
 var target_mana_not_full: bool = false # TWelaTargetConstraintResourceComponent.CheckResource(reMana).CheckNotFull
 var target_has_mana_cap: bool = false  # .CheckResource(reMana).CheckHasResource: cap > 0
+var zone_padding: float = 0.0          # TWelaTargetConstraintZoneComponent.SetPadding (Relocate: 5 inside the walk zone)
+var max_target_distance: bool = false  # TWelaTargetConstraintMaxTargetDistanceComponent: points within eiAbilityTargetRange
 var target_any_team: bool = false      # SetTargetTeamConstraint(tcAll)
 var prefer_allies: bool = false        # SetTargetTeamConstraintPriority(tcAllies): allies first when any qualifies
 var prefer_enemies: bool = false       # SetTargetTeamConstraintPriority(tcEnemies)
@@ -173,6 +175,8 @@ var used: bool = false
 var resource_triggers: Array = []    # TAutoBrainOnResourceComponent.TriggerOn
 var changes_max: bool = false        # TWarheadSpottyResourceComponent.ChangesMax (raises the cap and fills it)
 var apply_script_to_self_at_create: bool = false   # TWarheadApplyScriptComponent.ApplyToSelfAtCreate
+var pass_saved_target_index: int = -1  # .PassSavedTargetPosition(i): the owner's saved target i as a script parameter
+var pass_offset_to_owner: bool = false # .PassOffsetToOwner: the target's offset to the owner as a script parameter
 
 
 ## 'Modifiers\Stun.dws' -> "Stun", 'Links\Homeland.dws' -> "Links/Homeland", 'Spells\White\SolarFlare.dws'
@@ -212,6 +216,12 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 					get.call(gg, Kind.SUB).commander_cast = true
 			"TWelaEffectSuicideComponent":
 				get.call(g, Kind.SUB).suicide = true
+			"TWelaTargetConstraintZoneComponent":
+				for c in calls:
+					if c[0] == "SetPadding":
+						get.call(g, Kind.SUB).zone_padding = float(c[1][0])
+			"TWelaTargetConstraintMaxTargetDistanceComponent":
+				get.call(g, Kind.SUB).max_target_distance = true
 			"TWelaTargetConstraintAlliesComponent":
 				for gg in groups:
 					get.call(gg, Kind.SUB).target_allies = true
@@ -491,6 +501,10 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 							passed.append(int(c[1][0]))
 						elif c[0] == "PassSameTeam":
 							same_team = true
+						elif c[0] == "PassSavedTargetPosition":
+							w.pass_saved_target_index = int(c[1][0])
+						elif c[0] == "PassOffsetToOwner":
+							w.pass_offset_to_owner = true
 					if produced:
 						w.produced_scripts.append([script_key(str(args[0])), passed])
 					elif w.apply_script != "":

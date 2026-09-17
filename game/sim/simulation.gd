@@ -268,6 +268,13 @@ func _update_buffs(e: SimEntity) -> void:
 			if b.tick_times == 0 and b.remove_when_ticks_done:
 				e.remove_buff(b)
 				continue
+		if b.teleport_at >= 0 and time_ms >= b.teleport_at and e.alive:   # Relocate: heal / refill buildings, then blink
+			b.teleport_at = -1
+			if e.is_building():
+				var index := 1 if (e.has("upTier1") or e.has("upTier2")) else 3   # ResolveTier (2 -> 1 is a source quirk)
+				heal(e, e.max_health * float(b.tier_heal.get(index, 0.0)), SimConstants.DamageType.SPELL | SimConstants.DamageType.FLAT_HEAL, entities.get(b.source_id))
+				gain_mana(e, int(roundf(e.mana_cap * float(b.tier_mana.get(index, 0.0)))))
+			_teleport(e, b.teleport_to)
 		if b.bomb_script != "" and time_ms >= b.bomb_next_at and Buff.exists(b.bomb_script):   # OrbitalStrike bombardment
 			b.bomb_next_at += b.bomb_interval
 			var candidates: Array[SimEntity] = []
@@ -385,6 +392,11 @@ func _charge_creator_for_rescue(b: Buff) -> void:
 
 
 func _teleport(e: SimEntity, pos: Vector2) -> void:
+	if e.is_building():   # Relocate moves buildings: the blocked footprint moves with them
+		map.pathfinding.unblock_permanent_area(e.position, e.collision_radius)
+		e.position = pos
+		map.pathfinding.block_permanent_area(pos, e.collision_radius)
+		return
 	_stand(e)
 	_leave_standing(e)
 	e.position = pos
@@ -473,13 +485,38 @@ func _cast_spell(team: int, c: Commander, slot: Commander.DeckSlot, target: Vari
 		_fire_group(caster, chosen.group, unit)
 		_on_commander_ability_used(team, unit.position)
 		return PlayResult.OK
-	if not (target is Vector2) or not map.in_zone("Walkzone", target):
+	var points: Array = []   # eiAbilityTargetCount coordinates (Relocate: A and B)
+	var count: int = caster.bb.get_int("eiAbilityTargetCount", spell_group, 1)
+	if count > 1:
+		if not (target is Array) or target.size() != count:
+			return PlayResult.BAD_TARGET
+		points = target
+	elif target is Vector2:
+		points = [target]
+	else:
 		return PlayResult.BAD_TARGET
+	var padding := 0.0   # TWelaTargetConstraintZoneComponent(ZONE_WALK).SetPadding
+	var max_distance := -1.0   # TWelaTargetConstraintMaxTargetDistanceComponent: eiAbilityTargetRange
+	for w in caster.welas:
+		if w.group == spell_group:
+			padding = w.zone_padding
+			if w.max_target_distance:
+				max_distance = caster.bb.get_float("eiAbilityTargetRange", spell_group, 0.0)
+	for p in points:
+		if not (p is Vector2) or not map.in_zone_padded("Walkzone", p, padding):
+			return PlayResult.BAD_TARGET
+	if max_distance >= 0.0:
+		for a in points:
+			for b in points:
+				if a.distance_to(b) > max_distance:
+					return PlayResult.BAD_TARGET
+	target = points[0]
 	var pattern: String = caster.bb.get_value("eiWelaUnitPattern", spell_group, "").replace("\\", "/")
 	if pattern == "":
 		return PlayResult.BAD_TARGET
 	c.pay(slot, time_ms)
 	var effect := spawn(pattern, team, target)
+	effect.saved_targets = points   # TWelaEffectFactoryComponent.PassTargets
 	_gain_field_charges(effect)
 	if not effect.think_once_waits:   # timed effects (Rip Out Soul) act from step() after their delay
 		_think_once(effect)
@@ -1119,7 +1156,12 @@ func _fire_group(e: SimEntity, group: int, target: SimEntity) -> void:
 	elif w.damages:
 		deal_damage(target, amount, dtype, e)
 	if w.apply_script != "" and target.alive and Buff.exists(w.apply_script):
-		_apply_scripted(target, w.apply_script, w.apply_script_values, w.apply_script_same_team, e)
+		var values: Array = w.apply_script_values.duplicate()
+		if w.pass_saved_target_index >= 0 and w.pass_saved_target_index < e.saved_targets.size():
+			values.append(e.saved_targets[w.pass_saved_target_index])   # Relocate: point B
+		if w.pass_offset_to_owner:
+			values.append(target.position - e.position)   # Relocate: keep the formation around A
+		_apply_scripted(target, w.apply_script, values, w.apply_script_same_team, e)
 	for item in w.extra_apply_scripts:
 		if target.alive and Buff.exists(item[0]):
 			_apply_scripted(target, item[0], item[1], item[2], e)

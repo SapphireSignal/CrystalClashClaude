@@ -2178,3 +2178,32 @@ func test_orbital_strike() -> void:
 	for i in 40:
 		sim.step()
 	runner.check(target.health == hp and buddy.health == buddy_hp, "the strike ends after 15 s")
+
+
+func test_relocate() -> void:
+	var sim := _blue_spell_sim()
+	var turret := sim.spawn("Units/Blue/GatlingTurret", Simulation.TEAM_BLUE, Vector2(-40, -23))
+	turret.health = 100.0
+	turret.mana = 0
+	var monk := sim.spawn("Units/White/Monk", Simulation.TEAM_BLUE, Vector2(-38, -23))
+	monk.base_speed = 0.0
+	var far := sim.spawn("Units/White/Monk", Simulation.TEAM_BLUE, Vector2(-30, -23))
+	far.base_speed = 0.0
+	var a := Vector2(-40, -23)
+	var b := Vector2(-25, -20)
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 2, a), Simulation.PlayResult.BAD_TARGET, "relocate needs two points")
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 2, [a, Vector2(-10, -23)]), Simulation.PlayResult.BAD_TARGET, "points at most 20 apart")
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 2, [a, b]), Simulation.PlayResult.OK, "relocate from A to B")
+	runner.check(monk.has("upSummoningSickness"), "targets are stopped for 600 ms")
+	runner.check(monk.has("upImmuneToRelocate"), "and immune to another relocate")
+	var t := sim.time_ms
+	while sim.time_ms < t + 600:
+		sim.step()
+	runner.check_near(turret.position.distance_to(b), 0.0, "buildings blink to B after 500 ms", 0.01)
+	runner.check_near(monk.position.distance_to(b + Vector2(2, 0)), 0.0, "units keep their offset to A", 0.01)
+	runner.check_near(far.position.x, -30.0, "units beyond 5 of A stay")
+	runner.check_near(turret.health, 100.0 + 0.3 * turret.max_health, "tier 1 buildings heal 30 % of max hp")
+	runner.check_eq(turret.mana, 6, "and refill 30 % energy")
+	while sim.time_ms < t + 20100:
+		sim.step()
+	runner.check(not monk.has("upImmuneToRelocate"), "relocate immunity lasts 20 s")

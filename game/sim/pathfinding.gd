@@ -12,7 +12,8 @@ const MAX_PATH_LENGTH: float = 15.0   # PATHFINDING_MAX_COMPUTED_PATH_LENGTH
 var origin: Vector2                    # world position of tile (0,0) corner
 var width: int
 var height: int
-var _permanent: PackedByteArray        # 1 = blocked by environment/building
+var _permanent: PackedByteArray        # 1 = blocked by the environment (outside the Walkzone)
+var _buildings: PackedInt32Array       # number of buildings covering the tile (Relocate moves them)
 var _standing: PackedInt32Array        # count of entities standing on the tile
 var _reservations: Dictionary = {}     # tile index -> PackedByteArray(SLOT_COUNT) of blocked slots
 var _reservation_owner: Dictionary = {} # tile index -> PackedInt32Array(SLOT_COUNT) entity id that reserved
@@ -33,6 +34,7 @@ func _init(bounds: Rect2, walk_polygons: Array, p_lanes: Lanes) -> void:
 	width = ceili(bounds.size.x / TILE_SIZE)
 	height = ceili(bounds.size.y / TILE_SIZE)
 	_permanent.resize(width * height)
+	_buildings.resize(width * height)
 	_standing.resize(width * height)
 	for y in height:
 		for x in width:
@@ -61,11 +63,11 @@ func tile_center(t: Vector2i) -> Vector2:
 
 
 func is_permanently_blocked(i: int) -> bool:
-	return _permanent[i] != 0
+	return _permanent[i] != 0 or _buildings[i] > 0
 
 
 func is_blocked(i: int) -> bool:
-	return _permanent[i] != 0 or _standing[i] > 0
+	return _permanent[i] != 0 or _buildings[i] > 0 or _standing[i] > 0
 
 
 ## Polygons: Array of {"points": PackedVector2Array, "subtractive": bool}. A point is inside the
@@ -87,12 +89,20 @@ static func _point_in_multipolygon(p: Vector2, polygons: Array) -> bool:
 # ---------------------------------------------------------------- blocking
 
 func block_permanent_area(center: Vector2, radius: float) -> void:
+	_change_building_area(center, radius, 1)
+
+
+func unblock_permanent_area(center: Vector2, radius: float) -> void:
+	_change_building_area(center, radius, -1)
+
+
+func _change_building_area(center: Vector2, radius: float, delta: int) -> void:
 	var lo := tile_of(center - Vector2(radius, radius))
 	var hi := tile_of(center + Vector2(radius, radius))
 	for y in range(lo.y, hi.y + 1):
 		for x in range(lo.x, hi.x + 1):
 			if tile_center(Vector2i(x, y)).distance_to(center) <= radius:
-				_permanent[y * width + x] = 1
+				_buildings[y * width + x] = maxi(0, _buildings[y * width + x] + delta)
 
 
 func stand_on(i: int) -> void:

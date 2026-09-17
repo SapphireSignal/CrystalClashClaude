@@ -50,6 +50,10 @@ var splash_damage: float = 0.0      # TWarheadSplashDamageComponent in a timer g
 var splash_radius: float = 0.0
 var splash_type: int = 0
 var splash_once: bool = false       # the splash group removes itself after firing
+var teleport_at: int = -1           # Relocate: TWarheadSpottyTeleportComponent.ToCoordinate after the group's timer
+var teleport_to: Vector2 = Vector2.ZERO
+var tier_heal: Dictionary = {}      # ResolveTier heal on buildings: index (1 for tier 1/2, 3 otherwise) -> share of max hp
+var tier_mana: Dictionary = {}      # ResolveTier energy refill: index -> share of the cap
 var armor_requires_props: Array = []   # TModifierArmorTypeComponent.ReadyGroup: armor change only while these hold
 var expires_at: int = -1
 var values: Dictionary = {}         # "eiWelaModifier" -> {group_id: value}
@@ -164,6 +168,8 @@ static func create(script_name: String, now: int, params: Dictionary = {}) -> Bu
 	var nth_group := -1
 	var fight_group := -1     # TBrainWelaFightComponent inside the buff (OrbitalStrike bombardment)
 	var splash_group := -1
+	var resolve_tier_groups := {}   # TWelaHelperResolveComponent.ResolveTier: indexed values picked by the carrier's tier
+	var teleport_group := -1
 	for comp in data["components"]:
 		if comp.has("cond") and not params.get("__" + comp["cond"], false):
 			continue   # component only exists for melee / ranged owners
@@ -363,10 +369,26 @@ static func create(script_name: String, now: int, params: Dictionary = {}) -> Bu
 					b.on_hit_script = script
 				else:
 					pending_scripts.append(script)
+			"TWelaHelperResolveComponent":
+				for call in calls:
+					if call[0] == "ResolveTier":
+						resolve_tier_groups[g] = true
 			"TWarheadSpottyTeleportComponent":
 				for call in calls:
 					if call[0] == "ToNexus":
 						b.rescue_teleports_to_nexus = true
+					elif call[0] == "ToCoordinate":   # Relocate: 'Target.X + Offset.X', 'Target.Y + Offset.Y'
+						var coords: Array = []
+						for text in call[1]:
+							var expr := str(text)
+							for name in params:
+								if params[name] is Vector2:
+									expr = expr.replace(name + ".X", str(params[name].x)).replace(name + ".Y", str(params[name].y))
+							var ex := Expression.new()
+							assert(ex.parse(expr) == OK, "bad teleport coordinate %s" % expr)
+							coords.append(float(ex.execute()))
+						b.teleport_to = Vector2(coords[0], coords[1])
+						teleport_group = g
 			"TWarheadSpottyDamageComponent":
 				if not b.prevents_death:
 					b.dot_damage = b._value("eiWelaDamage", g, 0.0)
@@ -382,7 +404,9 @@ static func create(script_name: String, now: int, params: Dictionary = {}) -> Bu
 				splash_group = g
 				tick_group = g
 			"TWarheadSpottyHealComponent":
-				if g == b.on_fire_group:
+				if resolve_tier_groups.has(g):   # Relocate: buildings heal 30 / 25 / 15 % by tier index
+					b.tier_heal = {1: b._value("eiWelaDamage.1", g, 0.0), 3: b._value("eiWelaDamage.3", g, 0.0)}
+				elif g == b.on_fire_group:
 					b.on_fire_heal = b._value("eiWelaDamage", g, 0.0)
 					b.on_fire_heal_type = SimConstants.damage_mask(b.values.get("eiDamageType", {}).get(g, []))
 				else:
@@ -396,7 +420,9 @@ static func create(script_name: String, now: int, params: Dictionary = {}) -> Bu
 				for call in calls:
 					if call[0] == "SetResourceType" and call[1][0] == "reMana":
 						is_mana = true
-				if is_mana:
+				if is_mana and resolve_tier_groups.has(g):   # Relocate: energy refill 30 / 20 / 20 % by tier index
+					b.tier_mana = {1: b._value("eiWelaDamage.1", g, 0.0), 3: b._value("eiWelaDamage.3", g, 0.0)}
+				elif is_mana:
 					b.mana_per_tick = int(b._value("eiWelaDamage", g, 1.0))
 					tick_group = g
 				elif b.on_hit_group < 0 and b.values.get("eiWelaDamage", {}).has(g):
@@ -441,6 +467,8 @@ static func create(script_name: String, now: int, params: Dictionary = {}) -> Bu
 		if b.bomb_next_at <= 0:
 			b.bomb_next_at = now
 	b.splash_once = splash_group >= 0 and ending_groups.has(splash_group)
+	if teleport_group >= 0:   # Relocate: the group's timer (Once) delays the blink
+		b.teleport_at = now + int(b._value("eiCooldown", teleport_group, 0))
 	if tick_group >= 0 and (b.dot_damage > 0.0 or b.hot_heal > 0.0 or b.mana_per_tick > 0 or b.shard_projectile != "" or b.splash_damage > 0.0):
 		if b.values.get("eiCooldown", {}).has(tick_group) or b.tick_interval <= 0:
 			b.tick_interval = int(b._value("eiCooldown", tick_group, 1000))
