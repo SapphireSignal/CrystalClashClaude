@@ -167,6 +167,14 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
   is drawn after the deco band (covers the band's top edge like the live client) and before the cards.
 
 ## FIX FIRST (owner's request, before anything else)
+0. **Done (checkpoint 53): lane node ring + two extractor fixes.** `tools/convert_particles.py` reads `<x>`/`<y>`
+   axis tags case-insensitively (16 effects had zero sizes/colours: LaneNode, Capture0-2, Stun, SummoningSickness,
+   RootDebuff, DarkTrollFireWave, 5 White effects, lib_field, lib_vertical_lines); `tools/extract_units.py` parses
+   size expressions with parentheses (`10.0/(3.0)`). `tools/screenshot.gd -- 12 14 at=node size=1679x1079` frames the
+   map middle at the default zoom (use this, not `zoom=node`, for reference comparisons; lane nodes exist after the
+   10 s warm-up). Camera re-checked against both reference shots: angle matches, remaining scale = player's wheel
+   zoom (`docs/reference-material.md`). Still missing at the node: the live client's filled disc + sparkles (live
+   delta) and the blue capture-progress ring (only while units capture).
 1. **Done (checkpoint 37): lane node capture circle verified.** The ring renders (mesh, y 0.01, orientation:
    start +Z about +Y, gaps across the lane, arcs along it, exactly `DrawCircle` Up=UNITZ Left=UNITX); it was
    invisible because it was tinted white. The original tints it `GetTeamColor(Owner.TeamID)` and the node

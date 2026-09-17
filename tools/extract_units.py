@@ -31,7 +31,7 @@ RE_MESH_CALL = re.compile(r"\.([A-Za-z]+)(?:\(([^()]*(?:\([^()]*\)[^()]*)*)\))?"
 RE_MODEL_SIZE = re.compile(r"WriteGrouped\(eiModelSize,\s*\[([0-9.]+)\],\s*\[([^\]]*)\]")
 RE_SKIN_ELSE = re.compile(r"\belse\s*\n\s*begin", re.S)
 RE_EFFECT = re.compile(
-    r"TParticleEffectComponent\.Create(?:Grouped)?\(Entity(?:,\s*\[([^\]]*)\])?,\s*'([^']*)'(?:\s*,\s*([^)]*))?\)(.*?);", re.S
+    r"TParticleEffectComponent\.Create(?:Grouped)?\(Entity(?:,\s*\[([^\]]*)\])?,\s*'([^']*)'(?:\s*,\s*((?:[^()]|\([^()]*\))*))?\)(.*?);", re.S
 )
 RE_EFFECT_CALL = re.compile(r"\.([A-Za-z]+)(?:\(([^()]*(?:\([^()]*\)[^()]*)*)\))?")
 RE_UNIT_BAR = re.compile(

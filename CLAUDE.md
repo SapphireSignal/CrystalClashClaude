@@ -209,5 +209,5 @@ lane-locked z = -23) and map lighting scaled by 0.7 to match the reference brigh
 player), scripts' effect components in `units.json` `effects`, played by the sandbox on create / fire / die /
 projectile impact. HUD verified against the live-client screenshots (resource panel, deck panel with the
 engine's colour-override darken shader); lane node capture circle (`game/effects/range_circle.gd`) verified: neutral
-grey tint like the source, faint arc. Spawner tiles (`game/maps/build_grid.gd`, `assets/gameplay/Buildgrid`) with
+grey tint like the source, faint arc; its `LaneNode.pfx` ring pulse renders (lowercase axis tags fixed in the converter). Spawner tiles (`game/maps/build_grid.gd`, `assets/gameplay/Buildgrid`) with
 the wave-rotation glow. See `CONTINUE.md`.

@@ -28,10 +28,18 @@ def num(text: str | None, default: float = 0.0) -> float:
     return float(text.strip().replace(",", "."))
 
 
+def child_text(node, key: str) -> str | None:
+    """Axis tags are written `<X>` in most files and `<x>` in a few (e.g. LaneNode.pfx): match case-insensitively."""
+    for child in node:
+        if child.tag.lower() == key.lower():
+            return child.text
+    return None
+
+
 def vec(node, keys=("X", "Y", "Z"), default: float = 0.0) -> list[float]:
     if node is None:
         return [default] * len(keys)
-    return [num(node.findtext(k), default) for k in keys]
+    return [num(child_text(node, k), default) for k in keys]
 
 
 def varied(node, keys=("X", "Y", "Z")) -> dict:

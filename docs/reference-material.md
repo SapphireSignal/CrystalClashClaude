@@ -147,6 +147,14 @@ These are current and take precedence over Codex's older captures. Facts read fr
   The big capture arcs (radius 16.5, `RangeLine.tga`) look *lighter* than the floor in the live client; the
   2022 source tints them with the node's own team colour, neutral grey `404040` (never changes: the node is
   replaced by a tower). We keep the source's grey; with the texture's 13 % peak alpha it is a faint dark arc.
+- Lane node effect (2026-09-17, mid-lane shot `image-1789614715701.webp`): the 2022 `LaneNode.pfx` is a white
+  `FieldBorder` ring pulse (3 quads, size 10 x 0.3, alpha 0.74, every 250 ms) plus a faint point light; ours
+  renders the ring (the light is skipped like all `ptLight`). The live client additionally draws a filled white
+  disc with floating sparkles: a newer effect not in the repo (live delta). The blue progress ring is the capture
+  progress (`TResourceDisplayComponent` team power) and appears only while units stand on the node: not built yet.
+- Zoom in the owner's shots: edge-correlation scale fits give the game-start shot ~3 % closer than distance 38
+  and the mid-lane shot ~7 % farther (~41). A fixed camera cannot be both, so the player used the wheel; the
+  angle lines up in both. `coGameplayCameraMaxZoom` stays 3.8 (source comment "3.4 -> 4.0" hints at later values).
 - Lane node after a tower dies: the losing team cannot recapture for a while (owner: ~20 s live; source
   LaneNode_Red/_Blue block 40 s). Selecting an enemy squad: panel "Thistles", "40 / 40", attack "8.8", armor "0%",
   "Doubleshot, Evasion" (source Thistle: 27 HP, 14 damage x2). Enemy nexus is drawn red. Floating combat text

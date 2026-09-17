@@ -1,7 +1,7 @@
 extends SceneTree
 ## Runs game/main.tscn for a while and saves screenshots of the HUD for comparison with
 ## reference/media/ingame. Usage (windowed, not headless):
-##   godot --path <proj> -s tools/screenshot.gd --log-file <proj>/.tmp/godot.log -- <seconds> [<seconds> ...] [select] [hover=<slot>] [finish] [zoom=nexus|unit|node] [play=<slot>]
+##   godot --path <proj> -s tools/screenshot.gd --log-file <proj>/.tmp/godot.log -- <seconds> [<seconds> ...] [select] [hover=<slot>] [finish] [zoom=nexus|unit|node] [at=node] [play=<slot>]
 ## Writes .tmp/shot_<seconds>.png for each requested time; "select" selects a unit (or the blue nexus), "hover=N" shows deck slot N's card hint.
 
 var _targets: Array = []
@@ -11,6 +11,7 @@ var _select := false
 var _hover := -1
 var _finish := false
 var _zoom := ""
+var _at := ""      # at=node: look at the first lane node at the default zoom
 var _play := -1
 
 
@@ -28,6 +29,8 @@ func _initialize() -> void:
 			_zoom = arg.trim_prefix("zoom=")
 		elif arg.begins_with("play="):
 			_play = int(arg.trim_prefix("play="))
+		elif arg.begins_with("at="):
+			_at = arg.trim_prefix("at=")
 		elif arg.begins_with("size="):   # size=1679x1079: render at the reference screenshot's window size
 			var parts := arg.trim_prefix("size=").split("x")
 			DisplayServer.window_set_size(Vector2i(int(parts[0]), int(parts[1])))
@@ -59,6 +62,10 @@ func _process(delta: float) -> bool:
 					target = units[0]
 			_main._zoom = 2.6
 			_main._place_camera(target.position)
+		if _at == "node":
+			var nodes: Array = _main.sim.alive_entities(-1).filter(func(e): return e.is_lane_node())
+			if not nodes.is_empty():
+				_main._place_camera(nodes[0].position)
 		if _play >= 0:   # play=N: the blue deck slot N at the camera's look-at point (free cards not needed: 300 gold)
 			_main.sim.commanders[Simulation.TEAM_BLUE].free_cards = true
 			_main._play(Simulation.TEAM_BLUE, _play, _main._look_at + Vector2(6, 0))
