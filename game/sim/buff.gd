@@ -20,6 +20,16 @@ var late_expires_at: int = -1
 var link_damage: float = 0.0        # link entity brain (Links/VecraAura.ets): periodic damage to the linked target
 var link_damage_type: int = 0
 var link_leech: float = 0.0         # share of dealt damage healed back to the link owner
+var target_count_add: int = 0       # TModifierWelaTargetCountComponent on the main weapon (Frenzy: ranged +1)
+var on_fire_group: int = -1         # TWelaEffectFireComponent on the main weapon, redirected to self
+var on_fire_heal: float = 0.0       # Frenzy: melee heal 70 per attack
+var on_fire_heal_type: int = 0
+var shard_projectile: String = ""   # Frostspear: a projectile per tick at a random unit of the owner's team
+var shard_damage: float = 0.0
+var shard_type: int = 0
+var shard_range: float = 0.0
+var shard_must_not_have: Array = []
+var armor_requires_props: Array = []   # TModifierArmorTypeComponent.ReadyGroup: armor change only while these hold
 var expires_at: int = -1
 var values: Dictionary = {}         # "eiWelaModifier" -> {group_id: value}
 var damage_mods: Array = []         # {groups, value_group, multiply, must_have, factor}
@@ -108,21 +118,49 @@ static func create(script_name: String, now: int, params: Dictionary = {}) -> Bu
 		if not group_ids.has(sym):
 			group_ids[sym] = 20 + group_ids.size()
 		return group_ids[sym]
+	var defaults: Dictionary = data.get("defaults", {})
 	for event in data["values"]:
 		for sym in data["values"][event]:
 			var v: Variant = data["values"][event][sym]
-			if v is String and params.has(v):
-				v = params[v]
+			if v is Dictionary and v.has("if"):   # if Entity.HasDamageType(dtMelee) then a else b
+				v = v["then"] if params.get("__" + v["if"], false) else v["else"]
+			elif v is String:
+				v = _resolve_expression(v, params, defaults)
 			b.values.get_or_add(event, {})[gid.call(sym)] = v
 	var duration_group := -1
 	var has_remove := false
 	var tick_group := -1
 	var prop_groups: Array = []   # [group, props]
+	var timer_ready := false
+	var unready_groups := {}
 	for comp in data["components"]:
+		if comp.has("cond") and not params.get("__" + comp["cond"], false):
+			continue   # component only exists for melee / ranged owners
 		var groups: Array = comp["groups"].map(func(s): return gid.call(s))
 		var g: int = groups[0] if not groups.is_empty() else -1
 		var calls: Array = comp.get("calls", [])
 		match comp["class"]:
+			"TThinkImpulseTimerCooldownComponent":
+				for call in calls:
+					if call[0] == "TimerIsReady":
+						timer_ready = true
+			"TWelaEffectProjectileComponent":
+				b.shard_projectile = str(b.values.get("eiWelaUnitPattern", {}).get(g, "")).replace("\\", "/")
+				b.shard_damage = b._value("eiWelaDamage", g, 0.0)
+				b.shard_type = SimConstants.damage_mask(b.values.get("eiDamageType", {}).get(g, []))
+				b.shard_range = b._value("eiWelaRange", g, 0.0)
+				tick_group = g
+			"TWelaEffectFireComponent":
+				if groups.has(SimConstants.GROUP_MAINWEAPON):
+					for call in calls:
+						if call[0] == "TargetGroup":
+							b.on_fire_group = gid.call(call[1][0][0])
+			"TModifierWelaTargetCountComponent":
+				var value_group := g
+				for call in calls:
+					if call[0] == "SetValueGroup":
+						value_group = gid.call(call[1][0][0])
+				b.target_count_add = int(b._value("eiWelaModifier", value_group, 0.0))
 			"TAutoBrainBuffComponent":
 				b.buff_types = comp.get("args", [[]])[0]
 			"TUnitPropertyComponent":
@@ -130,6 +168,8 @@ static func create(script_name: String, now: int, params: Dictionary = {}) -> Bu
 			"TWelaReadyCooldownComponent":
 				if b.prevents_death:
 					continue
+				if not comp.get("args", []).is_empty() and str(comp["args"][0]).to_lower() == "false":
+					unready_groups[g] = true   # starts on cooldown: the first tick waits even with a ready timer
 				if g == b.on_hit_group:
 					b.on_hit_cooldown_ms = int(b._value("eiCooldown", g, 0))
 					continue
@@ -168,7 +208,14 @@ static func create(script_name: String, now: int, params: Dictionary = {}) -> Bu
 			"TModifierMultiplyMovementSpeedComponent":
 				b.speed_factor = b._value("eiWelaDamage", g, 1.0)
 			"TModifierMultiplyCooldownComponent":
-				b.cooldown_factor = b._value("eiWelaDamage", g, 1.0)
+				var value_group := -1
+				for call in calls:
+					if call[0] == "SetValueGroup":
+						value_group = gid.call(call[1][0][0])
+				if value_group >= 0 and b.values.get("eiWelaModifier", {}).has(value_group):
+					b.cooldown_factor = b._value("eiWelaModifier", value_group, 1.0)
+				else:
+					b.cooldown_factor = b._value("eiWelaDamage", g, 1.0)
 				b.cooldown_groups = groups
 			"TModifierArmorTypeComponent":
 				for call in calls:
@@ -176,10 +223,17 @@ static func create(script_name: String, now: int, params: Dictionary = {}) -> Bu
 						"Increase": b.armor_delta = int(b._value("eiWelaModifier", g, 1.0))
 						"Decrease": b.armor_delta = -int(b._value("eiWelaModifier", g, 1.0))
 						"SetTo": b.armor_set = SimConstants.ARMOR_NAMES.get(call[1][0], -1)
+						"ReadyGroup":
+							var rg: int = gid.call(call[1][0][0])
+							for other in data["components"]:
+								if other["class"] == "TWelaReadyUnitPropertyComponent" and other["groups"].map(func(s): return gid.call(s)).has(rg):
+									for oc in other.get("calls", []):
+										if oc[0] == "MustHave":
+											b.armor_requires_props.append_array(oc[1][0])
 			"TModifierResourceComponent":
 				for call in calls:
 					if call[0] == "Resource" and call[1][0] == "reHealth":
-						b.health_bonus = b._value("eiWelaDamage", g, 0.0)
+						b.health_bonus = b._value("eiWelaDamage", g, 0.0) * b._value("eiWelaModifier", g, 1.0)
 			"TBuffTakenDamageMultiplierComponent":
 				var on_heal := false
 				for call in calls:
@@ -201,6 +255,7 @@ static func create(script_name: String, now: int, params: Dictionary = {}) -> Bu
 						b.on_hit_must_not_have.append_array(call[1][0])
 					elif g == tick_group and call[0] == "MustNotHave":
 						b.dot_not_props.append_array(call[1][0])
+						b.shard_must_not_have.append_array(call[1][0])
 			"TWelaEffectSuicideComponent":
 				b.kills_on_expiry = true
 			"TAutoBrainOnTakeDamageComponent":
@@ -236,8 +291,12 @@ static func create(script_name: String, now: int, params: Dictionary = {}) -> Bu
 						if call[0] == "PercentageOfMaxHealth":
 							b.dot_percent_of_max = true
 			"TWarheadSpottyHealComponent":
-				b.hot_heal = b._value("eiWelaDamage", g, 0.0)
-				tick_group = g
+				if g == b.on_fire_group:
+					b.on_fire_heal = b._value("eiWelaDamage", g, 0.0)
+					b.on_fire_heal_type = SimConstants.damage_mask(b.values.get("eiDamageType", {}).get(g, []))
+				else:
+					b.hot_heal = b._value("eiWelaDamage", g, 0.0)
+					tick_group = g
 			"TWarheadSpottyResourceComponent":
 				var is_mana := false
 				for call in calls:
@@ -250,7 +309,7 @@ static func create(script_name: String, now: int, params: Dictionary = {}) -> Bu
 					b.instant_heal = b._value("eiWelaDamage", g, 0.0)   # Undying: heal back to max at once
 			"TWelaReadyNthComponent":
 				for call in calls:
-					if call[0] == "Times":
+					if call[0] == "Times" or call[0] == "Nth":
 						b.tick_times = int(call[1][0])
 	for item in prop_groups:
 		var own := int(b._value("eiCooldown", item[0], -1.0))
@@ -265,11 +324,29 @@ static func create(script_name: String, now: int, params: Dictionary = {}) -> Bu
 		b.charges = int(b._value("eiResourceBalance.reWelaCharge", duration_group, 0))
 		b.charge_cap = int(b._value("eiResourceCap.reWelaCharge", duration_group, 0))
 	b.block_once = has_remove and b.block_threshold >= 0.0
-	if tick_group >= 0 and (b.dot_damage > 0.0 or b.hot_heal > 0.0 or b.mana_per_tick > 0):
+	if tick_group >= 0 and (b.dot_damage > 0.0 or b.hot_heal > 0.0 or b.mana_per_tick > 0 or b.shard_projectile != ""):
 		b.tick_interval = int(b._value("eiCooldown", tick_group, 1000))
-		b.next_tick_at = now + b.tick_interval
+		b.next_tick_at = now if timer_ready and not unready_groups.has(tick_group) else now + b.tick_interval
 	b.stops_movement = b.properties.has("upStunned") or b.properties.has("upRooted") or b.properties.has("upFrozen")
 	return b
+
+
+## 'Duration' -> the passed or default parameter; 'Duration + 10000' -> evaluated with it.
+static func _resolve_expression(text: String, params: Dictionary, defaults: Dictionary) -> Variant:
+	var expr := text
+	var names := params.keys() + defaults.keys()
+	var known := false
+	for name in names:
+		if expr.contains(name):
+			known = true
+			expr = expr.replace(name, str(params.get(name, defaults.get(name))))
+	if not known:
+		return text
+	var e := Expression.new()
+	if e.parse(expr) != OK:
+		return text
+	var result: Variant = e.execute()
+	return text if e.has_execute_failed() else result
 
 
 func _value(event: String, group: int, default: float) -> float:

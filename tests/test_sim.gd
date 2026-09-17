@@ -417,7 +417,7 @@ func test_buffs_from_modifier_scripts() -> void:
 	t0 = sim.time_ms
 	while sim.time_ms < t0 + 2100:
 		sim.step()
-	runner.check_near(f.health, hp - 2.0, "root DoT: 1.5 dmg -> min 1 after armor, twice in 2 s")
+	runner.check_near(f.health, hp - 3.0, "root DoT: 1.5 dmg -> min 1 after armor, at once then every second (3 in 2.1 s)")
 
 
 func test_archer_relentless_vs_stunned() -> void:
@@ -1131,3 +1131,168 @@ func test_void_slime_status_mirror() -> void:
 	slime.fire_group = 1
 	sim.deal_damage(monk, 10.0, SimConstants.DamageType.MELEE, slime)
 	runner.check(slime.has("upFrozen"), "mirror to self: copies the victim's frozen status")
+
+
+func _black_spell_sim() -> Simulation:
+	var sim := Simulation.new(21, 4)
+	sim.spawn_bases()
+	var c: Commander = sim.commanders[Simulation.TEAM_BLUE]
+	c.set_deck(["Spells/Black/Frenzy.sps", "Spells/Black/Frostspear.sps", "Spells/Black/Freeze.sps",
+		"Spells/Black/OnTheEdge.sps", "Spells/Black/PermaFrost.sps", "Spells/Black/RipOutSoul.sps", "Spells/Black/ShatterIce.sps"])
+	c.gold = 1000.0
+	c.raise_tier(3)
+	while not sim.game_started:
+		sim.step()
+	return sim
+
+
+func test_frenzy() -> void:
+	var sim := _black_spell_sim()
+	var footman := sim.spawn("Units/White/Footman", Simulation.TEAM_BLUE, Vector2(0, -23))
+	var archer := sim.spawn("Units/White/Archer", Simulation.TEAM_BLUE, Vector2(2, -23))
+	var enemy := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(1, -23))
+	enemy.locked_until = 1 << 30
+	sim.apply_buff(footman, "Stun")
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 0, enemy.id), Simulation.PlayResult.BAD_TARGET, "frenzy is for allies")
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 0, footman.id), Simulation.PlayResult.OK, "frenzy on the footman")
+	runner.check(not footman.has("upStunned"), "frenzy strips state effects")
+	runner.check(footman.has("upBlessedFrenzy") and footman.has("upImmuneToStateEffects"), "blessed and immune")
+	runner.check_eq(footman.cooldown(1), 1000, "melee attacks twice as fast")
+	runner.check_eq(footman.target_count(1), 1, "melee gets no extra target")
+	footman.health = 10.0
+	footman.fire_group = 1
+	sim._fire_group(footman, 1, enemy)
+	runner.check_near(footman.health, 32.0, "melee heals 70 per attack (capped)")
+	var archer_cooldown := archer.cooldown(1)
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 0, archer.id), Simulation.PlayResult.OK, "frenzy on the archer")
+	runner.check_eq(archer.cooldown(1), int(archer_cooldown * 0.75), "ranged attack speed x0.75")
+	runner.check_eq(archer.target_count(1), 2, "ranged gains one extra target")
+	var t := sim.time_ms
+	while footman.has("upBlessedFrenzy") and sim.time_ms < t + 12000:
+		sim.step()
+	runner.check(sim.time_ms - t >= 10000 and sim.time_ms - t < 10100, "frenzy lasts 10 s (got %d)" % (sim.time_ms - t))
+
+
+func test_frostspear() -> void:
+	var sim := _black_spell_sim()
+	var victim := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(0, -23))
+	var a := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(3, -23))
+	var b := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(-3, -23))
+	for m in [victim, a, b]:
+		m.locked_until = 1 << 30
+	var shards: Array = []
+	var on_proj := func(p): if p.unit_id.ends_with("FrostspearProjectile"): shards.append(p)
+	sim.projectile_spawned.connect(on_proj)
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 1, victim.id), Simulation.PlayResult.OK, "frostspear on an enemy")
+	runner.check(victim.has("upFrozen"), "target frozen")
+	for i in 60:
+		sim.step()
+	sim.projectile_spawned.disconnect(on_proj)
+	runner.check_eq(shards.size(), 12, "12 ice shards")
+	runner.check_near(shards[0].damage, 10.0, "10 spell damage each")
+	runner.check_near(a.health + b.health, 2 * 265.0 - 120.0, "shards hit the victim's team mates within 6")
+	var tower := sim.spawn("Units/Neutral/LanetowerLevel1", Simulation.TEAM_RED, Vector2(20, -23))
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 1, tower.id), Simulation.PlayResult.OK, "frostspear on a base building")
+	runner.check(tower.has("upFrozen"), "base frozen")
+	var frozen: Buff = null
+	for x in tower.buffs:
+		if x.name == "Frozen":
+			frozen = x
+	runner.check(frozen != null and frozen.expires_at - sim.time_ms == 5000, "bases freeze for only 5 s")
+
+
+func test_freeze_spell() -> void:
+	var sim := _black_spell_sim()
+	var near: Array = []
+	for i in 3:
+		var m := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(i * 1.5, -23))
+		m.locked_until = 1 << 30
+		near.append(m)
+	var far := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(6, -23))
+	var friend := sim.spawn("Units/White/Monk", Simulation.TEAM_BLUE, Vector2(0, -22))
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 2, Vector2(0, -23)), Simulation.PlayResult.OK, "cast freeze")
+	for m in near:
+		runner.check(m.has("upFrozen"), "enemies within 4 frozen")
+	runner.check(not far.has("upFrozen") and not friend.has("upFrozen"), "far enemy and ally untouched")
+	runner.check_eq(sim.alive_entities(Simulation.TEAM_BLUE).filter(func(e): return e.is_spell_effect()).size(), 0, "field removed itself")
+
+
+func test_on_the_edge() -> void:
+	var sim := _black_spell_sim()
+	var allies: Array = []
+	for i in 10:
+		var f := sim.spawn("Units/White/Footman", Simulation.TEAM_BLUE, Vector2((i % 5) * 1.2, -23 + (i / 5) * 1.2))
+		f.base_speed = 0.0
+		allies.append(f)
+	var archer := sim.spawn("Units/White/Archer", Simulation.TEAM_RED, Vector2(0, -20))
+	archer.locked_until = 1 << 30
+	var base_range := archer.range_of(1)
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 3, Vector2(0, -23)), Simulation.PlayResult.OK, "cast on the edge")
+	for i in 5:
+		sim.step()
+	runner.check(archer.has("upBefogged"), "non-melee enemies in radius 5 are befogged")
+	runner.check_near(archer.range_of(1), base_range - 3.0, "befogged: -3 range")
+	var t := sim.time_ms
+	while sim.time_ms < t + 3200:
+		sim.step()
+	var blessed := allies.filter(func(f): return f.has("upBlessedGrievousWounds")).size()
+	runner.check_eq(blessed, 4, "one ally enchanted per second (first at once)")
+	while sim.time_ms < t + 12000:
+		sim.step()
+	runner.check_eq(sim.alive_entities(Simulation.TEAM_BLUE).filter(func(e): return e.has("upCharm")).size(), 0, "field gone after 10 enchantments")
+
+
+func test_permafrost() -> void:
+	var sim := _black_spell_sim()
+	var slime := sim.spawn("Units/Black/VoidSlime", Simulation.TEAM_RED, Vector2(0, -23))
+	slime.locked_until = 1 << 30
+	sim.apply_buff(slime, "Frozen")
+	for i in 100:   # 3.2 s into the 9 s freeze
+		sim.step()
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 4, slime.id), Simulation.PlayResult.OK, "cast permafrost")
+	var frozen: Buff = null
+	for b in slime.buffs:
+		if b.name == "Frozen":
+			frozen = b
+	runner.check(frozen != null and frozen.expires_at - sim.time_ms == 9000, "old freeze replaced by a fresh 9 s one")
+	runner.check_near(slime.max_health, 495.0 + 250.0 - 300.0, "enemy max hp -300 (after the slime's own +250 absorb)")
+	runner.check_eq(slime.armor(), SimConstants.ArmorType.HEAVY, "heavy armor while frozen")
+	var t := sim.time_ms
+	while slime.has("upFrozen") and sim.time_ms < t + 10000:
+		sim.step()
+	runner.check_eq(slime.armor(), SimConstants.ArmorType.UNARMORED, "armor back once thawed")
+	runner.check(slime.has("upBlessedHardening"), "hardening stays")
+
+
+func test_rip_out_soul() -> void:
+	var sim := _black_spell_sim()
+	var a := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(0, -23))
+	var b := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(3, -23))
+	var own := sim.spawn("Units/White/Monk", Simulation.TEAM_BLUE, Vector2(-3, -23))
+	for m in [a, b, own]:
+		m.locked_until = 1 << 30
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 5, Vector2(0, -23)), Simulation.PlayResult.OK, "cast rip out soul")
+	sim.step()
+	runner.check_near(a.health, 265.0, "nothing before the 500 ms delay")
+	for i in 16:
+		sim.step()
+	runner.check_near(a.health, 265.0 * 0.7, "30% max hp")
+	runner.check(a.has("upBanished") and b.has("upBanished"), "banished")
+	runner.check(own.has("upBanished"), "own units in the area are hit too")
+	runner.check_eq(sim.alive_entities(Simulation.TEAM_BLUE).filter(func(e): return e.is_spell_effect()).size(), 0, "effect removed itself")
+
+
+func test_shatter_ice() -> void:
+	var sim := _black_spell_sim()
+	var frozen := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(0, -23))
+	var warm := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(2, -23))
+	var tower := sim.spawn("Units/Neutral/LanetowerLevel1", Simulation.TEAM_RED, Vector2(-2, -23))
+	frozen.locked_until = 1 << 30
+	warm.locked_until = 1 << 30
+	sim.apply_buff(frozen, "Frozen")
+	sim.apply_buff(tower, "Frozen")
+	var tower_hp := tower.health
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 6, Vector2(0, -23)), Simulation.PlayResult.OK, "cast shatter ice")
+	runner.check_near(frozen.health, 265.0 - 250.0, "250 to frozen units")
+	runner.check_near(warm.health, 265.0, "unfrozen units untouched")
+	runner.check_near(tower.health, tower_hp - 800.0, "800 to frozen buildings")

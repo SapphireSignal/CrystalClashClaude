@@ -139,10 +139,26 @@ def strip_comments(body: str) -> str:
     return re.sub(r"//[^\n]*", "", body)
 
 
+RE_COND_BLOCK = re.compile(r"if Entity\.HasDamageType\((\w+)\) then\s*(?:begin(.*?)end;|((?:(?!\bif\b).)*?;))", re.S)
+
+
 def parse_components(body: str) -> list:
-    """Component declarations (class, groups, fluent calls) from a CreateEntity / Apply body."""
+    """Component declarations; components inside 'if Entity.HasDamageType(dtX) then ...' carry cond = dtX."""
     body = strip_comments(body)
     body = re.sub(r"\{\$IFDEF CLIENT\}.*?\{\$ENDIF\}", "", body, flags=re.S)
+    out = []
+    pos = 0
+    for m in RE_COND_BLOCK.finditer(body):
+        out += _parse_components_plain(body[pos:m.start()])
+        for comp in _parse_components_plain(m.group(2) or m.group(3)):
+            comp["cond"] = m.group(1)
+            out.append(comp)
+        pos = m.end()
+    return out + _parse_components_plain(body[pos:])
+
+
+def _parse_components_plain(body: str) -> list:
+    body = strip_comments(body)
     body = re.sub(r"\{\$IFDEF SERVER\}|\{\$ENDIF\}|\{\$IFNDEF \w+\}|\{\$ELSE\}", "", body)
     out = []
     for stmt in body.split(";"):
@@ -214,6 +230,12 @@ def create_entity_body(text: str) -> str:
     return m.group(1) if m else ""
 
 
+def create_meta_body(text: str) -> str:
+    """CreateMeta holds shared (server + client) components such as spell target constraints."""
+    m = re.search(r"procedure CreateMeta\(.*?\);(.*?)^end;", text, re.S | re.M)
+    return m.group(1) if m else ""
+
+
 def parse_modifier(path: Path) -> dict:
     """Scripts/Modifiers/*.dws: procedure Apply(Entity; params) with SetValue lines and components."""
     text = path.read_text(encoding="utf-8", errors="replace")
@@ -222,16 +244,17 @@ def parse_modifier(path: Path) -> dict:
         return {}
     params = [p.split(":")[0].strip() for p in m.group(1).split(";")[1:] if ":" in p]
     body = m.group(2)
+    defaults: dict = {}
     delegate = re.search(r"(Apply\w+)\(Entity\s*,\s*([^)]*)\)", body)
     if delegate and "Create" not in body:  # Frozen.dws: Apply just calls ApplyWithDuration(Entity, DEFAULT_DURATION)
         target = re.search(rf"procedure {delegate.group(1)}\((.*?)\);(.*?)^end;", text, re.S | re.M)
         if target:
-            names = [p.split(":")[0].strip() for p in target.group(1).split(";")[1:] if ":" in p]
+            params = [p.split(":")[0].strip() for p in target.group(1).split(";")[1:] if ":" in p]
             args = [a.strip() for a in delegate.group(2).split(",")]
             defines = dict(re.findall(r"^#define\s+(\w+)\s+([0-9.]+)", text, re.M))
             body = target.group(2)
-            for name, arg in zip(names, args):
-                body = re.sub(rf"\b{name}\b", defines.get(arg, arg), body)
+            for name, arg in zip(params, args):
+                defaults[name] = parse_value(defines.get(arg, arg))
     raw = re.search(r"function Apply(?:Raw|Effect)\(.*?\)\s*:\s*\w+;(.*?)^end;", text, re.S | re.M)
     if raw:  # some scripts split the server part into ApplyRaw/ApplyEffect (Invincibility, BlessingGrievousWounds)
         body = raw.group(1) + "\n" + body
@@ -241,6 +264,12 @@ def parse_modifier(path: Path) -> dict:
     for k, v in re.findall(r"^#define\s+(\w+)\s+([0-9.]+)", text, re.M):
         consts[k] = float(v) if "." in v else int(v)
     values: dict = {}
+    conditional = re.compile(
+        r"if Entity\.HasDamageType\((\w+)\) then\s*Entity\.Blackboard\.SetValue\((\w+),\s*\[(\w+)\],\s*([^)]+)\)"
+        r"\s*else\s*Entity\.Blackboard\.SetValue\(\2,\s*\[\3\],\s*([^)]+)\)", re.S)
+    for m in conditional.finditer(body):
+        values.setdefault(m.group(2), {})[m.group(3)] = {"if": m.group(1), "then": parse_value(m.group(4).strip()), "else": parse_value(m.group(5).strip())}
+    body = conditional.sub("", body)
     for line in body.splitlines():
         line = line.strip()
         mm = re.match(r"Entity\.Blackboard\.Set(Indexed)?Value\(\s*(\w+)\s*,\s*\[([^\]]*)\]\s*,\s*(?:(\w+)\s*,\s*)?(.+?)\);", line)
@@ -255,7 +284,7 @@ def parse_modifier(path: Path) -> dict:
         entry = values.setdefault(key, {})
         for g in [x.strip() for x in groups.split(",") if x.strip()]:
             entry[g] = value
-    return {"params": params, "consts": consts, "values": values, "components": parse_components(body)}
+    return {"params": params, "defaults": defaults, "consts": consts, "values": values, "components": parse_components(body)}
 
 
 def extract_modifiers() -> dict:
@@ -308,7 +337,7 @@ def parse_script(path: Path) -> dict:
     parse_set_lines(body, data["values"])
     entity_body = create_entity_body(text)
     parse_set_lines(re.sub(r"\{\$IFDEF CLIENT\}.*?\{\$ENDIF\}", "", entity_body, flags=re.S), data["values"])
-    data["components"] = data.get("components", []) + parse_components(entity_body)
+    data["components"] = data.get("components", []) + parse_components(create_meta_body(text)) + parse_components(entity_body)
     return data
 
 

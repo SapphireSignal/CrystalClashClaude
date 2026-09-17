@@ -102,6 +102,11 @@ Act as two people at once:
   (the prompt to paste into a new chat), commit + push.
 - 2026-09-16 Git identity in this repo is `SapphireSignal` (never the owner's personal name/email). Remote:
   github.com/SapphireSignal/CrystalClashClaude. Commit + push at each working checkpoint.
+- 2026-09-16 Source of truth is the public repo snapshot (last commit 2022-01-19). Crystal Clash on Steam may
+  have later balance patches: after the port is playable, audit the Steam patch notes newer than that date
+  and apply differences through the extractor/data (never by hand). Until then we replicate the repo.
+- 2026-09-16 The fourth faction is `Scripts/Units/Golems` in the source (`Colorless` holds the neutral
+  golem variants); the display name follows whatever the Steam build calls it.
 
 ## Status
 Phase 1 done (docs written). Phase 2 in progress: `game/sim/` has fixed-tick Simulation, Blackboard stats from
@@ -138,6 +143,9 @@ fury (chains before the warhead), VoidCauldron blast, Frostgoyle Fountain (passi
 produced-unit scripts, building lifetime), Tyrus (soul armor, undertow with reverse projectiles, debut),
 Vecra (group-bound properties, group removal, activation, link entity aura), VoidWraith nova, VoidAltar
 (exile by max HP), VoidSlime (extractor inlines its generator procedures; status absorb and mirrors).
-370 tests pass. Black spells are next. `game/main.tscn` is a sandbox with capsule
+All 7 Black spells work (Frenzy, Frostspear with ice shards and 5 s base freeze, Freeze, On the Edge charm
+field with Befogged links, PermaFrost, Rip Out Soul, Shatter Ice); modifier scripts may be parametric
+(`defaults`, expressions), conditional on melee/ranged, and CreateMeta constraints are extracted.
+The Black faction is complete. 416 tests pass. Green, Blue and Golems are next. `game/main.tscn` is a sandbox with capsule
 units on the Compatibility renderer: keys 1-9,0,-,= play the 12 deck slots, a simple red AI plays back.
 See `CONTINUE.md`.

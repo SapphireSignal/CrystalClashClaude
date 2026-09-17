@@ -2,8 +2,8 @@
 
 Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
 
-## State (2026-09-16, checkpoint 15)
-- Phase 2 core sim works and is tested (370 tests). All 12 White units and 6 White spells work, plus
+## State (2026-09-16, checkpoint 16)
+- Phase 2 core sim works and is tested (416 tests). Black faction complete (12 units, 7 spells). All 12 White units and 6 White spells work, plus
   overheal, projectile splash and the dynamic drop zone.
 - Black steps 1a+1b done: souls (`_release_soul`, `gain_mana`, `Wela.Kind.ON_RESOURCE`), VoidSkeleton
   Undying (`Wela.Kind.PREVENT_DEATH`, buff `instant_heal`/`kills_on_expiry`), VoidBane cone cleave
@@ -16,6 +16,11 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
   `produced_scripts`, `lifetime_ms`, `projectile_reverse`, `activates_groups`/`active`, `removes_groups`,
   entity `group_properties`, link entities (`Links/*.ets` in units.json, `Buff.link_damage`), `mirror_pairs`,
   `on_deal_groups`, extractor `inline_local_procedures` (VoidSlime) and `fix_pattern_case`.
+- Black step 1d done (spells): extractor keeps modifier params (`defaults`, expression values like
+  `Duration + 10000`), conditional values/components on `Entity.HasDamageType`, CreateMeta constraints,
+  `TWelaTargetConstraintBooleanComponent` folded as AND; buff `shard_projectile` (Frostspear), `on_fire_heal`,
+  `target_count_add`, `armor_requires_props`; wela `extra_apply_scripts`, `remove_beacon_props`,
+  `removes_buff_types_any`, `damage_percent_of_max`, `ignore_own_radius`; entity `think_delay_ms`.
 - `game/sim/`: `simulation.gd` (loop, think chain over welas, chained fire groups, auras, splash, spells,
   combat hooks, projectiles, buffs, economy, movement, spawners, card play, ammo, tech-ups, lane nodes,
   charms), `wela.gd` (weapon/ability groups parsed from unit and spell components), `buff.gd` (modifier,
@@ -28,13 +33,12 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
 - `reference/media/` (local, gitignored): folder for real-game screenshots/videos the owner drops in.
 
 ## Next step (in order, one at a time, test after each)
-1. **Black faction** using `docs/factions/black.md` (units a-c are done):
-   d. Spells: Frenzy, Frostspear, Freeze, OnTheEdge, PermaFrost (`TWelaEffectRemoveBeaconComponent`),
-      RipOutSoul (percent max HP), ShatterIce.
-2. Green, Blue, Golems the same way (spawn a research agent per faction to write `docs/factions/<x>.md`
-   first, like Black; the coverage audit snippet is in git history, commit b937743).
-3. Then the sandbox should show a full deck including spells (main.gd: `ctEntity` spells need a unit under
+1. Green, Blue, Golems the same way as Black: `docs/factions/<x>.md` (research agents write them, same
+   structure as black.md), then units then spells, each with a test against the doc's numbers.
+2. Then the sandbox should show a full deck including spells (main.gd: `ctEntity` spells need a unit under
    the mouse), then phase 3 deck rules (12 slots, 2 colors, 1 epic) and phase 4 HUD.
+3. Late phase: audit Crystal Clash Steam patch notes newer than the repo snapshot (2022-01-19) and apply
+   balance changes via the extractor (see CLAUDE.md Decisions).
 
 ## Rules that bit us
 - Run `--import` before `-s tests/run_tests.gd` when new class_name scripts were added.

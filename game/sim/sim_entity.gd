@@ -26,6 +26,7 @@ var charges: Dictionary = {}         # group -> reWelaCharge balance kept per gr
 var thinks_once: bool = false        # TThinkImpulseOnceComponent: spell effect acts once on creation
 var thought_once: bool = false
 var think_once_waits: bool = false   # TThinkImpulseOnceComponent.WaitOneFrame: acts on the next tick instead
+var think_delay_ms: int = 0          # TThinkImpulseTimerCooldownComponent: acts once after this delay (RipOutSoul 500)
 var lifetime_ms: int = 0             # BuildingTemplate GROUP_BUILDING_LIFETIME: the building dies after this
 var group_properties: Dictionary = {}   # TUnitPropertyComponent on a wela group: group -> props, gone when the group is removed
 var removed_groups: Dictionary = {}     # TWelaEffectRemoveAfterUseComponent.TargetGroup
@@ -119,6 +120,13 @@ func setup(p_unit_id: String, p_league: int) -> void:
 			for c in comp.get("calls", []):
 				if c[0] == "WaitOneFrame":
 					think_once_waits = true
+		elif comp["class"] == "TThinkImpulseTimerCooldownComponent" and not comp["groups"].is_empty():
+			thinks_once = true
+			think_once_waits = true
+			think_delay_ms = bb.get_int("eiCooldown", UnitDb.group_id(comp["groups"][0], map), 0)
+			for c in comp.get("calls", []):
+				if c[0] == "TimerIsReady":
+					think_delay_ms = 0
 
 
 func charges_of(group: int) -> int:
@@ -170,9 +178,9 @@ func all_properties() -> Dictionary:
 
 func add_buff(b: Buff) -> void:
 	buffs.append(b)
-	if b.health_bonus != 0.0:
+	if b.health_bonus != 0.0:   # eiResourceCapTransaction: the cap moves and the balance follows it
 		max_health += b.health_bonus
-		health += b.health_bonus
+		health = minf(health + b.health_bonus, max_health) if b.health_bonus > 0.0 else minf(health, max_health)
 
 
 func remove_buff(b: Buff) -> void:
@@ -201,9 +209,14 @@ func speed() -> float:
 func armor() -> SimConstants.ArmorType:
 	var a := int(base_armor)
 	for b in buffs:
-		if b.armor_set >= 0:
+		var allowed := true
+		for p in b.armor_requires_props:
+			if not has(p):
+				allowed = false
+		if b.armor_set >= 0 and allowed:
 			a = b.armor_set
-		a += b.armor_delta
+		if allowed:
+			a += b.armor_delta
 	return clampi(a, 0, SimConstants.ArmorType.FORTIFIED) as SimConstants.ArmorType
 
 
@@ -268,6 +281,9 @@ func target_count(group: int = SimConstants.GROUP_MAINWEAPON) -> int:
 			add *= mana
 		if add > 0:
 			n += add
+	if group == SimConstants.GROUP_MAINWEAPON:
+		for b in buffs:
+			n += b.target_count_add
 	return n
 
 

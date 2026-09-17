@@ -85,6 +85,13 @@ func spawn(unit_id: String, team: int, pos: Vector2, front: Vector2 = Vector2.ZE
 	return e
 
 
+func _apply_scripted(target: SimEntity, script: String, values: Array, same_team: bool, e: SimEntity) -> void:
+	var params := _script_params(script, values)
+	if same_team:
+		params["SameTeam"] = target.team == e.team
+	apply_buff(target, script, params, e)
+
+
 ## PassIntValue(...) arguments matched to the script's parameter names (LegendarySpawn: Duration).
 func _script_params(script: String, values: Array) -> Dictionary:
 	var params := {}
@@ -174,7 +181,11 @@ func drop_squad(unit_id: String, team: int, pos: Vector2, count: int) -> Array[S
 # ---------------------------------------------------------------- buffs (modifier scripts)
 
 func apply_buff(e: SimEntity, script_name: String, params: Dictionary = {}, source: SimEntity = null) -> Buff:
-	var b := Buff.create(script_name, time_ms, params)
+	var full := params.duplicate()   # Entity.HasDamageType(dtMelee / dtRanged) for conditional script parts
+	var main_type := e.damage_type(SimConstants.GROUP_MAINWEAPON)
+	full["__dtMelee"] = (main_type & SimConstants.DamageType.MELEE) != 0
+	full["__dtRanged"] = (main_type & SimConstants.DamageType.RANGED) != 0
+	var b := Buff.create(script_name, time_ms, full)
 	if source != null:
 		b.source_id = source.id
 	e.add_buff(b)
@@ -211,6 +222,18 @@ func _update_buffs(e: SimEntity) -> void:
 				heal(e, b.hot_heal, SimConstants.DamageType.HOT, entities.get(b.source_id))
 			if b.mana_per_tick > 0:
 				e.mana = mini(e.mana_cap, e.mana + b.mana_per_tick)
+			if b.shard_projectile != "":   # Frostspear: one shard at a random unit of the victim's team within range
+				var candidates: Array[SimEntity] = []
+				for other: SimEntity in entities.values():
+					if other.alive and other != e and other.team == e.team and other.is_targetable() \
+						and not _has_any(other, b.shard_must_not_have) \
+						and other.position.distance_to(e.position) - other.collision_radius <= b.shard_range:
+						candidates.append(other)
+				if not candidates.is_empty():
+					_launch_projectile(b.shard_projectile, e, candidates[rng.randi_range(0, candidates.size() - 1)], b.shard_damage, b.shard_type)
+			if b.tick_times == 0 and b.expires_at < 0:
+				e.remove_buff(b)
+				continue
 		if b.is_expired(time_ms) and e.alive:
 			if not b.late_properties.is_empty():   # Frozen ends, the immunity group keeps running
 				b.properties = b.late_properties
@@ -222,6 +245,13 @@ func _update_buffs(e: SimEntity) -> void:
 			if b.kills_on_expiry:   # Undying runs out
 				_kill(e)
 				return
+
+
+func _has_any_in(props: Array, wanted: Array) -> bool:
+	for p in wanted:
+		if props.has(p):
+			return true
+	return false
 
 
 func _has_all(e: SimEntity, props: Array) -> bool:
@@ -397,7 +427,8 @@ func _cast_spell(team: int, c: Commander, slot: Commander.DeckSlot, target: Vari
 	c.pay(slot, time_ms)
 	var effect := spawn(pattern, team, target)
 	_gain_field_charges(effect)
-	_think_once(effect)
+	if not effect.think_once_waits:   # timed effects (Rip Out Soul) act from step() after their delay
+		_think_once(effect)
 	return PlayResult.OK
 
 
@@ -533,8 +564,9 @@ func step() -> void:
 		if e.is_lane_node():
 			_think_lane_node(e)
 			continue
-		if e.think_once_waits and not e.thought_once:   # TThinkImpulseOnceComponent.WaitOneFrame
-			_think_once(e)
+		if e.think_once_waits and not e.thought_once:   # WaitOneFrame / TThinkImpulseTimerCooldownComponent
+			if time_ms >= e.created_at + e.think_delay_ms:
+				_think_once(e)
 			continue
 		if e.lifetime_ms > 0 and time_ms >= e.created_at + e.lifetime_ms:   # GROUP_BUILDING_LIFETIME suicide
 			_kill(e)
@@ -661,6 +693,8 @@ func _wela_ready(e: SimEntity, w: Wela) -> bool:
 	if w.group == SimConstants.GROUP_MAINWEAPON and (not e.has_ammo() or e.has("upNoAutoAttack")):
 		return false
 	if w.mana_cost > 0 and e.mana < w.mana_cost:
+		return false
+	if w.charge_cost > 0 and e.charges_of(w.group) < w.charge_cost:
 		return false
 	return w.owner_ready(e)
 
@@ -802,12 +836,29 @@ func _fire_group(e: SimEntity, group: int, target: SimEntity) -> void:
 	if w.damage_scales_with_charges_of >= 0:   # Surge of Light: damage x stored charges
 		amount *= e.charges_of(w.damage_scales_with_charges_of)
 	if w.charge_cost > 0:
-		e.charges[group] = 0 if w.charge_consumes_all else e.charges_of(group) - w.charge_cost
+		if e.charges.has(group):
+			e.charges[group] = 0 if w.charge_consumes_all else e.charges_of(group) - w.charge_cost
+		else:   # the entity-wide charge pool (On the Edge field: 10 enchantments)
+			e.ammo = 0 if w.charge_consumes_all else e.ammo - w.charge_cost
+	if w.damage_percent_of_max:
+		amount *= target.max_health
+	for t in w.removes_buff_types_any:   # TWarheadSpottyRemoveBuffComponent.MustHaveAny (Frenzy: strip state effects)
+		for b in target.buffs.duplicate():
+			if b.has_type(t):
+				target.remove_buff(b)
+	if not w.remove_beacon_props.is_empty():   # TWelaEffectRemoveBeaconComponent: drop the running Frozen groups
+		for b in target.buffs.duplicate():
+			if _has_any_in(b.properties + b.late_properties, w.remove_beacon_props):
+				target.remove_buff(b)
 	var dtype := e.damage_type(group)
 	if group == e.fire_group or w.kind == Wela.Kind.FIGHT:
 		attack_fired.emit(e, target, amount)
 	if w.chain_first:
 		_fire_chains(e, w, target)
+	if group == SimConstants.GROUP_MAINWEAPON:
+		for b in e.buffs:   # Frenzy: melee heal per attack
+			if b.on_fire_heal > 0.0:
+				heal(e, b.on_fire_heal, b.on_fire_heal_type, e)
 	if w.projectile_reverse and target != e:   # the projectile starts at the target and flies to the owner
 		_launch_projectile(w.projectile, target, e, amount, dtype, group)
 	if w.projectile != "" and not w.projectile_reverse:
@@ -826,7 +877,10 @@ func _fire_group(e: SimEntity, group: int, target: SimEntity) -> void:
 	elif w.damages:
 		deal_damage(target, amount, dtype, e)
 	if w.apply_script != "" and target.alive and Buff.exists(w.apply_script):
-		apply_buff(target, w.apply_script, _script_params(w.apply_script, w.apply_script_values), e)
+		_apply_scripted(target, w.apply_script, w.apply_script_values, w.apply_script_same_team, e)
+	for item in w.extra_apply_scripts:
+		if target.alive and Buff.exists(item[0]):
+			_apply_scripted(target, item[0], item[1], item[2], e)
 	for ag in w.activates_groups:   # TWelaEffectActivationAbilityComponent.SetsActive
 		var aw := e.wela(ag)
 		if aw != null:
@@ -1175,7 +1229,7 @@ func _pick_target(e: SimEntity, w: Wela, range: float) -> SimEntity:
 			continue
 		if not w.target_allowed(other, e):
 			continue
-		var dist := e.position.distance_to(other.position) - other.collision_radius - e.collision_radius
+		var dist := e.position.distance_to(other.position) - other.collision_radius - (0.0 if w.ignore_own_radius else e.collision_radius)
 		if dist > range:
 			continue
 		var key := (rng.randf() * range if w.picks_random_targets else dist) + (100000.0 if other.has("upLowPrio") else 0.0)

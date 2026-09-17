@@ -54,6 +54,12 @@ var modifies_amount: bool = false      # TAutoBrainOnTakeDamageComponent.Modifie
 var mirror_pairs: Array = []           # TAutoBrainOnTakeDamageComponent.CheckSelfForTargetsInGroup + FireTargetsInGroup: [[self, enemy]]
 var on_deal_groups: Array = []         # TAutoBrainOnDealDamageComponent.FireInGroup on a unit weapon (VoidSlime mirror)
 var apply_script_values: Array = []    # TWarheadApplyScriptComponent.PassIntValue for apply_script
+var extra_apply_scripts: Array = []    # further TWarheadApplyScriptComponents on the same group: [script, values, pass_same_team]
+var apply_script_same_team: bool = false   # PassSameTeam: the script gets SameTeam = target on the owner's team
+var removes_buff_types_any: Array = [] # TWarheadSpottyRemoveBuffComponent.MustHaveAny (Frenzy strips state effects)
+var remove_beacon_props: Array = []    # TWelaEffectRemoveBeaconComponent.SearchForWelaBeacon (PermaFrost wipes Frozen)
+var damage_percent_of_max: bool = false   # TWarheadSpottyDamageComponent.PercentageOfMaxHealth
+var ignore_own_radius: bool = false    # TWelaTargetingRadialComponent.IgnoreOwnCollisionradius
 # effects
 var heals: bool = false
 var damages: bool = false
@@ -143,6 +149,7 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 		return by_group[g]
 	var later: Array = []   # [groups, callable] applied after all groups exist
 	var warhead_seen := {}   # group -> true once its instant/projectile effect component appeared
+	var booleans: Array = []   # TWelaTargetConstraintBooleanComponent: [group, [A, B]] merged after the constraints
 	for comp in components:
 		order += 1
 		var groups: Array = comp["groups"].map(func(s): return UnitDb.group_id(s, map))
@@ -200,6 +207,8 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 							w.picks_random_targets = true
 						elif c[0] == "SetValidateGroup":
 							w.validate_group = UnitDb.group_id(c[1][0][0], map)
+						elif c[0] == "IgnoreOwnCollisionradius":
+							w.ignore_own_radius = true
 						elif c[0] == "PicksRandomTargetsWithRepetition":
 							w.picks_random_targets = true
 							w.picks_with_repetition = true
@@ -243,6 +252,25 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 				var w: Wela = get.call(g, Kind.SUB)
 				w.damages = true
 				w.splash = comp["class"].begins_with("TWarheadSplash")
+				for c in calls:
+					if c[0] == "PercentageOfMaxHealth":
+						w.damage_percent_of_max = true
+			"TWarheadSpottyRemoveBuffComponent":
+				for c in calls:
+					if c[0] == "MustHaveAny":
+						get.call(g, Kind.SUB).removes_buff_types_any = c[1][0]
+			"TWelaEffectRemoveBeaconComponent":
+				for c in calls:
+					if c[0] == "SearchForWelaBeacon":
+						get.call(g, Kind.SUB).remove_beacon_props = c[1][0]
+			"TWelaTargetConstraintBooleanComponent":
+				var sources: Array = []
+				for c in calls:
+					if c[0] == "GroupA" or c[0] == "GroupB":
+						sources.append(UnitDb.group_id(c[1][0][0], map))
+					elif c[0] == "OperatorOr":
+						push_warning("TWelaTargetConstraintBooleanComponent.OperatorOr treated as And")
+				booleans.append([g, sources])
 			"TWarheadSpottyKillComponent":
 				var w: Wela = get.call(g, Kind.SUB)
 				w.kills = true
@@ -298,6 +326,7 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 					var w: Wela = get.call(g, Kind.SUB)
 					var produced := false
 					var passed: Array = []
+					var same_team := false
 					for c in calls:
 						if c[0] == "ApplyToSelfAtCreate":
 							w.apply_script_to_self_at_create = true
@@ -305,11 +334,16 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 							produced = true
 						elif c[0] == "PassIntValue":
 							passed.append(int(c[1][0]))
+						elif c[0] == "PassSameTeam":
+							same_team = true
 					if produced:
 						w.produced_scripts.append([script_key(str(args[0])), passed])
+					elif w.apply_script != "":
+						w.extra_apply_scripts.append([script_key(str(args[0])), passed, same_team])
 					else:
 						w.apply_script = script_key(str(args[0]))
 						w.apply_script_values = passed
+						w.apply_script_same_team = same_team
 			"TBrainWelaSelftargetComponent":
 				var w: Wela = get.call(g, Kind.SELF_PASSIVE)
 				if w.kind == Kind.SUB:
@@ -503,6 +537,15 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 					"MustHaveAny": w.must_have_any.append_array(c[1][0])
 					"MustNotHave": w.must_not_have.append_array(c[1][0])
 					"BothMustHaveAny": w.compare_any.append_array(c[1][0])
+	for item in booleans:   # both sides must pass: fold their constraints into the firing group
+		var w: Wela = get.call(item[0], Kind.SUB)
+		for src in item[1]:
+			if by_group.has(src) and src != item[0]:
+				var s: Wela = by_group[src]
+				w.must_have.append_array(s.must_have)
+				w.must_have_any.append_array(s.must_have_any)
+				w.must_not_have.append_array(s.must_not_have)
+				w.compare_any.append_array(s.compare_any)
 	var out: Array[Wela] = []
 	out.assign(by_group.values())
 	out.sort_custom(func(a, b): return a.order < b.order)
