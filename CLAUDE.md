@@ -127,6 +127,7 @@ HailOfArrows field), entity spells fire the card's group at the unit (SolarFlare
 with stored charges, PromiseOfLife charm field with guard charges and the 3-charm cap). Overheal, splash
 on projectiles with the splash-factor pool, and the dynamic drop zone (31.5 around the nexus, 30 around
 own lanetowers, inside the Drop polygon) are in. All 12 White units and all 6 White spells work.
-265 tests pass. `game/main.tscn` is a sandbox with capsule
+Generic factory spawns, unit-property target efficiency and multi-target attacks are wired (untested until
+Black). `docs/factions/black.md` is the full Black faction spec for the next step. 265 tests pass. `game/main.tscn` is a sandbox with capsule
 units on the Compatibility renderer: keys 1-9,0,-,= play the 12 deck slots, a simple red AI plays back.
 See `CONTINUE.md`.

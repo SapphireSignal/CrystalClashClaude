@@ -387,7 +387,8 @@ func _pick_targets(e: SimEntity, w: Wela, range: float, count: int) -> Array[Sim
 		var dist := e.position.distance_to(other.position) - other.collision_radius
 		if dist > range:
 			continue
-		scored.append([dist + (100000.0 if other.has("upLowPrio") else 0.0), other])
+		var key := dist + (100000.0 if other.has("upLowPrio") else 0.0) - _property_efficiency(w, other) * 1000000.0
+		scored.append([key, other])
 	scored.sort_custom(func(a, b): return a[0] < b[0])
 	var out: Array[SimEntity] = []
 	for i in mini(count, scored.size()):
@@ -667,6 +668,13 @@ func _resolve_pending_fire(e: SimEntity) -> void:
 	if target == null or not target.alive:
 		return
 	_fire_group(e, e.fire_group, target)
+	var w := e.wela(e.fire_group)
+	var extra := e.target_count(e.fire_group) - 1   # eiWelaTargetCount > 1: hit more targets in range
+	if w != null and extra > 0:
+		for other in _pick_targets(e, w, e.range_of(e.fire_group, time_ms), extra + 1):
+			if other != target and extra > 0:
+				_fire_group(e, e.fire_group, other)
+				extra -= 1
 
 
 ## eiFire for a wela group at a target: pay costs, run its warheads (heal / damage / kill / projectile /
@@ -700,6 +708,16 @@ func _fire_group(e: SimEntity, group: int, target: SimEntity) -> void:
 		deal_damage(target, amount, dtype, e)
 	if w.apply_script != "" and target.alive and Buff.exists(w.apply_script):
 		apply_buff(target, w.apply_script, {}, e)
+	if w.spawns:   # TWelaEffectFactoryComponent: units appear at the target position
+		var pattern: String = e.bb.get_value("eiWelaUnitPattern", group, "").replace("\\", "/")
+		var count := e.bb.get_int("eiWelaCount", group, 1)
+		if pattern != "" and UnitDb.has_unit(pattern):
+			var team := e.team if w.spawn_team < 0 else w.spawn_team
+			if w.spawn_spread and count > 1:
+				spawn_squad(pattern, team, target.position, count, false)
+			else:
+				for i in count:
+					spawn(pattern, team, target.position)
 	if w.charge_gain_group >= 0 and w.kind != Wela.Kind.FIGHT or (w.charge_gain_group >= 0 and w.commander_cast):
 		e.charges[w.charge_gain_group] = e.charges_of(w.charge_gain_group) + 1
 	for sg in w.instant_target_groups:   # splash warheads around the target position
@@ -914,10 +932,23 @@ func _pick_target(e: SimEntity, w: Wela, range: float) -> SimEntity:
 			key -= (other.max_health - other.health) * 1000.0
 		if w.efficiency_max_health != 0:
 			key -= other.max_health * 1000.0 * w.efficiency_max_health
+		key -= _property_efficiency(w, other) * 1000000.0
 		if key < best_key:
 			best_key = key
 			best = other
 	return best
+
+
+## TWelaEfficiencyUnitPropertyComponent: 1 when the target has any prioritized property (0 otherwise), reversed if asked.
+func _property_efficiency(w: Wela, target: SimEntity) -> float:
+	if w.prioritize_props.is_empty():
+		return 0.0
+	var hit := 0.0
+	for p in w.prioritize_props:
+		if target.has(p):
+			hit = 1.0
+			break
+	return 1.0 - hit if w.prioritize_reversed else hit
 
 
 func _face(e: SimEntity, at: Vector2) -> void:

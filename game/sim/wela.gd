@@ -81,6 +81,15 @@ var suicide_when_empty: bool = false # TWelaReadyResourceCompareComponent(reWela
 # spell effect entities
 var commander_cast: bool = false     # TBrainWelaCommanderComponent: cast by the player, not auto
 var suicide: bool = false            # TWelaEffectSuicideComponent
+# TWelaEffectFactoryComponent: spawn eiWelaUnitPattern x eiWelaCount at the target position
+var spawns: bool = false
+var spawn_spread: bool = false       # SpreadSpawns: squad formation
+var spawn_team: int = -1             # SetSpawnedTeam
+# TWelaEfficiencyUnitPropertyComponent: prefer targets with any of these properties (or without, reversed)
+var prioritize_props: Array = []
+var prioritize_reversed: bool = false
+# TModifierWelaTargetCountComponent: eiWelaTargetCount += eiWelaModifier of the value group
+var target_count_add_group: int = -1
 
 
 ## 'Modifiers\Stun.dws' -> "Stun", 'Links\Homeland.dws' -> "Links/Homeland", 'Spells\White\SolarFlare.dws'
@@ -154,6 +163,27 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 							w.picks_random_targets = true
 			"TWelaEfficiencyMissingHealthComponent":
 				get.call(g, Kind.SUB).efficiency_missing_health = true
+			"TWelaEfficiencyUnitPropertyComponent":
+				var w: Wela = get.call(g, Kind.SUB)
+				for c in calls:
+					if c[0] == "Prioritize":
+						w.prioritize_props.append_array(c[1][0])
+					elif c[0] == "Reverse":
+						w.prioritize_reversed = true
+			"TWelaEffectFactoryComponent":
+				var w: Wela = get.call(g, Kind.SUB)
+				w.spawns = true
+				for c in calls:
+					if c[0] == "SpreadSpawns":
+						w.spawn_spread = true
+					elif c[0] == "SetSpawnedTeam":
+						w.spawn_team = int(c[1][0])
+			"TModifierWelaTargetCountComponent":
+				var w: Wela = get.call(g, Kind.SUB)
+				w.target_count_add_group = g
+				for c in calls:
+					if c[0] == "SetValueGroup":
+						w.target_count_add_group = UnitDb.group_id(c[1][0][0], map)
 			"TWelaEfficiencyMaxHealthComponent":
 				var w: Wela = get.call(g, Kind.SUB)
 				w.efficiency_max_health = 1

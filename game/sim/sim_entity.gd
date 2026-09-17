@@ -235,6 +235,15 @@ func actionduration(group: int = SimConstants.GROUP_MAINWEAPON) -> int:
 	return bb.get_int("eiWelaActionduration", group, 0)
 
 
+## eiWelaTargetCount with TModifierWelaTargetCountComponent (adds eiWelaModifier of the value group).
+func target_count(group: int = SimConstants.GROUP_MAINWEAPON) -> int:
+	var n := bb.get_int("eiWelaTargetCount", group, 1)
+	var w := wela(group)
+	if w != null and w.target_count_add_group >= 0:
+		n += bb.get_int("eiWelaModifier", w.target_count_add_group, 0)
+	return maxi(1, n)
+
+
 func attention_range() -> float:
 	return bb.get_float("eiAttentionrange", SimConstants.GROUP_APPROACH, SimConstants.DEFAULT_ATTENTION_RANGE)
 
