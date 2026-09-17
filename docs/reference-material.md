@@ -73,3 +73,16 @@ These are current and take precedence over Codex's older captures. Facts read fr
   The original repo ships its text tables in `reference/rise-of-legions/Lang/*.csv` (cards, cards_abilities,
   cards_meta, collection, collection_quests, ...; several languages per row). Use them for all in-game text and
   verify against the screenshots for wording that changed after 2022.
+- In-game (match) screenshots: loading screen with both teams' names, avatars and deck names ("You might have
+  longer loading times on your first game..."); top bar with team health percentages and the clock; warm-up
+  banner "9 / Game is about to begin"; bottom-left economy panel: gold "300 / 400 (+10)", essence "1600",
+  income progress "0 / 1500", tier stone with the tech timer (04:00); card bar with 12 cards (charge counts under
+  each), tier-up buttons "04:00 / 08:00" with locks, spawner grid at the right of the card bar, minimap bottom-right
+  with three ping icons, "Activate Chat (Enter)". The build grid (8x3 cyan tiles) shows rows darkening over time
+  (owner: "spawners in the back fading away one by one") - verify against the scenario scripts in the HUD phase.
+- Card tooltip in game (Mirror Slime Spawner, 26 / 500, 1500): "- Absorb - Whenever this unit is affected by a
+  certain status effect for the first time, it permanently increases its health by 200." (source: 250, 495 HP ->
+  a live balance change), "- Status Adaptation - Whenever this unit attacks, it copies all status effects of its
+  target.", "- Status Reflector - Whenever this unit is attacked, it copies all of its status effects to the
+  attacker. (0.5 seconds cooldown)" (source: 200 ms), "Status effects: banished, bleeding, blinded, frozen,
+  grounded, lifted, petrified, rooted, silenced, stunned."
