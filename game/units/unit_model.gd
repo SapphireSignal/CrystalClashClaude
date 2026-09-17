@@ -16,6 +16,9 @@ static var _material_cache: Dictionary = {}  # xml path + team -> StandardMateri
 static var _folder_index: Dictionary = {}    # folder -> {lowercase name -> real name}
 
 var _players: Array[AnimationPlayer] = []
+var _bind_zones: Dictionary = {}             # zone -> bone name (BindZoneToBone)
+var _bone_offsets: Dictionary = {}           # zone -> [x, y, z] (BoneOffset, raw units)
+var _attachments: Dictionary = {}            # zone -> BoneAttachment3D
 var _speeds: Dictionary = {}                 # animation name -> SetAnimationSpeed factor
 var _has_attack_loop := false
 var _current := ""
@@ -46,6 +49,9 @@ static func create(unit_id: String, displayed_team: int = 1) -> UnitModel:
 		model.free()
 		return null
 	model._speeds = visuals["meshes"][0].get("animation_speeds", {})
+	for mesh in visuals["meshes"]:
+		model._bind_zones.merge(mesh.get("bind_zones", {}))
+		model._bone_offsets.merge(mesh.get("bone_offsets", {}))
 	model._has_attack_loop = visuals["meshes"][0].get("has_attack_loop", false)
 	for p in model.find_children("*", "AnimationPlayer", true, false):
 		model._players.append(p)
@@ -115,6 +121,33 @@ static func _cut_animations(player: AnimationPlayer, ranges: Dictionary) -> void
 				clip.track_insert_key(nt, clampf(time - start, 0.0, clip.length), take.track_get_key_value(t, k))
 		library.add_animation(name, clip)
 	player.add_animation_library("unit", library)
+
+
+## A node following the bone bound to a zone (BindZoneToBone + BoneOffset), null when unknown. Used to attach
+## particle effects (BindToSubPositionGroup) at the right spot.
+func bone_attachment(zone: String) -> Node3D:
+	if _attachments.has(zone):
+		return _attachments[zone]
+	var bone_name: String = _bind_zones.get(zone, "")
+	if bone_name == "":
+		return null
+	for skeleton in find_children("*", "Skeleton3D", true, false):
+		var idx: int = skeleton.find_bone(bone_name)
+		if idx < 0:
+			continue
+		var attachment := BoneAttachment3D.new()
+		attachment.bone_name = bone_name
+		skeleton.add_child(attachment)
+		var holder := Node3D.new()   # counters the model scale so effects keep world units
+		attachment.add_child(holder)
+		var s: float = skeleton.global_transform.basis.get_scale().x
+		holder.scale = Vector3.ONE / maxf(s, 0.0001)
+		if _bone_offsets.has(zone):
+			var o: Array = _bone_offsets[zone]
+			holder.position = Vector3(o[0], o[1], o[2])
+		_attachments[zone] = holder
+		return holder
+	return null
 
 
 func has_animation(name: String) -> bool:

@@ -19,7 +19,7 @@ var sim: Simulation
 var _accumulator_ms: float = 0.0
 var _views: Dictionary = {}   # entity id -> Node3D (UnitModel or placeholder mesh)
 var _last_fire: Dictionary = {}   # entity id -> fire_at last seen (attack animation trigger)
-var _effect_views: Dictionary = {}   # entity id -> Node3D holding the effects of entities without a model
+var _ready_effects: Dictionary = {}   # entity id -> [[ParticleEffect, wela group]] shown while that wela is ready
 var _hud: Hud
 var _selection_decal: MeshInstance3D
 var _armed_slot: int = -1      # card clicked in the deck panel, played at the next left click on the ground
@@ -367,6 +367,7 @@ func _on_died(e) -> void:
 		view.queue_free()
 		_views.erase(e.id)
 		_last_fire.erase(e.id)
+		_ready_effects.erase(e.id)
 
 
 func _on_projectile_removed(p: Projectile, _hit: bool) -> void:
@@ -384,8 +385,8 @@ func _spawn_effects(e, activation: String, parent: Node3D) -> void:
 	for effect in UnitDb.raw(e.unit_id).get("effects", []):
 		if not effect.get("activate", []).has(activation):
 			continue
-		if effect.get("visible_with_wela_ready", false) or effect.get("at_fire_target", false):
-			continue   # needs wela state / target tracking (later)
+		if effect.get("at_fire_target", false):
+			continue   # needs target tracking (later)
 		var path: String = effect["path"]
 		if path.contains("%d"):
 			path = path % HudStyle.displayed_team(e.team, Simulation.TEAM_BLUE)
@@ -411,8 +412,15 @@ func _spawn_effects(e, activation: String, parent: Node3D) -> void:
 			var o: Array = effect["model_offset"]
 			offset = Vector3(o[0], o[1], o[2]) * model_size
 		if parent != null:
-			parent.add_child(fx)
+			var anchor := parent
+			if parent is UnitModel and effect.has("bind_zone"):   # BindToSubPositionGroup: follow the zone's bone
+				var attachment: Node3D = parent.bone_attachment(str(effect["bind_zone"]))
+				if attachment != null:
+					anchor = attachment
+			anchor.add_child(fx)
 			fx.position = offset
+			if effect.get("visible_with_wela_ready", false) and e is SimEntity:
+				_ready_effects.get_or_add(e.id, []).append([fx, group])
 		else:
 			_units_root.add_child(fx)
 			fx.position = Vector3(e.position.x, 0.0, e.position.y) + offset
@@ -434,6 +442,9 @@ func _sync_views() -> void:
 		if view is UnitModel:
 			view.position = Vector3(e.position.x, 0.0, e.position.y)
 			view.set_moving(e.moving)
+			for pair in _ready_effects.get(id, []):   # VisibleWithWelaReady
+				var w := e.wela(pair[1])
+				pair[0].visible = w != null and sim._wela_ready(e, w)
 			if e.fire_at >= 0 and _last_fire.get(id, -1) != e.fire_at:   # a new attack started
 				_last_fire[id] = e.fire_at
 				view.play_attack()

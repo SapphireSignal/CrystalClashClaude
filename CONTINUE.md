@@ -2,7 +2,7 @@
 
 Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
 
-## State (2026-09-17, checkpoint 34)
+## State (2026-09-17, checkpoint 35)
 - Phases 1-3 done, 799 tests pass. Sandbox `game/main.tscn`: blue deck on keys 1-9,0,-,= or by clicking a card
   (drops/spells then need a left click on the ground, spawners go to the next free field); red AI plays Black.
 - **Phase 4 (HUD): step 1 done.** `game/ui/` holds the code-built HUD from `docs/hud.md`: top bar (clock, nexus
@@ -71,10 +71,12 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
   size normalization. Verified with `.tmp/effect_view.gd` (not committed) and Light Pulse in the sandbox
   (`tools/screenshot.gd -- 15 16 zoom=nexus play=8`).
 
+- **Checkpoint 35:** attached effects follow their bind zone bone (`UnitModel.bone_attachment(zone)`:
+  BoneAttachment3D + BoneOffset, model scale countered) and `VisibleWithWelaReady` effects toggle with
+  `sim._wela_ready` (the footmen's shield rings). `tools/screenshot.gd -- 15 17 zoom=nexus play=2` shows them.
+
 ## Next step (in order, one at a time, run the game after each)
-1. Particles polish: (a) `VisibleWithWelaReady` (shield block ring while the ability is ready) and
-   `AtFireTarget` / `ClonesToTarget` effects; (b) bind zones: place attached effects at the bone of the
-   `bind_zone` (units.json `visuals.bind_zones`, Skeleton3D bone global pose); (c) light particles as
+1. Particles polish: (a) `AtFireTarget` / `ClonesToTarget` effects; (c) light particles as
    OmniLight3D (100 emitters), `ptTrace` ribbons, nested `ptEffect`; (d) deactivation (`DeactivateOn*`,
    `stop_on_free`) and interval emitters that should stop when the wela ends; (e) the rotation sign convention
    (`Basis.from_euler(-rot)`) is a guess: compare an effect with a mean rotation against the original if one
