@@ -14,6 +14,8 @@ var speed: float           # world units per ms
 var damage: float
 var damage_type: int
 var created_at: int
+var aoe: float = 0.0          # splash radius on impact (eiWelaAreaOfEffect passed from the shooter or own)
+var splash_factor: float = 10000.0   # eiWelaSplashfactor: total damage pool = damage * factor
 
 
 func _init(p_unit_id: String, league: int) -> void:
@@ -21,3 +23,7 @@ func _init(p_unit_id: String, league: int) -> void:
 	var bb := Blackboard.new()
 	UnitDb.fill_blackboard(bb, unit_id, league)
 	speed = bb.get_float("eiSpeed", Blackboard.ANY_GROUP, 20.0 / 1000.0)
+	for g in bb.groups_of("eiWelaAreaOfEffect"):   # projectile scripts with their own splash group
+		aoe = maxf(aoe, bb.get_float("eiWelaAreaOfEffect", g, 0.0))
+	for g in bb.groups_of("eiWelaSplashfactor"):
+		splash_factor = bb.get_float("eiWelaSplashfactor", g, 10000.0)

@@ -16,6 +16,7 @@ var buffs: Array[Buff] = []
 
 var health: float = 0.0
 var max_health: float = 0.0
+var overheal: float = 0.0            # reOverheal: absorbed before health, capped at max_health * 2
 var alive: bool = true
 var base_armor: SimConstants.ArmorType = SimConstants.ArmorType.UNARMORED
 var base_speed: float = SimConstants.DEFAULT_SPEED   # units per ms

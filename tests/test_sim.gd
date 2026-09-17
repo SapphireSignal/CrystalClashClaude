@@ -265,6 +265,7 @@ func test_play_cards_and_economy() -> void:
 
 func test_sandbox_free_cards() -> void:
 	var sim := Simulation.new(2, 4)
+	sim.spawn_bases()
 	var c: Commander = sim.commanders[Simulation.TEAM_RED]
 	c.free_cards = true
 	c.set_deck(["Units/White/FootmanDrop"])
@@ -695,6 +696,64 @@ func test_promise_of_life_charm() -> void:
 	runner.check_eq(c.charm_count, 3, "charm count capped at 3")
 	runner.check(not charm.alive, "oldest charm removed when the fourth was placed")
 	runner.check_eq(sim.alive_entities(Simulation.TEAM_BLUE).filter(func(e): return e.has("upCharm")).size(), 3, "three charms alive")
+
+
+func test_overheal() -> void:
+	var sim := _spell_sim()
+	var monk := sim.spawn("Units/White/Monk", Simulation.TEAM_BLUE, Vector2(2, -23))
+	monk.base_speed = 0.0
+	monk.health = 200.0
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 2, monk.id), Simulation.PlayResult.OK, "solar flare")
+	runner.check_near(monk.health, 265.0, "health capped")
+	runner.check_near(monk.overheal, 335.0, "400 - 65 becomes overheal")
+	sim.deal_damage(monk, 100.0, SimConstants.DamageType.TRUE, monk)
+	runner.check_near(monk.overheal, 235.0, "damage eats overheal first")
+	runner.check_near(monk.health, 265.0, "health untouched while overheal lasts")
+	sim.deal_damage(monk, 300.0, SimConstants.DamageType.TRUE, monk)
+	runner.check_near(monk.overheal, 0.0, "overheal gone")
+	runner.check_near(monk.health, 200.0, "remaining 65 hit health")
+	monk.overheal = 0.0
+	monk.health = 265.0
+	sim.commanders[Simulation.TEAM_BLUE].slots[2].charges = 3
+	sim.play_card(Simulation.TEAM_BLUE, 2, monk.id)
+	sim.play_card(Simulation.TEAM_BLUE, 2, monk.id)
+	runner.check_near(monk.overheal, 530.0, "overheal capped at 2x max health")
+
+
+func test_projectile_splash() -> void:
+	var sim := Simulation.new(13, 4)
+	var saint := sim.spawn("Units/White/PatronSaint", Simulation.TEAM_BLUE, Vector2(0, -23))   # 110 dmg, aoe 2
+	var a := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(3, -23))
+	var b := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(4, -23))
+	var far := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(8, -23))
+	for m in [a, b, far]:
+		m.base_speed = 0.0
+		sim.apply_buff(m, "Stun")
+		m.buffs[0].expires_at = 1 << 40
+	var hits: Array = []
+	var on_removed := func(_p, hit): hits.append(hit)
+	sim.projectile_removed.connect(on_removed)
+	while hits.is_empty() and sim.time_ms < 5000:
+		sim.step()
+	sim.projectile_removed.disconnect(on_removed)
+	runner.check_near(a.health, 265.0 - 110.0, "primary target takes 110")
+	runner.check_near(b.health, 265.0 - 110.0, "neighbour in the 2.0 area takes full splash")
+	runner.check_near(far.health, 265.0, "unit outside the area untouched")
+
+
+func test_dynamic_drop_zone() -> void:
+	var sim := Simulation.new(13, 4)
+	sim.spawn_bases()
+	var c: Commander = sim.commanders[Simulation.TEAM_BLUE]
+	c.set_deck(["Units/White/FootmanDrop"])
+	c.free_cards = true
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 0, Vector2(-70, -23)), Simulation.PlayResult.OK, "within 31.5 of the nexus")
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 0, Vector2(-25, -23)), Simulation.PlayResult.OK, "within 30 of the own lanetower at -48")
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 0, Vector2(0, -23)), Simulation.PlayResult.BAD_TARGET, "lane center is outside the blue zone")
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 0, Vector2(60, -23)), Simulation.PlayResult.BAD_TARGET, "red side is outside")
+	var node: SimEntity = sim.alive_entities(0)[0]
+	sim.replace_entity(node, "Units/Neutral/LanetowerLevel1", Simulation.TEAM_BLUE)
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 0, Vector2(20, -23)), Simulation.PlayResult.OK, "captured lane tower extends the zone")
 
 
 func test_drop_formation() -> void:

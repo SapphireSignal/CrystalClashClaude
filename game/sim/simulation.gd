@@ -395,9 +395,18 @@ func _pick_targets(e: SimEntity, w: Wela, range: float, count: int) -> Array[Sim
 	return out
 
 
-## ZONE_DROP: the map's Drop polygon. The dynamic nexus/lane-push zones are not implemented yet.
-func _in_drop_zone(_team: int, p: Vector2) -> bool:
-	return map.in_zone("Drop", p)
+## Drops need the map's Drop polygon (TWelaTargetConstraintZoneComponent ZONE_DROP) and the team's dynamic
+## drop zone (dzDrop): radius eiWelaRange[3] around the own nexus (31.5) and own lanetowers (30),
+## emitted by TDynamicZoneRadialEmitterComponent, so the zone grows as lane nodes are captured.
+func _in_drop_zone(team: int, p: Vector2) -> bool:
+	if not map.in_zone("Drop", p):
+		return false
+	for e: SimEntity in entities.values():
+		if not e.alive or e.team != team or not (e.has("upNexus") or e.has("upLanetower")):
+			continue
+		if e.position.distance_to(p) <= e.bb.get_float("eiWelaRange", 3, 0.0):
+			return true
+	return false
 
 
 func _has_legendary_unit(team: int) -> bool:
@@ -678,7 +687,7 @@ func _fire_group(e: SimEntity, group: int, target: SimEntity) -> void:
 	if group == e.fire_group or w.kind == Wela.Kind.FIGHT:
 		attack_fired.emit(e, target, amount)
 	if w.projectile != "":
-		_launch_projectile(w.projectile, e, target, amount, dtype)
+		_launch_projectile(w.projectile, e, target, amount, dtype, group)
 	elif w.kills:
 		if target.alive and target != e:
 			target.exiled = w.exiles
@@ -764,7 +773,9 @@ func deal_damage(target: SimEntity, amount: float, damage_type: int, source: Sim
 		if b.taken_damage_mult != 1.0 and (b.taken_damage_types == 0 or damage_type & b.taken_damage_types):
 			amount *= b.taken_damage_mult
 	var final := SimConstants.apply_armor(amount, target.armor(), damage_type)
-	target.health -= final
+	var from_overheal := minf(final, target.overheal)   # THealthComponent.OnDamage: overheal absorbs first
+	target.overheal -= from_overheal
+	target.health -= final - from_overheal
 	if target.health <= 0.0:
 		_kill(target, source)
 	return final
@@ -802,15 +813,20 @@ func _on_take_damage(target: SimEntity, amount: float, _damage_type: int) -> flo
 	return amount
 
 
-## THealthComponent.OnHeal: heal up to max health (overheal not implemented yet).
-func heal(target: SimEntity, amount: float, _damage_type: int, _source: SimEntity) -> float:
+## THealthComponent.OnHeal: heal up to max health; with dtOverheal the rest becomes overheal, capped at
+## max_health * OVERHEAL_LIMIT_FACTOR.
+func heal(target: SimEntity, amount: float, damage_type: int, _source: SimEntity) -> float:
 	if not target.alive or target.has("upUnhealable"):
 		return 0.0
 	var healed := minf(amount, target.max_health - target.health)
 	target.health += healed
-	if healed > 0.0:
-		_on_healed(target, healed)
-	return healed
+	var over := 0.0
+	if damage_type & SimConstants.DamageType.OVERHEAL:
+		over = maxf(0.0, minf(amount - healed, target.max_health * SimConstants.OVERHEAL_LIMIT_FACTOR - target.overheal))
+		target.overheal += over
+	if healed + over > 0.0:
+		_on_healed(target, healed + over)
+	return healed + over
 
 
 ## TAutoBrainOnHealedComponent: fires once (or once per TimesForEach healed) on the owner; the group may
@@ -873,7 +889,7 @@ func _on_before_death(e: SimEntity, _killer: SimEntity) -> void:
 			if candidates.is_empty():
 				continue
 			target = candidates[rng.randi_range(0, candidates.size() - 1)]
-		_launch_projectile(w.projectile, e, target, e.damage(w.group), e.damage_type(w.group))
+		_launch_projectile(w.projectile, e, target, e.damage(w.group), e.damage_type(w.group), w.group)
 
 
 ## Targeting (Server.Welas.pas:1740-1790): efficiency first (missing health for heals), then upLowPrio last,
@@ -913,7 +929,7 @@ func _face(e: SimEntity, at: Vector2) -> void:
 # ---------------------------------------------------------------- projectiles
 
 ## TWelaEffectProjectileComponent.Fire: the projectile carries the shooter's weapon values.
-func _launch_projectile(pattern: String, shooter: SimEntity, target: SimEntity, dmg: float, damage_type: int) -> Projectile:
+func _launch_projectile(pattern: String, shooter: SimEntity, target: SimEntity, dmg: float, damage_type: int, group: int = -1) -> Projectile:
 	var p := Projectile.new(pattern, league)
 	p.id = _next_id
 	_next_id += 1
@@ -925,9 +941,31 @@ func _launch_projectile(pattern: String, shooter: SimEntity, target: SimEntity, 
 	p.damage = dmg
 	p.damage_type = damage_type
 	p.created_at = time_ms
+	if group >= 0:   # the shooter's group values ride along (eiWelaAreaOfEffect, eiWelaSplashfactor)
+		if shooter.bb.has_value("eiWelaAreaOfEffect", group):
+			p.aoe = shooter.bb.get_float("eiWelaAreaOfEffect", group, 0.0)
+		if shooter.bb.has_value("eiWelaSplashfactor", group):
+			p.splash_factor = shooter.bb.get_float("eiWelaSplashfactor", group, 10000.0)
 	projectiles[p.id] = p
 	projectile_spawned.emit(p)
 	return p
+
+
+## TWarheadSplashDamageComponent on impact: every enemy within the area takes damage; with a splash
+## factor the total pool is damage * factor spread evenly, each capped at the full damage.
+func _projectile_splash(p: Projectile, primary: SimEntity) -> void:
+	var source: SimEntity = entities.get(p.source_id)
+	var targets: Array[SimEntity] = []
+	for other: SimEntity in entities.values():
+		if not other.alive or other.team == p.team or other.team == 0 or not other.is_targetable():
+			continue
+		if other.position.distance_to(primary.position) - other.collision_radius <= p.aoe:
+			targets.append(other)
+	if targets.is_empty():
+		return
+	var per_target := minf(p.damage, p.damage * p.splash_factor / targets.size())
+	for other in targets:
+		deal_damage(other, per_target, p.damage_type, source)
 
 
 ## TMovementComponent.IdleDirect with range 0 toward the (homing) target, then FireAtTarget on arrival.
@@ -944,7 +982,10 @@ func _move_projectiles() -> void:
 			p.position = p.last_target_position
 			var hit := target != null and target.alive
 			if hit:
-				deal_damage(target, p.damage, p.damage_type, entities.get(p.source_id))
+				if p.aoe > 0.0:
+					_projectile_splash(p, target)
+				else:
+					deal_damage(target, p.damage, p.damage_type, entities.get(p.source_id))
 			projectiles.erase(id)
 			projectile_removed.emit(p, hit)
 		else:

@@ -2,8 +2,9 @@
 
 Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
 
-## State (2026-09-16, checkpoint 11)
-- Phase 2 core sim works and is tested (249 tests). All 12 White units and 6 White spells work. `game/sim/`: `simulation.gd` (loop, think chain over
+## State (2026-09-16, checkpoint 12)
+- Phase 2 core sim works and is tested (265 tests). All 12 White units and 6 White spells work, plus
+  overheal, projectile splash and the dynamic drop zone. `game/sim/`: `simulation.gd` (loop, think chain over
   welas, chained fire groups, auras, splash, spells, combat hooks, projectiles, buffs, economy, movement,
   spawners, card play, ammo, tech-ups, lane nodes), `wela.gd` (weapon/ability groups parsed from unit and
   spell components; header lists covered classes), `buff.gd` (modifier + link payload scripts),
@@ -15,14 +16,10 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
 - Sandbox `game/main.tscn`: capsules, 12-slot white deck on keys 1-9,0,-,=, simple red AI. Renderer: Compatibility.
 
 ## Next step (in order, one at a time, test after each)
-1. **Overheal** (`reOverheal`, `OVERHEAL_LIMIT_FACTOR 2.0`, `dtOverheal` heals above max, decays?) in `heal()`.
-2. **Splash on projectiles** (`eiWelaAreaOfEffect` on HeavyGunner infused shot, PatronSaint, lanetower
-   projectiles): pass the projectile script's AoE + `eiWelaSplashfactor` into `Projectile` and splash on impact.
-3. **Dynamic drop zone** (`dzNexus`/`dzDrop`, radius 31.5 around own nexus and own lanetowers) replacing the
-   static `Drop` polygon check in `play_card`.
-4. Then Black, Green, Blue, Golems: run the component coverage audit (see git history for the Python
-   snippet), implement missing component classes faction by faction, with tests per unit.
-5. Then the sandbox should show the whole White deck including spells (main.gd: `ctEntity` spells need a
+1. **Black faction** (`Units/Black/*`, `Spells/Black/*`): run the coverage audit (Python snippet: load
+   `units.json`, list component classes per unit not handled by `wela.gd`/`buff.gd`), implement the missing
+   classes, add one test per unit against the numbers in its `.ets`. Then Green, Blue, Golems the same way.
+2. Then the sandbox should show the whole White deck including spells (main.gd: `ctEntity` spells need a
    unit under the mouse).
 
 ## Rules that bit us
