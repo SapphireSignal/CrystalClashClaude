@@ -257,9 +257,27 @@ func _update_buffs(e: SimEntity) -> void:
 						candidates.append(other)
 				if not candidates.is_empty():
 					_launch_projectile(b.shard_projectile, e, candidates[rng.randi_range(0, candidates.size() - 1)], b.shard_damage, b.shard_type)
+			if b.splash_damage > 0.0:   # OrbitalStrikeBombardement: splash around the carrier on its team
+				for other: SimEntity in entities.values():
+					if other.alive and other.team == e.team and other.is_targetable() and not _has_any(other, b.shard_must_not_have) \
+						and other.position.distance_to(e.position) - other.collision_radius <= b.splash_radius:
+						deal_damage(other, b.splash_damage, b.splash_type, entities.get(b.source_id))
+				if b.splash_once:
+					e.remove_buff(b)
+					continue
 			if b.tick_times == 0 and b.remove_when_ticks_done:
 				e.remove_buff(b)
 				continue
+		if b.bomb_script != "" and time_ms >= b.bomb_next_at and Buff.exists(b.bomb_script):   # OrbitalStrike bombardment
+			b.bomb_next_at += b.bomb_interval
+			var candidates: Array[SimEntity] = []
+			for other: SimEntity in entities.values():
+				if other.alive and other != e and other.team == e.team and other.is_targetable() \
+					and not _has_any(other, b.bomb_must_not_have) \
+					and other.position.distance_to(e.position) - other.collision_radius <= b.bomb_range:
+					candidates.append(other)
+			if not candidates.is_empty():
+				apply_buff(candidates[rng.randi_range(0, candidates.size() - 1)], b.bomb_script, {}, entities.get(b.source_id))
 		if b.is_expired(time_ms) and e.alive:
 			if not b.late_properties.is_empty():   # Frozen ends, the immunity group keeps running
 				b.properties = b.late_properties

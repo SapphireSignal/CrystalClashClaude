@@ -40,6 +40,7 @@ var ready_if_no_targets: bool = false  # .ReadyIfNoTargets (else ReadyIfTargets)
 var target_self: bool = false          # TWelaTargetingSelfComponent: the only target is the owner
 var target_health_full: bool = false   # TWelaTargetConstraintResourceComponent.CheckFull
 var target_mana_not_full: bool = false # TWelaTargetConstraintResourceComponent.CheckResource(reMana).CheckNotFull
+var target_has_mana_cap: bool = false  # .CheckResource(reMana).CheckHasResource: cap > 0
 var target_any_team: bool = false      # SetTargetTeamConstraint(tcAll)
 var prefer_allies: bool = false        # SetTargetTeamConstraintPriority(tcAllies): allies first when any qualifies
 var prefer_enemies: bool = false       # SetTargetTeamConstraintPriority(tcEnemies)
@@ -214,9 +215,11 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 			"TWelaTargetConstraintAlliesComponent":
 				for gg in groups:
 					get.call(gg, Kind.SUB).target_allies = true
+					get.call(gg, Kind.SUB).team_constraint_set = true
 			"TWelaTargetConstraintEnemiesComponent":
 				for gg in groups:
 					get.call(gg, Kind.SUB).target_allies = false
+					get.call(gg, Kind.SUB).team_constraint_set = true
 			"TBrainWelaFightComponent":
 				var w: Wela = get.call(g, Kind.FIGHT)
 				w.kind = Kind.FIGHT if w.kind == Kind.SUB else w.kind
@@ -374,7 +377,8 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 				var w: Wela = get.call(g, Kind.SUB)
 				w.heals = true
 				w.splash = comp["class"].begins_with("TWarheadSplash")
-				w.target_allies = true
+				if not w.team_constraint_set:   # OrbitalStrike's "heal" of 0 sits on an Enemies group
+					w.target_allies = true
 				for c in calls:
 					if c[0] == "PercentageOfMaxHealth":
 						w.heal_percent_of_max = true
@@ -608,6 +612,8 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 						w.target_health_full = true
 					elif c[0] == "CheckNotFull" and resource == "reMana":
 						w.target_mana_not_full = true
+					elif c[0] == "CheckHasResource" and resource == "reMana":
+						w.target_has_mana_cap = true   # FluxField: only energy users get enchanted
 					elif c[0] == "Comparator":
 						op = c[1][0]
 					elif c[0] == "Reference":
@@ -744,6 +750,9 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 				w.must_have_any.append_array(s.must_have_any)
 				w.must_not_have.append_array(s.must_not_have)
 				w.compare_any.append_array(s.compare_any)
+				w.target_has_mana_cap = w.target_has_mana_cap or s.target_has_mana_cap
+				w.target_mana_not_full = w.target_mana_not_full or s.target_mana_not_full
+				w.target_health_full = w.target_health_full or s.target_health_full
 	var out: Array[Wela] = []
 	out.assign(by_group.values())
 	out.sort_custom(func(a, b): return a.order < b.order)
@@ -777,6 +786,8 @@ func target_allowed(target: SimEntity, owner: SimEntity = null) -> bool:
 	if target_health_full and target.health < target.max_health:
 		return false
 	if target_mana_not_full and target.mana >= target.mana_cap:
+		return false
+	if target_has_mana_cap and target.mana_cap <= 0:
 		return false
 	if cap_op != "" and not _compare(target.max_health, cap_op, cap_ref):
 		return false

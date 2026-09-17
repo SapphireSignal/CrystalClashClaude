@@ -40,6 +40,16 @@ var shard_type: int = 0
 var shard_range: float = 0.0
 var shard_must_not_have: Array = []
 var shard_enemies: bool = false     # EnergyRift: the buff's fight group shoots enemies of the carrier (Frostspear: its allies)
+var mana_cap_add: int = 0           # TModifierResourceComponent.DontFillCap.Resource(reMana) (BlessingEnergy: +2 max energy)
+var bomb_script: String = ""        # OrbitalStrike: a script dropped on a random unit of the carrier's team every tick
+var bomb_range: float = 0.0
+var bomb_interval: int = 0
+var bomb_next_at: int = 0           # first bomb after TWelaReadyCooldownComponent.Cooldown(ms).Once
+var bomb_must_not_have: Array = []
+var splash_damage: float = 0.0      # TWarheadSplashDamageComponent in a timer group (OrbitalStrikeBombardement)
+var splash_radius: float = 0.0
+var splash_type: int = 0
+var splash_once: bool = false       # the splash group removes itself after firing
 var armor_requires_props: Array = []   # TModifierArmorTypeComponent.ReadyGroup: armor change only while these hold
 var expires_at: int = -1
 var values: Dictionary = {}         # "eiWelaModifier" -> {group_id: value}
@@ -152,6 +162,8 @@ static func create(script_name: String, now: int, params: Dictionary = {}) -> Bu
 	var unready_groups := {}
 	var pending_scripts: Array = []   # rescue scripts for prevent-death buffs, otherwise applied when the buff ends
 	var nth_group := -1
+	var fight_group := -1     # TBrainWelaFightComponent inside the buff (OrbitalStrike bombardment)
+	var splash_group := -1
 	for comp in data["components"]:
 		if comp.has("cond") and not params.get("__" + comp["cond"], false):
 			continue   # component only exists for melee / ranged owners
@@ -204,8 +216,15 @@ static func create(script_name: String, now: int, params: Dictionary = {}) -> Bu
 					b.removed_properties.append_array(comp.get("args", [[]])[0])
 				else:
 					prop_groups.append([g, comp.get("args", [[]])[0]])
+			"TBrainWelaFightComponent":
+				fight_group = g
 			"TWelaReadyCooldownComponent":
 				if b.prevents_death:
+					continue
+				if g == fight_group:   # .Cooldown(1000).Once: a one-time delay before the bombardment starts
+					for call in calls:
+						if call[0] == "Cooldown":
+							b.bomb_next_at = now + int(call[1][0])
 					continue
 				if not comp.get("args", []).is_empty() and str(comp["args"][0]).to_lower() == "false":
 					unready_groups[g] = true   # starts on cooldown: the first tick waits even with a ready timer
@@ -285,6 +304,9 @@ static func create(script_name: String, now: int, params: Dictionary = {}) -> Bu
 					b.health_bonus_add = b._value("eiWelaModifier", g, 0.0) if add_modifier else 0.0
 				elif is_health:
 					b.health_bonus = b._value("eiWelaDamage", g, 0.0) * b._value("eiWelaModifier", g, 1.0)
+				for call in calls:
+					if call[0] == "Resource" and call[1][0] == "reMana":
+						b.mana_cap_add = int(b._value("eiWelaDamage", g, 0.0))   # DontFillCap: the balance stays
 			"TBuffTakenDamageMultiplierComponent":
 				var on_heal := false
 				for call in calls:
@@ -308,6 +330,9 @@ static func create(script_name: String, now: int, params: Dictionary = {}) -> Bu
 						b.on_hit_must_have.append_array(call[1][0])
 					elif g == b.on_hit_group and call[0] == "MustNotHave":
 						b.on_hit_must_not_have.append_array(call[1][0])
+					elif g == fight_group and fight_group >= 0 and call[0] == "MustNotHave":
+						b.bomb_must_not_have.append_array(call[1][0])
+						b.shard_must_not_have.append_array(call[1][0])   # EnergyRift: the fight group is also the shard group
 					elif g == tick_group and call[0] == "MustNotHave":
 						b.dot_not_props.append_array(call[1][0])
 						b.shard_must_not_have.append_array(call[1][0])
@@ -332,6 +357,8 @@ static func create(script_name: String, now: int, params: Dictionary = {}) -> Bu
 				var script: String = Wela.script_key(str(comp.get("args", [""])[0]))
 				if b.reflects_projectiles:
 					b.projectile_script = script   # modifies the reflected projectile (x0.4, dtReflected)
+				elif g == fight_group and fight_group >= 0:
+					b.bomb_script = script   # OrbitalStrike: dropped on the bombardment's random target
 				elif b.on_hit_group >= 0:
 					b.on_hit_script = script
 				else:
@@ -348,6 +375,12 @@ static func create(script_name: String, now: int, params: Dictionary = {}) -> Bu
 					for call in calls:
 						if call[0] == "PercentageOfMaxHealth":
 							b.dot_percent_of_max = true
+			"TWarheadSplashDamageComponent":   # OrbitalStrikeBombardement: 11 splash in 2.0 around the carrier after 174 ms
+				b.splash_damage = b._value("eiWelaDamage", g, 0.0)
+				b.splash_radius = b._value("eiWelaAreaOfEffect", g, 0.0)
+				b.splash_type = SimConstants.damage_mask(b.values.get("eiDamageType", {}).get(g, []))
+				splash_group = g
+				tick_group = g
 			"TWarheadSpottyHealComponent":
 				if g == b.on_fire_group:
 					b.on_fire_heal = b._value("eiWelaDamage", g, 0.0)
@@ -402,7 +435,13 @@ static func create(script_name: String, now: int, params: Dictionary = {}) -> Bu
 			if tick_group >= 0 and not b.values.get("eiCooldown", {}).has(tick_group):
 				b.tick_interval = int(b._value("eiCooldown", g, 1000))
 	b.block_once = has_remove and b.block_threshold >= 0.0
-	if tick_group >= 0 and (b.dot_damage > 0.0 or b.hot_heal > 0.0 or b.mana_per_tick > 0 or b.shard_projectile != ""):
+	if b.bomb_script != "" and fight_group >= 0:
+		b.bomb_range = b._value("eiWelaRange", fight_group, 0.0)
+		b.bomb_interval = int(b._value("eiCooldown", fight_group, 1000))
+		if b.bomb_next_at <= 0:
+			b.bomb_next_at = now
+	b.splash_once = splash_group >= 0 and ending_groups.has(splash_group)
+	if tick_group >= 0 and (b.dot_damage > 0.0 or b.hot_heal > 0.0 or b.mana_per_tick > 0 or b.shard_projectile != "" or b.splash_damage > 0.0):
 		if b.values.get("eiCooldown", {}).has(tick_group) or b.tick_interval <= 0:
 			b.tick_interval = int(b._value("eiCooldown", tick_group, 1000))
 		b.next_tick_at = now if timer_ready and not unready_groups.has(tick_group) else now + b.tick_interval

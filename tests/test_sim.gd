@@ -2121,3 +2121,60 @@ func test_factory_reset() -> void:
 	runner.check_eq(tower.lifetime_started_at, sim.time_ms, "a timed building's lifetime restarts")
 	runner.check_near(monk.health, 265.0, "enemies in radius 4 are reset too")
 	runner.check(not monk.has("upStunned"), "and stripped of all buffs")
+
+
+func test_flux_field() -> void:
+	var sim := _blue_spell_sim()
+	var drones: Array = []
+	for i in 8:
+		var d := sim.spawn("Units/Blue/DamperDrone", Simulation.TEAM_BLUE, Vector2(-40 + (i % 4) * 1.2, -23 + (i / 4) * 1.2))
+		d.base_speed = 0.0
+		d.mana = 0
+		drones.append(d)
+	var monk := sim.spawn("Units/White/Footman", Simulation.TEAM_BLUE, Vector2(-40, -20))   # no energy pool: never enchanted
+	monk.base_speed = 0.0
+	var enemy := sim.spawn("Units/White/Archer", Simulation.TEAM_RED, Vector2(-38, -21))
+	enemy.locked_until = 1 << 30
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 4, Vector2(-40, -23)), Simulation.PlayResult.OK, "flux field at a point")
+	for i in 5:
+		sim.step()
+	runner.check(enemy.has("upSilenced") and enemy.has("upHasStateEffect"), "enemies in radius 4 are silenced")
+	var t := sim.time_ms
+	while sim.time_ms < t + 3200:
+		sim.step()
+	runner.check_eq(drones.filter(func(d): return d.has("upBlessedEnergy")).size(), 6, "6 energy users enchanted, one per 500 ms")
+	runner.check(not monk.has("upBlessedEnergy"), "units without energy are skipped")
+	var blessed: SimEntity = drones.filter(func(d): return d.has("upBlessedEnergy"))[0]
+	runner.check_eq(blessed.mana_cap, 4, "blessing energy: +2 max energy, not filled")
+	var most: int = drones.map(func(d): return d.mana).max()
+	runner.check(most >= 1, "and +1 energy every 3 s (got %d)" % most)
+	runner.check_eq(sim.alive_entities(Simulation.TEAM_BLUE).filter(func(e): return e.has("upCharm")).size(), 0, "field gone after 6 enchantments")
+	for i in 5:
+		sim.step()
+	runner.check(not enemy.has("upSilenced"), "silence ends with the field")
+	while sim.time_ms < t + 13000:
+		sim.step()
+	runner.check_eq(blessed.mana, 4, "four regenerations in total fill the raised cap")
+
+
+func test_orbital_strike() -> void:
+	var sim := _blue_spell_sim()
+	var target := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(-30, -23))
+	var buddy := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(-32, -23))
+	var far := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(-20, -23))
+	for m in [target, buddy, far]:
+		m.locked_until = 1 << 30
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 6, target.id), Simulation.PlayResult.OK, "orbital strike on an enemy")
+	var t := sim.time_ms
+	while sim.time_ms < t + 3000:
+		sim.step()
+	runner.check(target.health <= 265.0 - 5 * 13.0, "13 spell damage every 0.5 s to the marked unit (got %.0f)" % target.health)
+	runner.check(buddy.health < 265.0 - 3 * 11.0, "bombs (11 splash) rain on its team within 6 after 1 s (got %.0f)" % buddy.health)
+	runner.check_near(far.health, 265.0, "nothing beyond 6")
+	while sim.time_ms < t + 15500:
+		sim.step()
+	var hp := target.health
+	var buddy_hp := buddy.health
+	for i in 40:
+		sim.step()
+	runner.check(target.health == hp and buddy.health == buddy_hp, "the strike ends after 15 s")

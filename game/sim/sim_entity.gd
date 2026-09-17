@@ -186,6 +186,7 @@ func add_buff(b: Buff) -> void:
 	if b.health_bonus != 0.0:   # eiResourceCapTransaction: the cap moves and the balance follows it
 		max_health += b.health_bonus
 		health = minf(health + b.health_bonus, max_health) if b.health_bonus > 0.0 else minf(health, max_health)
+	mana_cap += b.mana_cap_add   # BlessingEnergy: DontFillCap, the balance stays
 
 
 func remove_buff(b: Buff) -> void:
@@ -193,6 +194,8 @@ func remove_buff(b: Buff) -> void:
 	if b.health_bonus != 0.0:
 		max_health -= b.health_bonus
 		health = minf(health, max_health)
+	mana_cap -= b.mana_cap_add
+	mana = mini(mana, mana_cap)
 
 
 func has_buff(script_name: String) -> bool:
