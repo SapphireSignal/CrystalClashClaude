@@ -151,8 +151,10 @@ field with Befogged links, PermaFrost, Rip Out Soul, Shatter Ice); modifier scri
 The Black faction is complete. Green is complete too (13 units incl. Saplings with timed life and flourish,
 Rootling beam links, Heart of the Forest ally approach and wait brain, Spore field, Woodwalker/Sapling Farm
 summons, Rootdude, Forest Guardian shared cooldown, Groundbreaker burrow, Oracle feast, Brratu straight-line
-siege; 6 spells incl. Saplingcharge's timer waves). Blue is in progress (drones, gatling links, gadget cap,
-missiles, ammo factory, induction done). Golems (Crystal Legion) after that. 531 tests pass.
+siege; 6 spells incl. Saplingcharge's timer waves). Blue is complete (13 units: energy, gadgets, gatling
+links, missiles, ObserverDrone cloak/range aura, Atlas levels from card plays, PhaseDrone blink, ShieldDrone
+projectile reflection, Bombardier line laser, Aegis cones/starfall/rift; 7 spells incl. Relocate's two-point
+cast and OrbitalStrike's bombardment buffs). Golems (Crystal Legion) next. 650 tests pass.
 `docs/reference-material.md` lists the owner's live-client screenshots and the balance deltas seen so far
 (towers/nexus reworked after 2022). `game/main.tscn` is a sandbox with capsule
 units on the Compatibility renderer: keys 1-9,0,-,= play the 12 deck slots, a simple red AI plays back.
