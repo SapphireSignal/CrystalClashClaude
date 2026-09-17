@@ -22,23 +22,23 @@ func test_unit_data_footman() -> void:
 	var e := SimEntity.new()
 	e.setup("Units/White/Footman", 4)
 	runner.check_near(e.max_health, 32.0, "footman hp")
-	runner.check_near(e.attack_damage(), 13.0, "footman dmg")
-	runner.check_eq(e.attack_cooldown(), 2000, "footman cooldown")
-	runner.check_near(e.attack_range(), 1.0, "footman range")
-	runner.check_eq(e.armor, SimConstants.ArmorType.MEDIUM, "footman armor")
+	runner.check_near(e.damage(), 13.0, "footman dmg")
+	runner.check_eq(e.cooldown(), 2000, "footman cooldown")
+	runner.check_near(e.range_of(), 1.0, "footman range")
+	runner.check_eq(e.armor(), SimConstants.ArmorType.MEDIUM, "footman armor")
 	runner.check_near(e.collision_radius, 0.55, "footman radius")
-	runner.check_near(e.speed, 0.004, "default speed 4 u/s")
+	runner.check_near(e.speed(), 0.004, "default speed 4 u/s")
 	runner.check(e.has("upMelee"), "footman is melee")
 
 
 func test_league_arrays() -> void:
 	var e := SimEntity.new()
 	e.setup("Units/Neutral/Nexus", 3)
-	runner.check_near(e.attack_damage(), 120.0, "nexus dmg league 3")
+	runner.check_near(e.damage(), 120.0, "nexus dmg league 3")
 	runner.check_eq(e.bb.get_int("eiResourceCap.reWelaCharge"), 16, "nexus ammo league 3")
 	e = SimEntity.new()
 	e.setup("Units/Neutral/Nexus", 1)
-	runner.check_near(e.attack_damage(), 110.0, "nexus dmg league 1")
+	runner.check_near(e.damage(), 110.0, "nexus dmg league 1")
 
 
 func test_economy_tick() -> void:
@@ -96,7 +96,7 @@ func test_attack_timing() -> void:
 	var sim := Simulation.new(3, 4)
 	var footman := sim.spawn("Units/White/Footman", Simulation.TEAM_RED, Vector2(1.0, -23))
 	var archer := sim.spawn("Units/White/Archer", Simulation.TEAM_BLUE, Vector2(-0.5, -23))
-	archer.speed = 0.0
+	archer.base_speed = 0.0
 	var hits: Array = []
 	var on_hit := func(att, _t, dmg): if att == footman: hits.append([sim.time_ms, dmg])
 	sim.attack_fired.connect(on_hit)
@@ -277,27 +277,28 @@ func test_archer_projectile() -> void:
 	var sim := Simulation.new(4, 4)
 	var archer := sim.spawn("Units/White/Archer", Simulation.TEAM_BLUE, Vector2(-5, -23))
 	var footman := sim.spawn("Units/White/Footman", Simulation.TEAM_RED, Vector2(4, -23))
-	footman.speed = 0.0
-	footman.summoning_sick_until = 1 << 40   # target dummy: never thinks
+	footman.base_speed = 0.0
+	footman.add_buff(Buff.create("Stun", 0))   # target dummy: stunned, never thinks
 	var launched: Array = []
 	var hits: Array = []
 	var on_launch := func(p): launched.append([sim.time_ms, p.speed])
 	var on_removed := func(p, hit): hits.append([sim.time_ms, hit, p.position])
 	sim.projectile_spawned.connect(on_launch)
 	sim.projectile_removed.connect(on_removed)
-	while hits.is_empty() and sim.time_ms < 5000:
+	while hits.size() < 2 and sim.time_ms < 8000:
 		sim.step()
 	sim.projectile_spawned.disconnect(on_launch)
 	sim.projectile_removed.disconnect(on_removed)
-	runner.check_eq(launched.size(), 1, "archer launched one projectile")
-	runner.check_eq(hits.size(), 1, "projectile arrived")
-	if launched.size() == 1 and hits.size() == 1:
+	runner.check_eq(launched.size(), 2, "archer launched two projectiles")
+	runner.check_eq(hits.size(), 2, "both projectiles arrived")
+	if launched.size() == 2 and hits.size() == 2:
 		runner.check_near(launched[0][1], 0.02, "archer projectile speed 20 u/s")
 		runner.check(hits[0][1], "projectile hit the footman")
 		var flight: int = hits[0][0] - launched[0][0]
 		# 9 units at 20 u/s = 450 ms, quantised to 32 ms ticks
 		runner.check(flight >= 448 and flight <= 480, "flight time ~450 ms (got %d)" % flight)
-		runner.check_near(footman.health, 32.0 - 20.0 * 0.7, "20 ranged dmg vs medium armor = 14")
+		# first arrow (20 >= 10) is absorbed by Shieldblock, the second lands while Shieldblock is on cooldown
+		runner.check_near(footman.health, 32.0 - 20.0 * 0.7, "Shieldblock ate the first arrow, second did 20 ranged vs medium = 14")
 		runner.check_eq(hits[0][2], footman.position, "impact at the target position")
 
 
@@ -305,11 +306,11 @@ func test_projectile_misses_dead_target() -> void:
 	var sim := Simulation.new(4, 4)
 	var archer := sim.spawn("Units/White/Archer", Simulation.TEAM_BLUE, Vector2(-5, -23))
 	var footman := sim.spawn("Units/White/Footman", Simulation.TEAM_RED, Vector2(4, -23))
-	footman.speed = 0.0
+	footman.base_speed = 0.0
 	while sim.projectiles.is_empty() and sim.time_ms < 5000:
 		sim.step()
 	runner.check_eq(sim.projectiles.size(), 1, "projectile in flight")
-	sim.deal_damage(footman, 1e6, SimConstants.DamageType.TRUE, archer)
+	sim._kill(footman, archer)
 	var results: Array = []
 	var on_removed := func(_p, hit): results.append(hit)
 	sim.projectile_removed.connect(on_removed)
@@ -353,7 +354,7 @@ func test_tower_uses_ammo() -> void:
 	tower.ammo_recharge_ms = 0   # no recharge for this test
 	for i in 3:
 		var f := sim.spawn("Units/White/Footman", Simulation.TEAM_BLUE, Vector2(40, -23 + i))
-		f.speed = 0.0
+		f.base_speed = 0.0
 	var shots: Array = []   # lambdas capture ints by value, so collect into an array
 	var on_fire := func(att, _t, _d): if att == tower: shots.append(sim.time_ms)
 	sim.attack_fired.connect(on_fire)
@@ -373,7 +374,7 @@ func test_lane_node_capture() -> void:
 		sim.step()
 	for i in 2:
 		var f := sim.spawn("Units/White/Footman", Simulation.TEAM_BLUE, Vector2(-5, -23 + i))
-		f.speed = 0.0
+		f.base_speed = 0.0
 	# 15 team power at +1 per 500 ms = 7.5 s
 	var t0 := sim.time_ms
 	while node.alive and sim.time_ms < t0 + 12000:
@@ -387,6 +388,69 @@ func test_lane_node_capture() -> void:
 	# killing it leaves a neutral lane node again
 	sim.deal_damage(captured, 1e6, SimConstants.DamageType.TRUE, captured)
 	runner.check_eq(sim.alive_entities(0).size(), 1, "lane node respawned on tower death")
+
+
+func test_buffs_from_modifier_scripts() -> void:
+	var sim := Simulation.new(8, 4)
+	var f := sim.spawn("Units/White/Footman", Simulation.TEAM_BLUE, Vector2(0, -23))
+	var stun := sim.apply_buff(f, "Stun")
+	runner.check_eq(stun.expires_at, sim.time_ms + 3000, "stun lasts 3000 ms")
+	runner.check(f.has("upStunned") and f.has("upHasStateEffect"), "stunned properties")
+	runner.check(not f.can_think(sim.time_ms), "stunned units do not think")
+	runner.check_eq(stun.buff_types, ["btNegative", "btState"], "buff types from TAutoBrainBuffComponent")
+	sim.apply_buff(f, "BlessingStrength")
+	runner.check_near(f.max_health, 72.0, "+40 health")
+	runner.check_near(f.health, 72.0, "health filled with the cap")
+	runner.check_near(f.damage(), 21.0, "+8 damage added to the main weapon")
+	sim.apply_buff(f, "BlessingArmor")
+	runner.check_eq(f.armor(), SimConstants.ArmorType.HEAVY, "armor class up by one")
+	runner.check(f.has("upBlessed"), "blessed")
+	var t0 := sim.time_ms
+	while f.has("upStunned") and sim.time_ms < t0 + 5000:
+		sim.step()
+	runner.check(sim.time_ms - t0 >= 3000 and sim.time_ms - t0 < 3000 + 2 * SimConstants.TICK_MS, "stun expired after 3 s")
+	runner.check(f.has("upBlessed"), "permanent blessings stay")
+	sim.apply_buff(f, "Root", {}, f)
+	runner.check(not f.can_move(), "rooted units cannot move")
+	var hp := f.health
+	t0 = sim.time_ms
+	while sim.time_ms < t0 + 2100:
+		sim.step()
+	runner.check_near(f.health, hp - 2.0, "root DoT: 1.5 dmg -> min 1 after armor, twice in 2 s")
+
+
+func test_archer_relentless_vs_stunned() -> void:
+	var sim := Simulation.new(8, 4)
+	var archer := sim.spawn("Units/White/Archer", Simulation.TEAM_BLUE, Vector2(-5, -23))
+	var monk := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(4, -23))   # unarmored, no shieldblock
+	sim.apply_buff(monk, "Stun")
+	monk.buffs[0].expires_at = 1 << 40
+	var hits: Array = []
+	var on_removed := func(_p, hit): hits.append(hit)
+	sim.projectile_removed.connect(on_removed)
+	while hits.is_empty() and sim.time_ms < 5000:
+		sim.step()
+	sim.projectile_removed.disconnect(on_removed)
+	runner.check_near(monk.health, 265.0 - 40.0, "20 dmg x2 vs stunned = 40")
+
+
+func test_priest_heals_injured_ally() -> void:
+	var sim := Simulation.new(8, 4)
+	var priest := sim.spawn("Units/White/Priest", Simulation.TEAM_BLUE, Vector2(-3, -23))
+	var monk := sim.spawn("Units/White/Monk", Simulation.TEAM_BLUE, Vector2(0, -23))
+	priest.base_speed = 0.0
+	monk.base_speed = 0.0
+	runner.check_eq(priest.mana, 5, "priest starts with 5 mana")
+	monk.health = 100.0
+	var t0 := sim.time_ms
+	while monk.health < 200.0 and sim.time_ms < t0 + 5000:
+		sim.step()
+	runner.check_near(monk.health, 200.0, "healed for 100")
+	runner.check_eq(priest.mana, 0, "heal cost 5 mana")
+	runner.check(monk.has("upBlessedArmor"), "heal also applies BlessingArmor")
+	while priest.mana < 1 and sim.time_ms < t0 + 8000:
+		sim.step()
+	runner.check(sim.time_ms - t0 >= 3000, "mana regenerates 1 per 3 s")
 
 
 func test_drop_formation() -> void:

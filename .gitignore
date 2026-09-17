@@ -4,3 +4,4 @@ reference/
 !assets/**/*.import
 .tmp/
 *.log
+*.f32

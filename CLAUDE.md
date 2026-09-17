@@ -115,5 +115,9 @@ the original cost/charge/recharge formulas, commander decks, card play with zone
 gold-to-wood refund and automatic income upgrades, homing projectiles for ranged attacks, nexus/lanetower
 ammo with recharge, tech-up replacement of nexus and lanetowers (Level1 -> 2 -> 3, damage kept), neutral
 lane nodes with team-power capture that become the capturing team's lanetower, lanetower death leaves a
-lane node. 161 tests pass. `game/main.tscn` is a sandbox with capsule units on the Compatibility renderer:
-keys 1-9,0,-,= play the 12 deck slots at the mouse, a simple red AI plays back. See `CONTINUE.md`.
+lane node. Data-driven abilities: the extractor records every server component per script; `wela.gd`
+turns them into weapon/ability groups (main attack, heals with mana, Shieldblock, Relentless damage
+multipliers, deathrattle projectiles) and `buff.gd` turns `Scripts/Modifiers/*.dws` into timed buffs
+(stun/root/blessings, stat modifiers, DoT). 180 tests pass. `game/main.tscn` is a sandbox with capsule
+units on the Compatibility renderer: keys 1-9,0,-,= play the 12 deck slots, a simple red AI plays back.
+See `CONTINUE.md`.

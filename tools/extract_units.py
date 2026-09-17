@@ -106,6 +106,104 @@ def parse_set_lines(body: str, values: dict) -> None:
             entry[str(g)] = value
 
 
+RE_COMPONENT = re.compile(
+    r"(T\w+)\.Create(Grouped)?\(\s*Entity\s*(?:,\s*\[([^\]]*)\])?\s*(?:,\s*(.*?))?\)((?:\s*\.\w+(?:\([^()]*(?:\([^()]*\)[^()]*)*\))?)*)\s*$",
+    re.S,
+)
+RE_CALL = re.compile(r"\.(\w+)(?:\(([^()]*(?:\([^()]*\)[^()]*)*)\))?")
+RE_CONST = re.compile(r"^\s*(?:const\s+)?(\w+)\s*=\s*([0-9.]+)\s*;", re.M)
+
+
+def parse_args(raw: str) -> list:
+    """Split a Delphi argument list at top-level commas and parse each value."""
+    args, depth, cur = [], 0, ""
+    for ch in raw:
+        if ch in "[(":
+            depth += 1
+        elif ch in "])":
+            depth -= 1
+        if ch == "," and depth == 0:
+            args.append(cur)
+            cur = ""
+        else:
+            cur += ch
+    if cur.strip():
+        args.append(cur)
+    return [parse_value(a) for a in args]
+
+
+def strip_comments(body: str) -> str:
+    return re.sub(r"//[^\n]*", "", body)
+
+
+def parse_components(body: str) -> list:
+    """Component declarations (class, groups, fluent calls) from a CreateEntity / Apply body."""
+    body = strip_comments(body)
+    body = re.sub(r"\{\$IFDEF CLIENT\}.*?\{\$ENDIF\}", "", body, flags=re.S)
+    body = re.sub(r"\{\$IFDEF SERVER\}|\{\$ENDIF\}|\{\$IFNDEF \w+\}|\{\$ELSE\}", "", body)
+    out = []
+    for stmt in body.split(";"):
+        stmt = " ".join(stmt.split())
+        # drop leading control flow such as "if Game.IsPvP then" or "begin"
+        stmt = re.sub(r"^(?:.*?\bthen\b\s*)?(?:begin\s*)?(?:else\s*)?", "", stmt, count=1) if "then" in stmt or stmt.startswith(("begin", "else")) else stmt
+        m = RE_COMPONENT.match(stmt.strip())
+        if not m:
+            continue
+        cls, grouped, groups, extra, chain = m.groups()
+        comp = {"class": cls, "groups": [g.strip() for g in groups.split(",") if g.strip()] if groups is not None else []}
+        if extra:
+            comp["args"] = parse_args(extra)
+        calls = []
+        for cm in RE_CALL.finditer(chain or ""):
+            calls.append([cm.group(1), parse_args(cm.group(2)) if cm.group(2) else []])
+        if calls:
+            comp["calls"] = calls
+        out.append(comp)
+    return out
+
+
+def create_entity_body(text: str) -> str:
+    m = re.search(r"procedure CreateEntity\(.*?\);(.*?)^end;", text, re.S | re.M)
+    return m.group(1) if m else ""
+
+
+def parse_modifier(path: Path) -> dict:
+    """Scripts/Modifiers/*.dws: procedure Apply(Entity; params) with SetValue lines and components."""
+    text = path.read_text(encoding="utf-8", errors="replace")
+    m = re.search(r"procedure Apply\((.*?)\);(.*?)^end;", text, re.S | re.M)
+    if not m:
+        return {}
+    params = [p.split(":")[0].strip() for p in m.group(1).split(";")[1:] if ":" in p]
+    body = strip_comments(m.group(2))
+    body = re.sub(r"\{\$IFDEF CLIENT\}.*?\{\$ENDIF\}", "", body, flags=re.S)
+    consts = {k: float(v) if "." in v else int(v) for k, v in RE_CONST.findall(body)}
+    values: dict = {}
+    for line in body.splitlines():
+        line = line.strip()
+        mm = re.match(r"Entity\.Blackboard\.Set(Indexed)?Value\(\s*(\w+)\s*,\s*\[([^\]]*)\]\s*,\s*(?:(\w+)\s*,\s*)?(.+?)\);", line)
+        if not mm:
+            continue
+        indexed, event, groups, index, raw = mm.groups()
+        raw = strip_annotations(raw).strip()
+        for name, const_value in consts.items():
+            raw = re.sub(rf"\b{name}\b", str(const_value), raw)
+        value = parse_value(raw)
+        key = event if not indexed else f"{event}.{index}"
+        entry = values.setdefault(key, {})
+        for g in [x.strip() for x in groups.split(",") if x.strip()]:
+            entry[g] = value
+    return {"params": params, "consts": consts, "values": values, "components": parse_components(body)}
+
+
+def extract_modifiers() -> dict:
+    out = {}
+    for path in sorted(SCRIPTS.glob("Modifiers/*.dws")):
+        data = parse_modifier(path)
+        if data:
+            out[path.stem] = data
+    return out
+
+
 def parse_script(path: Path) -> dict:
     text = path.read_text(encoding="utf-8", errors="replace")
     body = create_data_body(text)
@@ -124,6 +222,7 @@ def parse_script(path: Path) -> dict:
                 data[k] = parent[k]
         for event, by_group in parent["values"].items():
             data["values"][event] = dict(by_group)
+        data["components"] = parent["components"]
     m = RE_RADIUS.search(body)
     if m:
         data["collision_radius"] = float(m.group(1))
@@ -133,6 +232,7 @@ def parse_script(path: Path) -> dict:
         data["legendary"] = m.group(2) == "True"
         data["tier"] = int(m.group(3))
     parse_set_lines(body, data["values"])
+    data["components"] = data.get("components", []) + parse_components(create_entity_body(text))
     return data
 
 
@@ -171,9 +271,11 @@ def main() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
     units = extract_units()
     cards = extract_cards()
-    (OUT / "units.json").write_text(json.dumps(units, indent=1), encoding="utf-8")
+    modifiers = extract_modifiers()
+    (OUT / "units.json").write_text(json.dumps(units, separators=(",", ":")), encoding="utf-8")
     (OUT / "cards.json").write_text(json.dumps(cards, indent=1), encoding="utf-8")
-    print(f"units: {len(units)}  cards: {len(cards)}")
+    (OUT / "modifiers.json").write_text(json.dumps(modifiers, separators=(",", ":")), encoding="utf-8")
+    print(f"units: {len(units)}  cards: {len(cards)}  modifiers: {len(modifiers)}")
     missing = [u for u, d in units.items() if "eiResourceCap.reHealth" not in d["values"] and "card_kind" not in d]
     print(f"units without health (spawner/drop cards expected): {len(missing)}")
     return 0
