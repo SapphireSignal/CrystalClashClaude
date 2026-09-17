@@ -1563,3 +1563,110 @@ func test_brratu() -> void:
 	runner.check_near(monk.health, 265.0, "ignores units, only attacks buildings")
 	runner.check(brratu.position.x > start.x + 5.0, "walks straight down the lane at 2 u/s past the monk")
 	runner.check(brratu.no_pathfinding, "no pathfinding")
+
+
+func _green_spell_sim() -> Simulation:
+	var sim := Simulation.new(23, 4)
+	sim.spawn_bases()
+	var c: Commander = sim.commanders[Simulation.TEAM_BLUE]
+	c.set_deck(["Spells/Green/EntanglingRoots.sps", "Spells/Green/GiantGrowth.sps", "Spells/Green/EvolveOracle.sps",
+		"Spells/Green/HealingGarden.sps", "Spells/Green/EvolveThistle.sps", "Spells/Green/Saplingcharge.sps"])
+	c.gold = 1000.0
+	c.raise_tier(3)
+	while not sim.game_started:
+		sim.step()
+	return sim
+
+
+func test_entangling_roots() -> void:
+	var sim := _green_spell_sim()
+	var ground: Array = []
+	for i in 18:
+		var m := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2((i % 6) * 0.6, -23 + (i / 6) * 0.6))
+		m.locked_until = 1 << 30
+		ground.append(m)
+	var flyer := sim.spawn("Units/Green/Wisp", Simulation.TEAM_RED, Vector2(0, -22))
+	flyer.locked_until = 1 << 30
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 0, Vector2(0, -23)), Simulation.PlayResult.OK, "cast entangling roots")
+	var rooted := ground.filter(func(m): return m.has("upRooted")).size()
+	runner.check_eq(rooted, 16, "up to 16 ground enemies rooted")
+	runner.check(not flyer.has("upRooted"), "flying units are not rooted")
+
+
+func test_giant_growth() -> void:
+	var sim := _green_spell_sim()
+	var monk := sim.spawn("Units/White/Monk", Simulation.TEAM_BLUE, Vector2(0, -23))
+	monk.base_speed = 0.0
+	monk.health = 100.0
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 1, monk.id), Simulation.PlayResult.OK, "cast giant growth")
+	runner.check_near(monk.max_health, 265.0 + 160.0, "+160 max hp")
+	runner.check(monk.has("upBlessed") and monk.has("upBlessedGrowth"), "enchanted")
+	var t := sim.time_ms
+	while sim.time_ms < t + 1100:
+		sim.step()
+	runner.check_near(monk.health, 100.0 + 0.02 * 425.0, "heals 2 % of max hp per second")
+	while sim.time_ms < t + 25000:
+		sim.step()
+	runner.check_near(monk.health, minf(425.0, 100.0 + 20 * 0.02 * 425.0), "20 ticks, then the heal stops")
+	runner.check(monk.has("upBlessedGrowth") and is_equal_approx(monk.max_health, 425.0), "the hp bonus stays")
+
+
+func test_evolve_oracle_and_thistle() -> void:
+	var sim := _green_spell_sim()
+	var sapling := sim.spawn("Units/Green/Sapling", Simulation.TEAM_BLUE, Vector2(0, -23))
+	sapling.base_speed = 0.0
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 2, sapling.id), Simulation.PlayResult.OK, "cast evolve oracle on a sapling")
+	runner.check(not sapling.alive and sapling.exiled, "the sapling is exiled")
+	var oracles := sim.alive_entities(Simulation.TEAM_BLUE).filter(func(e): return e.unit_id == "Units/Green/Oracle")
+	runner.check_eq(oracles.size(), 1, "an oracle appears")
+	if not oracles.is_empty():
+		runner.check_near(oracles[0].health, 0.6 * 610.0, "at 60 % health")
+		runner.check(oracles[0].has("upSummoningSickness"), "1 s of summoning sickness")
+	var saplings: Array = []
+	for i in 8:
+		var s := sim.spawn("Units/Green/Sapling", Simulation.TEAM_BLUE, Vector2(10 + (i % 4) * 0.8, -23 + (i / 4) * 0.8))
+		s.base_speed = 0.0
+		saplings.append(s)
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 4, Vector2(10, -23)), Simulation.PlayResult.OK, "cast evolve thistle")
+	var thistles := sim.alive_entities(Simulation.TEAM_BLUE).filter(func(e): return e.unit_id == "Units/Green/Thistle").size()
+	runner.check_eq(thistles, 6, "up to 6 saplings become thistles")
+	runner.check_eq(saplings.filter(func(s): return s.alive).size(), 2, "the other saplings stay")
+
+
+func test_healing_garden() -> void:
+	var sim := _green_spell_sim()
+	var monk := sim.spawn("Units/White/Monk", Simulation.TEAM_BLUE, Vector2(0, -23))
+	var walker := sim.spawn("Units/Green/Woodwalker", Simulation.TEAM_BLUE, Vector2(2, -23))
+	monk.base_speed = 0.0
+	walker.base_speed = 0.0
+	walker.mana = 0
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 3, Vector2(1, -23)), Simulation.PlayResult.OK, "cast healing garden")
+	for i in 3:
+		sim.step()
+	runner.check(walker.has("upEnergyAuraBuffed"), "mana users in 3.5 get the energy aura")
+	var t := sim.time_ms
+	while sim.time_ms < t + 2200:
+		sim.step()
+	var blessed := [monk, walker].filter(func(u): return u.has("upBlessedHealth"))
+	runner.check_eq(blessed.size(), 2, "one unit enchanted at once, another after 2 s")
+	runner.check_near(monk.max_health, 265.0 + 0.3 * 265.0 + 50.0, "blessing of health: +30 % max hp + 50")
+	while sim.time_ms < t + 3200:
+		sim.step()
+	runner.check(walker.mana >= 1, "energy aura: +1 mana per 3 s (walker's own regen stops at 0 mana? it has its own too)")
+
+
+func test_saplingcharge() -> void:
+	var sim := _green_spell_sim()
+	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 5, Vector2(-20, -23)), Simulation.PlayResult.OK, "cast saplingcharge")
+	var count := func(): return sim.alive_entities(Simulation.TEAM_BLUE).filter(func(e): return e.unit_id == "Units/Green/Sapling").size()
+	var t := sim.time_ms
+	while sim.time_ms < t + 3300:
+		sim.step()
+	runner.check_eq(count.call(), 15, "first wave: 15 saplings by ~3.1 s")
+	while sim.time_ms < t + 14500:
+		sim.step()
+	runner.check_eq(count.call(), 115, "15 + 10 x 10 saplings in total")
+	runner.check_eq(sim.alive_entities(Simulation.TEAM_BLUE).filter(func(e): return e.unit_id == "Spells/Green/Saplingcharge").size(), 1, "the field is still there before 15 s")
+	while sim.time_ms < t + 15100:
+		sim.step()
+	runner.check_eq(sim.alive_entities(Simulation.TEAM_BLUE).filter(func(e): return e.unit_id == "Spells/Green/Saplingcharge").size(), 0, "field gone after 15 s")

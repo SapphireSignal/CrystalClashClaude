@@ -74,6 +74,12 @@ var redirect_to_ground: bool = false   # TWelaEffectRedirecterComponent.Redirect
 var ready_not_full: bool = false       # TWelaReadyResourceCompareComponent.CheckNotFull
 var damage_scale_resource: String = ""   # TModifierWelaDamageComponent.ScaleWithResource on a unit weapon (Brratu)
 var damage_scale_group: int = -1
+var timer_period: int = -1             # TThinkImpulseTimerCooldownComponent: fires every eiCooldown of the group
+var nth: int = 0                       # TWelaReadyNthComponent.Nth: ready on the nth think
+var think_count: int = 0
+var produced_fire_group: int = -1      # TAutoBrainWelaTargetProducedUnitComponent.FireInGroup
+var resource_percentage: bool = false  # TWarheadSpottyResourceComponent.AmountIsPercentage (of the target's cap)
+var resource_sets_value: bool = false  # TWarheadSpottyResourceComponent.SetsResourceToValue
 # effects
 var heals: bool = false
 var damages: bool = false
@@ -201,6 +207,17 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 				for c in calls:
 					if c[0] == "RedirectToGround":
 						get.call(g, Kind.SUB).redirect_to_ground = true
+			"TThinkImpulseTimerCooldownComponent":
+				for gg in groups:
+					get.call(gg, Kind.SUB).timer_period = bb.get_int("eiCooldown", gg, 0)
+			"TWelaReadyNthComponent":
+				for c in calls:
+					if c[0] == "Nth" or c[0] == "Times":
+						get.call(g, Kind.SUB).nth = int(c[1][0])
+			"TAutoBrainWelaTargetProducedUnitComponent":
+				for c in calls:
+					if c[0] == "FireInGroup":
+						get.call(g, Kind.SUB).produced_fire_group = UnitDb.group_id(c[1][0][0], map)
 			"TBrainWelaSelftargetGroundComponent":
 				var w: Wela = get.call(g, Kind.SELF_GROUND)
 				w.kind = Kind.SELF_GROUND
@@ -568,6 +585,10 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 						get.call(g, Kind.SUB).changes_max = true
 					elif c[0] == "RedirectToSelf":
 						get.call(g, Kind.SUB).warhead_to_self = true
+					elif c[0] == "AmountIsPercentage":
+						get.call(g, Kind.SUB).resource_percentage = true
+					elif c[0] == "SetsResourceToValue":
+						get.call(g, Kind.SUB).resource_sets_value = true
 				if res == "reWelaCharge" and by_group.has(g) and by_group[g].kind in [Kind.SELF_PASSIVE, Kind.SELF_GROUND]:
 					by_group[g].kind = Kind.SUB   # ammo recharge groups are handled by _recharge_ammo
 				if res == "reWelaCharge" and target_group >= 0:

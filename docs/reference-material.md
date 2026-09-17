@@ -90,3 +90,10 @@ These are current and take precedence over Codex's older captures. Facts read fr
   cast spells. Your Mana regenerates over time. If you reach the cap, Mana is automatically converted into
   Essence." / "Essence is used to build Spawners. Generate more Essence by spending more Mana." / "You generate
   more Mana once you've spent enough Essence to fill the bar." (income bar 0 / 1500).
+- Card hover in game is two-stage: first the small card summary (name, attack / health, keywords, charges, cost),
+  about a second later the ability detail box (e.g. Relocate: "Teleports up to 5 allies to another target location.
+  Recently teleported targets can't be teleported for 19 seconds and units are stunned for 1s (legendary units
+  for 2s). Buildings are prioritized, healed and replenished after reappearing based on their stage. Stage I - 40%
+  health and 35% energy, Stage II - 35% / 25%, Stage III - 20% / 20%"). Clicking a unit on the field outlines it
+  white and opens a unit panel top-right: portrait with card level, name, health bar "500 / 500", attack "26.1",
+  armor "0%", keywords. After tier II: mana "436 / 500 (+12)", income bar "1500 / 1750" (thresholds grow).

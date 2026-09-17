@@ -45,6 +45,9 @@ var cooldown_groups: Array = []
 var armor_delta: int = 0
 var armor_set: int = -1
 var health_bonus: float = 0.0
+var health_bonus_cap_factor: float = 0.0   # TModifierResourceComponent.ScaleWithResource(reHealth).UseResourceCap (BlessingHealth)
+var health_bonus_add: float = 0.0
+var hot_percent_of_max: bool = false
 var stops_movement: bool = false
 var taken_damage_mult: float = 1.0
 var taken_damage_types: int = 0     # TBuffTakenDamageMultiplierComponent.DamageTypeMustHaveAny
@@ -134,6 +137,8 @@ static func create(script_name: String, now: int, params: Dictionary = {}) -> Bu
 	var duration_group := -1
 	var has_remove := false
 	var tick_group := -1
+	var cooldown_groups: Array = []   # groups with a TWelaReadyCooldownComponent and a cooldown value, in order
+	var ending_groups := {}           # groups that remove or suicide when they fire
 	var prop_groups: Array = []   # [group, props]
 	var timer_ready := false
 	var unready_groups := {}
@@ -186,12 +191,12 @@ static func create(script_name: String, now: int, params: Dictionary = {}) -> Bu
 					b.on_hit_cooldown_ms = int(b._value("eiCooldown", g, 0))
 					continue
 				if b.values.get("eiCooldown", {}).has(g):
-					if duration_group < 0:
-						duration_group = g
+					cooldown_groups.append(g)
 					if tick_group < 0:
 						tick_group = g
 			"TWelaEffectRemoveAfterUseComponent":
 				has_remove = true
+				ending_groups[g] = true
 			"TModifierWelaDamageComponent":
 				var mod := {"groups": groups, "value_group": g, "multiply": false, "must_have": [], "factor": 1.0}
 				for call in calls:
@@ -243,9 +248,21 @@ static func create(script_name: String, now: int, params: Dictionary = {}) -> Bu
 										if oc[0] == "MustHave":
 											b.armor_requires_props.append_array(oc[1][0])
 			"TModifierResourceComponent":
+				var scale_cap := false
+				var add_modifier := false
+				var is_health := false
 				for call in calls:
 					if call[0] == "Resource" and call[1][0] == "reHealth":
-						b.health_bonus = b._value("eiWelaDamage", g, 0.0) * b._value("eiWelaModifier", g, 1.0)
+						is_health = true
+					elif call[0] == "UseResourceCap":
+						scale_cap = true
+					elif call[0] == "AddModifier":
+						add_modifier = true
+				if is_health and scale_cap:   # v = damage x max health (+ modifier): resolved by the sim on apply
+					b.health_bonus_cap_factor = b._value("eiWelaDamage", g, 0.0)
+					b.health_bonus_add = b._value("eiWelaModifier", g, 0.0) if add_modifier else 0.0
+				elif is_health:
+					b.health_bonus = b._value("eiWelaDamage", g, 0.0) * b._value("eiWelaModifier", g, 1.0)
 			"TBuffTakenDamageMultiplierComponent":
 				var on_heal := false
 				for call in calls:
@@ -270,6 +287,7 @@ static func create(script_name: String, now: int, params: Dictionary = {}) -> Bu
 						b.shard_must_not_have.append_array(call[1][0])
 			"TWelaEffectSuicideComponent":
 				b.kills_on_expiry = true
+				ending_groups[g] = true
 			"TAutoBrainOnTakeDamageComponent":
 				b.block_threshold = b._value("eiWelaDamage", g, 0.0)
 				b.block_factor = b._value("eiWelaModifier", g, 1.0)
@@ -309,6 +327,9 @@ static func create(script_name: String, now: int, params: Dictionary = {}) -> Bu
 				else:
 					b.hot_heal = b._value("eiWelaDamage", g, 0.0)
 					tick_group = g
+					for call in calls:
+						if call[0] == "PercentageOfMaxHealth":
+							b.hot_percent_of_max = true
 			"TWarheadSpottyResourceComponent":
 				var is_mana := false
 				for call in calls:
@@ -323,6 +344,10 @@ static func create(script_name: String, now: int, params: Dictionary = {}) -> Bu
 				for call in calls:
 					if call[0] == "Times" or call[0] == "Nth":
 						b.tick_times = int(call[1][0])
+	for g in cooldown_groups:   # the duration is the cooldown whose group ends the buff, not a tick cadence
+		if ending_groups.has(g):
+			duration_group = g
+			break
 	if b.prevents_death:
 		b.rescue_scripts = pending_scripts
 	elif not pending_scripts.is_empty():
@@ -339,9 +364,17 @@ static func create(script_name: String, now: int, params: Dictionary = {}) -> Bu
 		b.expires_at = now + b.duration_ms
 		b.charges = int(b._value("eiResourceBalance.reWelaCharge", duration_group, 0))
 		b.charge_cap = int(b._value("eiResourceCap.reWelaCharge", duration_group, 0))
+	for g in b.values.get("eiResourceCost.reWelaCharge", {}):   # ticks paid with charges (Giant Growth: 20 x 1)
+		var pool := int(b._value("eiResourceBalance.reWelaCharge", g, 0))
+		var cost := int(b._value("eiResourceCost.reWelaCharge", g, 1))
+		if pool > 0 and cost > 0 and b.tick_times < 0:
+			b.tick_times = pool / cost
+			if tick_group >= 0 and not b.values.get("eiCooldown", {}).has(tick_group):
+				b.tick_interval = int(b._value("eiCooldown", g, 1000))
 	b.block_once = has_remove and b.block_threshold >= 0.0
 	if tick_group >= 0 and (b.dot_damage > 0.0 or b.hot_heal > 0.0 or b.mana_per_tick > 0 or b.shard_projectile != ""):
-		b.tick_interval = int(b._value("eiCooldown", tick_group, 1000))
+		if b.values.get("eiCooldown", {}).has(tick_group) or b.tick_interval <= 0:
+			b.tick_interval = int(b._value("eiCooldown", tick_group, 1000))
 		b.next_tick_at = now if timer_ready and not unready_groups.has(tick_group) else now + b.tick_interval
 	b.stops_movement = b.properties.has("upStunned") or b.properties.has("upRooted") or b.properties.has("upFrozen")
 	return b

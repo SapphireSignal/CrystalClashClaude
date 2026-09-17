@@ -126,13 +126,6 @@ func setup(p_unit_id: String, p_league: int) -> void:
 			for c in comp.get("calls", []):
 				if c[0] == "WaitOneFrame":
 					think_once_waits = true
-		elif comp["class"] == "TThinkImpulseTimerCooldownComponent" and not comp["groups"].is_empty():
-			thinks_once = true
-			think_once_waits = true
-			think_delay_ms = bb.get_int("eiCooldown", UnitDb.group_id(comp["groups"][0], map), 0)
-			for c in comp.get("calls", []):
-				if c[0] == "TimerIsReady":
-					think_delay_ms = 0
 
 
 func charges_of(group: int) -> int:

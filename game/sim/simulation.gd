@@ -63,6 +63,15 @@ func spawn(unit_id: String, team: int, pos: Vector2, front: Vector2 = Vector2.ZE
 	_next_id += 1
 	e.team = team
 	e.setup(unit_id, league)
+	for g in e.bb.groups_of("eiCooldown"):   # SaplingchargeSapling: eiCooldown 'round(random * 500)'
+		var v: Variant = e.bb.get_value("eiCooldown", g)
+		if v is String:
+			var m := RegEx.create_from_string("random\\s*\\*\\s*([0-9.]+)").search(v)
+			assert(m != null, "unsupported eiCooldown expression %s in %s" % [v, unit_id])
+			e.bb.set_value("eiCooldown", g, int(roundf(rng.randf() * float(m.get_string(1)))))
+	for w in e.welas:
+		if w.timer_period >= 0:
+			w.timer_period = e.bb.get_int("eiCooldown", w.group, 0)
 	e.position = pos
 	e.front = front if front != Vector2.ZERO else Vector2(-1.0 if team == TEAM_RED else 1.0, 0.0)
 	e.created_at = time_ms
@@ -186,6 +195,8 @@ func apply_buff(e: SimEntity, script_name: String, params: Dictionary = {}, sour
 	full["__dtMelee"] = (main_type & SimConstants.DamageType.MELEE) != 0
 	full["__dtRanged"] = (main_type & SimConstants.DamageType.RANGED) != 0
 	var b := Buff.create(script_name, time_ms, full)
+	if b.health_bonus_cap_factor != 0.0:   # BlessingHealth: +30 % of max health + 50
+		b.health_bonus = b.health_bonus_cap_factor * e.max_health + b.health_bonus_add
 	if source != null:
 		b.source_id = source.id
 	e.add_buff(b)
@@ -219,7 +230,7 @@ func _update_buffs(e: SimEntity) -> void:
 					dot *= b.charges
 				deal_damage(e, dot, b.dot_type, entities.get(b.source_id))
 			if b.hot_heal > 0.0:
-				heal(e, b.hot_heal, SimConstants.DamageType.HOT, entities.get(b.source_id))
+				heal(e, b.hot_heal * (e.max_health if b.hot_percent_of_max else 1.0), SimConstants.DamageType.HOT, entities.get(b.source_id))
 			if b.mana_per_tick > 0:
 				e.mana = mini(e.mana_cap, e.mana + b.mana_per_tick)
 			if b.shard_projectile != "":   # Frostspear: one shard at a random unit of the victim's team within range
@@ -411,7 +422,7 @@ func _cast_spell(team: int, c: Commander, slot: Commander.DeckSlot, target: Vari
 			return PlayResult.BAD_TARGET
 		var chosen: Wela = null
 		for w in caster.welas:
-			if not w.commander_cast or not (w.heals or w.damages or w.projectile != "" or w.apply_script != ""):
+			if not w.commander_cast or not (w.heals or w.damages or w.projectile != "" or w.apply_script != "" or w.spawns or w.kills):
 				continue
 			if w.target_allies != (unit.team == team) or not w.target_allowed(unit, caster):
 				continue
@@ -585,6 +596,7 @@ func step() -> void:
 		_regenerate(e)
 		_resolve_pending_fire(e)
 		_think_passives(e)
+		_think_timers(e)
 		if e.think_once_waits and not e.thought_once:   # WaitOneFrame / TThinkImpulseTimerCooldownComponent
 			if time_ms >= e.created_at + e.think_delay_ms:
 				_think_once(e)
@@ -647,6 +659,31 @@ func _fire_scheduled_events() -> void:
 ## that has a target in range fires. Otherwise approach the nearest enemy in attention range or follow the lane.
 ## Passive brains (auras, ThinksPassively fight groups, self-target groups) run every tick, even while the
 ## unit is frozen or stunned: Vecra melts her own prison while carrying upFrozen.
+## TThinkImpulseTimerCooldownComponent: the group thinks every eiCooldown (first time after one period);
+## fight groups pick their targets, self-ground groups fire at the owner, Nth gates the nth think.
+func _think_timers(e: SimEntity) -> void:
+	for w in e.welas:
+		if w.timer_period < 0 or not e.alive:
+			continue
+		if w.next_at < 0:
+			w.next_at = e.created_at + w.timer_period
+		if time_ms < w.next_at:
+			continue
+		w.next_at += maxi(w.timer_period, SimConstants.TICK_MS)
+		if not w.active or w.used:
+			continue
+		w.think_count += 1
+		if w.nth > 0 and w.think_count != w.nth:
+			continue
+		if not _wela_ready(e, w):
+			continue
+		if w.kind == Wela.Kind.FIGHT:
+			for target in _pick_targets(e, w, e.range_of(w.group), e.bb.get_int("eiWelaTargetCount", w.group, 1)):
+				_fire_group(e, w.group, target)
+		else:
+			_fire_group(e, w.group, e)
+
+
 func _think_passives(e: SimEntity) -> void:
 	for w in e.welas:
 		if not w.active and w.link_delay > 0 and time_ms >= e.created_at + w.link_delay:
@@ -946,6 +983,10 @@ func _fire_group(e: SimEntity, group: int, target: SimEntity) -> void:
 	elif w.changes_max and w.resource == "reHealth":   # eiResourceCapTransaction: raise the cap and fill it
 		target.max_health += amount
 		target.health += amount
+	elif w.resource == "reHealth" and w.resource_sets_value:   # EvolveOracle: health := 60 % of the cap
+		target.health = minf(target.max_health, amount * (target.max_health if w.resource_percentage else 1.0))
+	elif w.resource == "reHealth" and not w.heals and w.kind != Wela.Kind.RESOURCE_REGEN and w.resource != "":
+		target.health = minf(target.max_health, target.health + amount)
 	elif w.resource == "reWelaChargeCapacity":
 		var who := e if w.warhead_to_self else target
 		who.charge_capacity = mini(who.charge_capacity_cap, who.charge_capacity + int(amount))
@@ -988,11 +1029,19 @@ func _fire_group(e: SimEntity, group: int, target: SimEntity) -> void:
 		if pattern != "" and UnitDb.has_unit(pattern):
 			var team := e.team if w.spawn_team < 0 else w.spawn_team
 			var produced: Array[SimEntity] = []
-			if w.spawn_spread and count > 1:
+			var area := e.bb.get_float("eiWelaAreaOfEffect", group, 0.0)
+			if w.spawn_spread and area > 0.0:   # SpreadSpawns with an area: random offset up to the radius
+				for i in count:
+					var offset := Vector2.RIGHT.rotated(rng.randf() * TAU) * (rng.randf() * area)
+					produced.append(spawn(pattern, team, target.position + offset))
+			elif w.spawn_spread and count > 1:
 				produced = spawn_squad(pattern, team, target.position, count, false)
 			else:
 				for i in count:
 					produced.append(spawn(pattern, team, target.position))
+			if w.produced_fire_group >= 0:   # TAutoBrainWelaTargetProducedUnitComponent (EvolveOracle: 60 % hp)
+				for unit in produced:
+					_fire_group(e, w.produced_fire_group, unit)
 			for unit in produced:
 				for item in w.produced_scripts:   # ApplyToProducedUnits (LegendarySpawn 660 ms, TimedLife 17 s)
 					if Buff.exists(item[0]):
