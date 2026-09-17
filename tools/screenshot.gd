@@ -1,7 +1,7 @@
 extends SceneTree
 ## Runs game/main.tscn for a while and saves screenshots of the HUD for comparison with
 ## reference/media/ingame. Usage (windowed, not headless):
-##   godot --path <proj> -s tools/screenshot.gd --log-file <proj>/.tmp/godot.log -- <seconds> [<seconds> ...] [select] [hover=<slot>] [finish] [zoom=nexus|unit|node] [at=node] [size=WxH, default 1679x1079] [play=<slot>]
+##   godot --path <proj> -s tools/screenshot.gd --log-file <proj>/.tmp/godot.log -- <seconds> [<seconds> ...] [select] [hover=<slot>] [finish] [zoom=nexus|unit|node] [at=node] [screen=X,Y] [size=WxH, default 1679x1079] [play=<slot>]
 ## Writes .tmp/shot_<seconds>.png for each requested time; "select" selects a unit (or the blue nexus), "hover=N" shows deck slot N's card hint.
 
 var _targets: Array = []
@@ -12,6 +12,7 @@ var _hover := -1
 var _finish := false
 var _zoom := ""
 var _at := ""
+var _screen := Vector2(-1, -1)   # screen=X,Y: put the at= target on this pixel (matches a reference shot's framing)
 var size := "1679x1079"   # the owner's live-client window (small HUD layout); comparisons must use it      # at=node: look at the first lane node at the default zoom
 var _play := -1
 
@@ -32,6 +33,9 @@ func _initialize() -> void:
 			_play = int(arg.trim_prefix("play="))
 		elif arg.begins_with("at="):
 			_at = arg.trim_prefix("at=")
+		elif arg.begins_with("screen="):
+			var xy := arg.trim_prefix("screen=").split(",")
+			_screen = Vector2(float(xy[0]), float(xy[1]))
 		elif arg.begins_with("size="):   # size=WxH overrides the default reference window size
 			size = arg.trim_prefix("size=")
 	var parts := size.split("x")
@@ -70,6 +74,9 @@ func _process(delta: float) -> bool:
 			var nodes: Array = _main.sim.alive_entities(-1).filter(func(e): return e.is_lane_node())
 			if not nodes.is_empty():
 				_main._place_camera(nodes[0].position)
+				if _screen.x >= 0:   # shift the look-at so the node projects onto the requested pixel
+					var centre := Vector2(root.get_viewport().size) / 2.0
+					_main._place_camera(nodes[0].position + (_main._ground_at(centre) - _main._ground_at(_screen)))
 		if _play >= 0:   # play=N: the blue deck slot N at the camera's look-at point (free cards not needed: 300 gold)
 			_main.sim.commanders[Simulation.TEAM_BLUE].free_cards = true
 			_main._play(Simulation.TEAM_BLUE, _play, _main._look_at + Vector2(6, 0))

@@ -277,7 +277,10 @@ func _next_free_field(team: int) -> Variant:
 
 
 func _mouse_world_2d() -> Vector2:
-	var m := get_viewport().get_mouse_position()
+	return _ground_at(get_viewport().get_mouse_position())
+
+
+func _ground_at(m: Vector2) -> Vector2:   # screen pixel -> sim ground point (y = 0)
 	var from := _camera.project_ray_origin(m)
 	var dir := _camera.project_ray_normal(m)
 	if absf(dir.y) < 0.0001:
