@@ -1604,10 +1604,14 @@ func test_giant_growth() -> void:
 	var t := sim.time_ms
 	while sim.time_ms < t + 1100:
 		sim.step()
-	runner.check_near(monk.health, 100.0 + 0.02 * 425.0, "heals 2 % of max hp per second")
+	runner.check_near(monk.health, 260.0 + 0.02 * 425.0, "heals 2 % of max hp per second (the +160 also filled the cap)")
+	while sim.time_ms < t + 12000:
+		sim.step()
+	runner.check_near(monk.health, 260.0 + 12 * 0.02 * 425.0, "one tick per second")
+	monk.health = 100.0
 	while sim.time_ms < t + 25000:
 		sim.step()
-	runner.check_near(monk.health, minf(425.0, 100.0 + 20 * 0.02 * 425.0), "20 ticks, then the heal stops")
+	runner.check_near(monk.health, 100.0 + 8 * 0.02 * 425.0, "20 ticks in total, then the heal stops")
 	runner.check(monk.has("upBlessedGrowth") and is_equal_approx(monk.max_health, 425.0), "the hp bonus stays")
 
 
@@ -1615,6 +1619,8 @@ func test_evolve_oracle_and_thistle() -> void:
 	var sim := _green_spell_sim()
 	var sapling := sim.spawn("Units/Green/Sapling", Simulation.TEAM_BLUE, Vector2(0, -23))
 	sapling.base_speed = 0.0
+	for i in 10:   # saplings are untargetable during their 200 ms spawn lockout
+		sim.step()
 	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 2, sapling.id), Simulation.PlayResult.OK, "cast evolve oracle on a sapling")
 	runner.check(not sapling.alive and sapling.exiled, "the sapling is exiled")
 	var oracles := sim.alive_entities(Simulation.TEAM_BLUE).filter(func(e): return e.unit_id == "Units/Green/Oracle")
@@ -1627,6 +1633,8 @@ func test_evolve_oracle_and_thistle() -> void:
 		var s := sim.spawn("Units/Green/Sapling", Simulation.TEAM_BLUE, Vector2(10 + (i % 4) * 0.8, -23 + (i / 4) * 0.8))
 		s.base_speed = 0.0
 		saplings.append(s)
+	for i in 10:
+		sim.step()
 	runner.check_eq(sim.play_card(Simulation.TEAM_BLUE, 4, Vector2(10, -23)), Simulation.PlayResult.OK, "cast evolve thistle")
 	var thistles := sim.alive_entities(Simulation.TEAM_BLUE).filter(func(e): return e.unit_id == "Units/Green/Thistle").size()
 	runner.check_eq(thistles, 6, "up to 6 saplings become thistles")

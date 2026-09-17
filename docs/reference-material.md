@@ -97,3 +97,6 @@ These are current and take precedence over Codex's older captures. Facts read fr
   health and 35% energy, Stage II - 35% / 25%, Stage III - 20% / 20%"). Clicking a unit on the field outlines it
   white and opens a unit panel top-right: portrait with card level, name, health bar "500 / 500", attack "26.1",
   armor "0%", keywords. After tier II: mana "436 / 500 (+12)", income bar "1500 / 1750" (thresholds grow).
+- Hovering a building outlines it: the live client outlines the player's own nexus red and the enemy's blue.
+  **Owner decision (2026-09-16): in our version own = blue, enemy = red**, consistent with the team colors
+  (blue = player, red = enemy in the top bar and minimap).

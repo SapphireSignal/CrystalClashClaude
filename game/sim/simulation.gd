@@ -69,9 +69,6 @@ func spawn(unit_id: String, team: int, pos: Vector2, front: Vector2 = Vector2.ZE
 			var m := RegEx.create_from_string("random\\s*\\*\\s*([0-9.]+)").search(v)
 			assert(m != null, "unsupported eiCooldown expression %s in %s" % [v, unit_id])
 			e.bb.set_value("eiCooldown", g, int(roundf(rng.randf() * float(m.get_string(1)))))
-	for w in e.welas:
-		if w.timer_period >= 0:
-			w.timer_period = e.bb.get_int("eiCooldown", w.group, 0)
 	e.position = pos
 	e.front = front if front != Vector2.ZERO else Vector2(-1.0 if team == TEAM_RED else 1.0, 0.0)
 	e.created_at = time_ms
@@ -242,7 +239,7 @@ func _update_buffs(e: SimEntity) -> void:
 						candidates.append(other)
 				if not candidates.is_empty():
 					_launch_projectile(b.shard_projectile, e, candidates[rng.randi_range(0, candidates.size() - 1)], b.shard_damage, b.shard_type)
-			if b.tick_times == 0 and b.expires_at < 0:
+			if b.tick_times == 0 and b.remove_when_ticks_done:
 				e.remove_buff(b)
 				continue
 		if b.is_expired(time_ms) and e.alive:
@@ -703,8 +700,8 @@ func _think(e: SimEntity) -> void:
 		return
 	var waiting := false   # a fight group has a target but is on cooldown: hold position, let other groups act
 	for w in e.welas:
-		if w.passive or not w.active or w.used or not _wela_ready(e, w):
-			continue
+		if w.passive or not w.active or w.used or w.timer_period >= 0 or not _wela_ready(e, w):
+			continue   # timer-driven groups think from _think_timers only
 		if w.kind == Wela.Kind.SELF_GROUND:
 			if time_ms >= w.cooldown_ready_at and e.fire_at < 0:
 				_prefire(e, w, e)

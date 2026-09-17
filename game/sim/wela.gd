@@ -173,6 +173,8 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 	for comp in components:
 		order += 1
 		var groups: Array = comp["groups"].map(func(s): return UnitDb.group_id(s, map))
+		if groups.is_empty():
+			groups = [-1]   # CreateGrouped(Entity, []): the entity-wide group
 		var calls: Array = comp.get("calls", [])
 		var args: Array = comp.get("args", [])
 		var g: int = groups[0] if not groups.is_empty() else -1
@@ -208,8 +210,13 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 					if c[0] == "RedirectToGround":
 						get.call(g, Kind.SUB).redirect_to_ground = true
 			"TThinkImpulseTimerCooldownComponent":
+				var period := 0   # one timer for all its groups: the first group's cooldown (RipOutSoul [0,1,3] = 500)
 				for gg in groups:
-					get.call(gg, Kind.SUB).timer_period = bb.get_int("eiCooldown", gg, 0)
+					if bb.has_value("eiCooldown", gg):
+						period = bb.get_int("eiCooldown", gg, 0)
+						break
+				for gg in groups:
+					get.call(gg, Kind.SUB).timer_period = period
 			"TWelaReadyNthComponent":
 				for c in calls:
 					if c[0] == "Nth" or c[0] == "Times":

@@ -305,7 +305,7 @@
   "colors": [
    "ecGreen"
   ],
-  "script": "Units/Green/RootDudeSpawner",
+  "script": "Units/Green/RootdudeSpawner",
   "tier": 2,
   "name": "Rootdood"
  },
@@ -415,7 +415,7 @@
   "colors": [
    "ecGreen"
   ],
-  "script": "Units/Green/RootDudeDrop",
+  "script": "Units/Green/RootdudeDrop",
   "tier": 2,
   "name": "Rootdood"
  },
@@ -565,7 +565,7 @@
   "colors": [
    "ecGreen"
   ],
-  "script": "Spells/Green/SaplingCharge.sps",
+  "script": "Spells/Green/Saplingcharge.sps",
   "tier": 3,
   "name": "Sapling Charge"
  },
@@ -985,7 +985,7 @@
   "colors": [
    "ecBlue"
   ],
-  "script": "Units/Blue/AirDominatorDrop",
+  "script": "Units/Blue/AirdominatorDrop",
   "tier": 3,
   "name": "Oppressor"
  },

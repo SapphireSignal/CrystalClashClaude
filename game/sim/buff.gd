@@ -80,6 +80,7 @@ var hot_heal: float = 0.0
 var mana_per_tick: int = 0
 var tick_interval: int = 0
 var tick_times: int = -1            # -1 = unlimited
+var remove_when_ticks_done: bool = false   # the Nth group also removes the buff (Frostspear)
 var next_tick_at: int = 0
 # prevent death (TAutoBrainPreventDeathComponent): set health, strip buffs, apply scripts, teleport home
 var prevents_death: bool = false
@@ -143,6 +144,7 @@ static func create(script_name: String, now: int, params: Dictionary = {}) -> Bu
 	var timer_ready := false
 	var unready_groups := {}
 	var pending_scripts: Array = []   # rescue scripts for prevent-death buffs, otherwise applied when the buff ends
+	var nth_group := -1
 	for comp in data["components"]:
 		if comp.has("cond") and not params.get("__" + comp["cond"], false):
 			continue   # component only exists for melee / ranged owners
@@ -344,6 +346,8 @@ static func create(script_name: String, now: int, params: Dictionary = {}) -> Bu
 				for call in calls:
 					if call[0] == "Times" or call[0] == "Nth":
 						b.tick_times = int(call[1][0])
+						nth_group = g
+	b.remove_when_ticks_done = nth_group >= 0 and ending_groups.has(nth_group)
 	for g in cooldown_groups:   # the duration is the cooldown whose group ends the buff, not a tick cadence
 		if ending_groups.has(g):
 			duration_group = g

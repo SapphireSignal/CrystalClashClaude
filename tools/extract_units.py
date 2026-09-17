@@ -429,6 +429,10 @@ def main() -> int:
     units = extract_units()
     fix_pattern_case(units)
     cards = extract_cards()
+    lower = {k.lower(): k for k in units}
+    for card in cards:   # the card registry spells some scripts differently (SaplingCharge vs Saplingcharge.sps)
+        if card["script"] not in units and card["script"].lower() in lower:
+            card["script"] = lower[card["script"].lower()]
     modifiers = extract_modifiers()
     (OUT / "units.json").write_text(json.dumps(units, separators=(",", ":")), encoding="utf-8")
     (OUT / "cards.json").write_text(json.dumps(cards, indent=1), encoding="utf-8")
