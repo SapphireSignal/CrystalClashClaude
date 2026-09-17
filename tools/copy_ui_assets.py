@@ -19,7 +19,7 @@ OUT_FONTS = ROOT / "assets" / "fonts"
 FOLDERS = [
     "HUD/DeckPanel", "HUD/GameStatePanel", "HUD/InfoPanel", "HUD/MinimapPanel", "HUD/RessourcePanel",
     "HUD/InfoPanel/Attack", "HUD/InfoPanel/Armor", "HUD/TechnicalPanel", "HUD/Announcements", "HUD/FinalScreen", "Shared/CardIcons", "Shared/LeagueIcons",
-    "Shared/FactionIcons",
+    "Shared/FactionIcons", "MainMenu/Shared/Card",
 ]
 FILES = ["HUD/Selection.png", "HUD/SelectionBuilding.png"]
 FONT_FILES = ["ProzaLibre-Regular.ttf", "ProzaLibre-Medium.ttf", "ProzaLibre-SemiBold.ttf",

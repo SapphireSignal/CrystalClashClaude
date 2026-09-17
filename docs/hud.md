@@ -94,8 +94,26 @@ keyword descriptions (`effect_<keyword>_description`).
 
 ## Other panels
 - TechnicalPanel top-left 158x34: `59 FPS` (x 0), ping icon (x 62), `NN ms` (x 78), black font.
-- Announcements (`AnnouncementBackground.png` 1189x206, 150 px from the top): warm-up countdown / "Game is
-  about to begin" (`core_game_commencing`), showdown (`core_announcement_title_showdown`).
-- Health bars over units are in-world quads (`Visuals.pas` `THealthbarComponent`), not GUI.
+- Announcements (`AnnouncementBackground.png` 1189x206, 150 px from the top, content padding 29 % 10 %, title
+  uppercase bold 70 %, subtitle 32 % at the bottom): `core_announcement_title/subtitle_<uid>`; `stage_1` on the
+  first game tick, `stage_2` / `stage_3` (league > 2) on the tech events, `showdown`, each for 2000 ms
+  (`TClientGUIComponent.OnGameEvent`). The live client shows a warm-up countdown ("9 / Game is about to begin");
+  that subtitle is not in the 2022 Lang tables (`Lang.LIVE_CLIENT_TEXT`).
+- Unit bars (`TEntityDisplayWrapperComponent` + `TResourceDisplay*Component`, `EntityComponents.Client.GUI.pas`):
+  a GUI stack in world-screen space at `bounding top + 1 + udHealthbarOffset`, anchored at its centre. Health bar
+  63x8: background `$99000000`, 1 px inset black border, 1 px padding, fill gradient by displayed team (blue
+  `$FF51A2FF`/`$FF2850A0`, red `$FFE66868`/`$FF723333`, grey `$FFDEDEDE`/`$FF404040`), overheal white
+  `$FFFFFFFF`/`$FF808080` fills the whole bar behind, progress = `hp / (max + overheal)`. Shown only while damaged
+  or with overheal (`coGameplayHealthbarMode` default `hmDamaged`) or while Alt is held; hidden when exiled.
+  Extra bars come from the scripts (`units.json` `unit_bars`, extracted from `TResourceDisplayIntegerProgressBar`
+  / `TResourceDisplayProgressBarComponent` chains): 63x6, integer bars split into `cap` chunks with 1 px black
+  outlines (mana yellow `$FFFAF800`/`$FF8B8A00`, `reWelaCharge` cyan `$FF63D9DB`/`$FF377D7D`), `HideIfEmpty`,
+  `FixedCap`, `SizeY`. Chunk in/out animations (200 ms) are not replicated yet. No floating combat text exists
+  in the original.
+- Card hint ability box (`.skill-hint`, `shared_card.scss`): 250 wide, `$frame` (2 px `$FF5c8989` border, bg
+  `$FF3C5757`), each skill = uppercase name on `$FF273A3C` + hint (15 px, `$FFA9DCE7`), then the keyword
+  descriptions (`effect_<keyword>_description`) in a lighter box. The 2022 source shows it on hovering the
+  description; the live client opens it while hovering the deck slot, so we open it after 1 s of hover.
+  Tooltip variables (`%(key)`) come from `units.json` `ability_details` (`PassInteger` etc., per-league arrays).
 - Chat button "Activate Chat (Enter)" left edge, scoreboard (hold key), menu, final screen (`Victory.png` /
   `Defeat.png` on `banner.png`) come with multiplayer / polish.

@@ -4,6 +4,8 @@ extends Control
 ## tier-locked groups sink down under a countdown plate, cooldown fill and charge / hotkey badges.
 
 signal slot_clicked(slot_index: int)
+signal slot_hovered(slot_index: int)
+signal slot_unhovered(slot_index: int)
 signal spawner_jump
 
 const HEIGHT := 75.0
@@ -151,7 +153,8 @@ func _build_slot(commander: Commander, index: int) -> SlotView:
 	v.root.mouse_filter = MOUSE_FILTER_STOP
 	v.root.focus_mode = Control.FOCUS_NONE
 	v.root.pressed.connect(func(): slot_clicked.emit(index))
-	v.root.tooltip_text = Lang.card_name(card)
+	v.root.mouse_entered.connect(func(): slot_hovered.emit(index))
+	v.root.mouse_exited.connect(func(): slot_unhovered.emit(index))
 	# ready glow behind the icon
 	var glow_name := "highlight_spawner" if card.is_spawner() else "highlight_drop"
 	var glow_tex := HudStyle.tex("HUD/DeckPanel/%s.png" % glow_name)

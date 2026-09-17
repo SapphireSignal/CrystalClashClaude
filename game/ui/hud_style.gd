@@ -116,6 +116,26 @@ static func unit_color(unit_id: String) -> String:
 	return str(identity).trim_prefix("ec")
 
 
+static var _stats_cache: Dictionary = {}
+
+
+## A unit's blackboard stats (health, damage, cooldown, armor) for tooltips, built once per league / level.
+static func unit_stats(unit_id: String, league: int, level: int) -> SimEntity:
+	var key := "%s:%d:%d" % [unit_id, league, level]
+	if not _stats_cache.has(key):
+		var e := SimEntity.new()
+		e.setup(unit_id, league, level)
+		_stats_cache[key] = e
+	return _stats_cache[key]
+
+
+## units.json `ability_details`: the script's TTooltipUnitAbilityComponents (name, keywords, vars).
+static func ability_details(unit_id: String) -> Array:
+	if not UnitDb.has_unit(unit_id):
+		return []
+	return UnitDb.raw(unit_id).get("ability_details", [])
+
+
 ## coGameplayFixedTeamColors: the own team is shown as 1 (blue), the enemy as 2 (red), neutral 0.
 static func displayed_team(team: int, own_team: int) -> int:
 	if team == 0:

@@ -2,7 +2,7 @@
 
 Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
 
-## State (2026-09-17, checkpoint 26)
+## State (2026-09-17, checkpoint 27)
 - Phases 1-3 done, 799 tests pass. Sandbox `game/main.tscn`: blue deck on keys 1-9,0,-,= or by clicking a card
   (drops/spells then need a left click on the ground, spawners go to the next free field); red AI plays Black.
 - **Phase 4 (HUD): step 1 done.** `game/ui/` holds the code-built HUD from `docs/hud.md`: top bar (clock, nexus
@@ -11,20 +11,26 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
   minimap (WorldToMiniMap port with the original angle/scale, icons by kind, camera ground quad, menu button
   without a menu yet), unit info panel on left click (portrait + league icon, name, health/mana or ammo, DPS,
   armor caption, ability keywords; spawners show the produced unit), `Selection.png` ground decal.
-  `tools/screenshot.gd` runs the game and saves `.tmp/shot_<s>.png` (`-- 30 31 select` selects a unit first).
+  `tools/screenshot.gd` runs the game and saves `.tmp/shot_<s>.png` (`-- 30 31 select` selects a unit first,
+  `hover=N` shows slot N's card hint at the first shot; a shot one second later shows the ability box).
+- **Step 2 + 3 done (checkpoint 27):** `card_hint.gd` (CardHUD replica: shadow, frame/icon/league/level, name,
+  skill list or spell text with `%(key)` variables, DPS/health boxes, price tag + tech roman, ability box after
+  1 s), `announcements.gd` (warm-up countdown, stage 1/2/3, showdown), `unit_bars.gd` (health bars while damaged
+  or Alt, overheal, integer chunk bars for mana/ammo, progress bars). The extractor now records `ability_details`
+  and `unit_bars`. The original has no floating combat text (not built). `docs/hud.md` updated.
 - Verified by screenshot against `reference/media/ingame/*.webp` (those use the client's small layout; ours is
   the normal 1920x1080 layout, so sizes differ but the structure matches).
 
 ## Next step (in order, one at a time, run the game after each)
-1. Card hint on hover (`MainMenu/Shared/Card/CardHUD.dui` + `shared_card.scss`, 334 wide, 260 px above the
-   bottom): card name, cost, tier, short description (`card_short_description_<ident>`), ability names.
-2. Announcements (`AnnouncementBackground.png` 1189x206, 150 px from the top): warm-up countdown / "Game is
-   about to begin" (`core_game_commencing`), stage 2/3 and showdown titles (`core_announcement_title_*`).
-3. In-world health bars over units (`Visuals.pas` `THealthbarComponent`: quads above the unit, team colour,
-   segment ticks) and floating combat text.
-4. **Settings menu (the gear button on the minimap): do NOT build it yet.** The owner will add screenshots of the
+1. Final screen: `team_lost` -> `HUD/FinalScreen/Victory.png` / `Defeat.png` on `banner.png` (read the
+   FinalScreen `.dui` + `core_game.scss` first), then freeze input. Small step.
+2. **Phase 5 (assets)**: research first. Find the original mesh/animation formats under `reference/rise-of-legions/`
+   and the loaders in `reference/delphi3d-engine/`, textures (`.tga`/`.dds`), particles `.pfx`, FMOD sound banks.
+   Write `docs/assets.md` rows per format with a conversion plan, then `tools/convert_*.py` for meshes first
+   (Footman), swap the capsule in `main.gd` for the real model, then the maps.
+3. **Settings menu (the gear button on the minimap): do NOT build it yet.** The owner will add screenshots of the
    live client's settings screens to `reference/media/` first; build it only after they exist.
-5. Later: audit the Steam patch notes newer than 2022-01-19 (CLAUDE.md Decisions) and apply via the extractor.
+4. Later: audit the Steam patch notes newer than 2022-01-19 (CLAUDE.md Decisions) and apply via the extractor.
 
 ## Rules that bit us
 - Run `--import` before `-s tests/run_tests.gd` when new class_name scripts or assets were added.
@@ -34,6 +40,11 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
   matches the folder listing case-insensitively; never `load()` those paths directly.
 - Card frames (`Card_<Color>.tga`) are opaque: draw the frame first, the round icon on top.
 - Children of a Control draw above the Control's own `_draw`: minimap icons go on an overlay child.
+- A screenshot shows the previous frame: call `show_*` one shot earlier than the shot that should contain it.
+- Autowrap labels in a container inflate it on the first frame: `reset_size()` each frame while visible
+  (see `CardHint.refresh`).
+- Regex alternations must list the longer name first (`PassSingleAsInteger|PassSingle`).
+- Bash heredocs choke on apostrophes in long text: write doc/patch scripts with the Write tool, then run them.
 - Lambdas connected to sim signals must be disconnected in tests; lambdas capture ints by value (use Arrays).
 - `alive_entities(-1)` = all teams; team 0 is the neutral team (lane nodes).
 - Spell cards are keyed with their `.sps` suffix (`Spells/White/LightPulse.sps`), effects without it.

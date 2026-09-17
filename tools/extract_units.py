@@ -21,7 +21,14 @@ RE_SET = re.compile(
     r"Entity\.Blackboard\.Set(Indexed)?Value\(\s*(\w+)\s*,\s*\[([^\]]*)\]\s*,\s*(?:(\w+)\s*,\s*)?(.+?)\);\s*(?://.*)?$"
 )
 RE_RADIUS = re.compile(r"Entity\.CollisionRadius\s*:=\s*([0-9.]+)")
-RE_ABILITY = re.compile(r"TTooltipUnitAbilityComponent\.Create(?:Grouped)?\(Entity,\s*(?:\[[^\]]*\],\s*)?'(\w+)'")
+RE_ABILITY = re.compile(
+    r"TTooltipUnitAbilityComponent\.Create(?:Grouped)?\(Entity,\s*(?:\[[^\]]*\],\s*)?'(\w+)'\)(.*?);", re.S
+)
+RE_UNIT_BAR = re.compile(
+    r"TResourceDisplay(IntegerProgressBar|ProgressBar)Component\.Create(?:Grouped)?\(Entity(?:,\s*\[[^\]]*\])?\)(.*?);", re.S
+)
+RE_UNIT_BAR_CALL = re.compile(r"\.(ShowResource|HideIfEmpty|HideIfFull|FixedCap|SizeY)(?:\(([^)]*)\))?")
+RE_ABILITY_CALL = re.compile(r"\.(Keyword|PassInteger|PassPercentage|PassSingleAsInteger|PassSingle|PassString|IsCardDescription)(?:\(([^()]*(?:\([^()]*\)[^()]*)*)\))?")
 RE_INIT_CARD = re.compile(r"Init(Drop|Spawner|BuildingCard)Data\(Entity,\s*(True|False)\s*,\s*(?:\{@\w+\})?(\d)")
 RE_LEAGUE_ARR = re.compile(r"^(?:([0-9.]+)\s*\*\s*)?[fi]\(\s*\[([^\]]*)\]\s*,\s*Entity\.CardLeague(?:\([^)]*\))?\s*\)$")
 RE_INHERITS = re.compile(r"InheritsFrom(?:Preceding)?\s*:\s*string\s*=\s*'([^']+)'")
@@ -373,6 +380,82 @@ def extract_modifiers() -> dict:
     return out
 
 
+
+def _tooltip_number(expr: str):
+    """A tooltip value: a number, a `{@marker}` prefixed number, or a per-league `i([..], Entity.CardLeague)` array."""
+    expr = re.sub(r"\{@\w+\}", "", expr).strip()
+    m = RE_LEAGUE_ARR.match(expr)
+    if m:
+        values = [float(v) for v in m.group(2).split(",")]
+        return [int(v) if v.is_integer() else v for v in values]
+    v = float(expr)
+    return int(v) if v.is_integer() else v
+
+
+def _split_args(raw: str) -> list:
+    """Top-level comma split (commas inside (...) / [...] belong to the argument)."""
+    args, depth, current = [], 0, ""
+    for ch in raw:
+        if ch in "([":
+            depth += 1
+        elif ch in ")]":
+            depth -= 1
+        if ch == "," and depth == 0:
+            args.append(current.strip())
+            current = ""
+        else:
+            current += ch
+    args.append(current.strip())
+    return args
+
+
+def parse_unit_bars(text: str) -> list:
+    """Client-side resource bars above the unit (TResourceDisplay*Component chains): kind integer (chunks) or
+    progress, the resource shown (reMana, reWelaCharge), HideIfEmpty / HideIfFull, FixedCap, SizeY."""
+    bars = []
+    for kind, chain in RE_UNIT_BAR.findall(text):
+        bar = {"kind": "integer" if kind == "IntegerProgressBar" else "progress", "resource": "reHealth"}
+        for method, arg in RE_UNIT_BAR_CALL.findall(chain):
+            if method == "ShowResource":
+                bar["resource"] = arg.strip()
+            elif method == "HideIfEmpty":
+                bar["hide_if_empty"] = True
+            elif method == "HideIfFull":
+                bar["hide_if_full"] = True
+            elif method == "FixedCap":
+                bar["fixed_cap"] = int(arg)
+            elif method == "SizeY":
+                bar["size_y"] = float(arg)
+        bars.append(bar)
+    return bars
+
+
+def parse_ability_chain(name: str, chain: str) -> dict:
+    """TTooltipUnitAbilityComponent method chain -> {name, keywords, card_description, vars}. Each var mirrors
+    TTranslationIntegerVariable / TTranslationStringVariable: key, value (or per-league list), frac, percent,
+    span, text (strings)."""
+    ability = {"name": name, "keywords": [], "card_description": False, "vars": []}
+    for method, raw_args in RE_ABILITY_CALL.findall(chain):
+        args = _split_args(raw_args) if raw_args else []
+        if method == "IsCardDescription":
+            ability["card_description"] = True
+        elif method == "Keyword":
+            ability["keywords"].append(args[0].strip("'"))
+        elif method == "PassString":
+            ability["vars"].append({"key": args[0].strip("'"), "text": args[1].strip("'"),
+                                    "span": args[2].strip("'") if len(args) > 2 else ""})
+        elif method == "PassSingle":
+            ability["vars"].append({"key": args[0].strip("'"), "value": int(args[1]), "frac": int(args[2]),
+                                    "percent": False, "span": args[3].strip("'") if len(args) > 3 else ""})
+        else:  # PassInteger, PassPercentage, PassSingleAsInteger
+            value = _tooltip_number(args[1])
+            if method == "PassSingleAsInteger":
+                value = round(value) if not isinstance(value, list) else [round(v) for v in value]
+            ability["vars"].append({"key": args[0].strip("'"), "value": value, "frac": 0,
+                                    "percent": method == "PassPercentage",
+                                    "span": args[2].strip("'") if len(args) > 2 else ""})
+    return ability
+
 def parse_script(path: Path) -> dict:
     text = inline_local_procedures(path.read_text(encoding="utf-8", errors="replace"))
     body = create_data_body(text)
@@ -396,10 +479,20 @@ def parse_script(path: Path) -> dict:
             data["values"][event] = dict(by_group)
         data["components"] = parent["components"]
         data["abilities"] = list(parent.get("abilities", []))
-    # TTooltipUnitAbilityComponent names (client side): the unit panel lists them via unitability_name_<name>
-    for name in RE_ABILITY.findall(text):
+        data["ability_details"] = [dict(d) for d in parent.get("ability_details", [])]
+        if parent.get("unit_bars"):
+            data["unit_bars"] = [dict(b) for b in parent["unit_bars"]]
+    bars = parse_unit_bars(text)
+    if bars:
+        data["unit_bars"] = bars
+    # TTooltipUnitAbilityComponent (client side): ability names for the unit panel (unitability_name_<name>)
+    # and the full tooltip chain (keywords, %(key) variables, IsCardDescription) for the card hint.
+    for name, chain in RE_ABILITY.findall(text):
         if name not in data.setdefault("abilities", []):
             data["abilities"].append(name)
+        details = data.setdefault("ability_details", [])
+        details[:] = [d for d in details if d["name"] != name]
+        details.append(parse_ability_chain(name, chain))
     m = RE_RADIUS.search(body)
     if m:
         data["collision_radius"] = float(m.group(1))
@@ -446,6 +539,9 @@ def parse_spell(path: Path) -> dict:
             for g in [x.strip() for x in groups.split(",") if x.strip()]:
                 entry[g] = value
         data["components"] += parse_components(body)
+    for name, chain in RE_ABILITY.findall(text):   # the spell's IsCardDescription tooltip (card hint variables)
+        data.setdefault("abilities", []).append(name)
+        data.setdefault("ability_details", []).append(parse_ability_chain(name, chain))
     return data
 
 

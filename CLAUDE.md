@@ -173,5 +173,7 @@ and fonts are copied 1:1 by `tools/copy_ui_assets.py` into `assets/ui/` and `ass
 code-built HUD (`hud.gd` owner; `game_info_bar.gd` clock + nexus bars, `resource_panel.gd`, `deck_panel.gd` with
 tier-locked groups, cooldown fill, charge/hotkey badges, click-to-arm cards and the spawner jump, `minimap.gd`
 with the WorldToMiniMap port, icons and camera quad, `info_panel.gd` for the clicked unit with a ground decal,
-`lang.gd`, `hud_style.gd`). `tools/screenshot.gd` captures the running game for comparison with `reference/media`.
-See `CONTINUE.md`.
+`lang.gd`, `hud_style.gd`, `card_hint.gd` hover card with the delayed ability box, `announcements.gd`,
+`unit_bars.gd` health/mana/ammo bars projected over units). The extractor records `ability_details`
+(tooltip variables/keywords) and `unit_bars` per script. `tools/screenshot.gd` captures the running game for
+comparison with `reference/media`. See `CONTINUE.md`.

@@ -5,6 +5,11 @@ const PATH := "res://game/data/lang/en.json"
 
 static var _table: Dictionary = {}
 
+## Strings the live client shows that the 2022 snapshot's Lang tables lack (docs/reference-material.md).
+const LIVE_CLIENT_TEXT := {
+	"core_game_countdown": "Game is about to begin",
+}
+
 
 static func _load() -> void:
 	if not _table.is_empty():
@@ -12,6 +17,9 @@ static func _load() -> void:
 	var file := FileAccess.open(PATH, FileAccess.READ)
 	assert(file != null, "missing %s, run tools/extract_lang.py" % PATH)
 	_table = JSON.parse_string(file.get_as_text())
+	for key in LIVE_CLIENT_TEXT:
+		if not _table.has(key):
+			_table[key] = LIVE_CLIENT_TEXT[key]
 
 
 static func has_key(key: String) -> bool:
@@ -31,6 +39,26 @@ static func first(keys: Array, fallback: String) -> String:
 		if has_key(k):
 			return t(k)
 	return fallback
+
+
+## TTranslationVariable.Apply: replaces %(key) with the tooltip variable's value (units.json `ability_details`
+## vars; per-league lists pick the card's league, `frac` adds a decimal, `percent` appends %).
+static func format(text: String, vars: Array, league: int) -> String:
+	for v in vars:
+		var value_text: String
+		if v.has("text"):
+			value_text = str(v["text"])
+		else:
+			var value: Variant = v["value"]
+			if value is Array:
+				value = value[clampi(league, 1, value.size()) - 1]
+			value_text = str(int(value)) if (value is int or float(value) == floor(float(value))) else str(value)
+			if int(v.get("frac", 0)) != 0:
+				value_text += "." + str(int(v["frac"]))
+			if v.get("percent", false):
+				value_text += "%"
+		text = text.replace("%(" + str(v["key"]) + ")", value_text)
+	return text
 
 
 ## Script identifier used by the lang keys: file name without folder / extension, lowercased
