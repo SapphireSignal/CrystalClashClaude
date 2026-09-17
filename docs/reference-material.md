@@ -111,13 +111,14 @@ These are current and take precedence over Codex's older captures. Facts read fr
   Upgrade"; it fires two shots at two enemies. The 2022 source lanetower has 800-1400 HP by league/level, 100 damage,
   6-18 ammo and a single target. Nexus live: 8000 HP, 25 ammo, 96 damage (source: 110-120 damage, 8-20 ammo).
   Towers and bases were reworked after the repo snapshot; the patch-notes audit must cover them first.
-- Camera (measured on the lane node screenshots, 2026-09-17): the platform ring's ellipse ratio gives a pitch of
-  53-54 deg and the same ring pixel size as our zoom 3.8, so pitch, zoom and FOV equal the 2022 `CAMERAOFFSET`.
-  The lane runs at 29.2 deg on screen in the live client but 36.7 deg with the 2022 vector, i.e. the live yaw
-  is 55.5 deg across the lane instead of 47.4: applied in `main.gd` (offset -0.3305, 0.8121, 0.4809) at the
-  owner's request ("I just want the camera the same"). The minimap keeps the 2022 angle: its painted image is
-  not rotated in the live client (whale shadow middle-left, trees top-right / left match the unrotated
-  `map_minimap_single.png`). The game-start shot (blue nexus, "Game is about to begin") shows the own base
+- Camera (2026-09-17): fitted on `image-1789614749130.webp` (game start) from the four corners of the spawner
+  tile (7,1) at (1332,515) (1377,474) (1322,435) (1280,470) and the nexus ground centre (850,525) with the
+  original vertical FOV: pitch 52-54 deg, yaw 49 deg, distance 39, target = the nexus, 3.8 px rms. That is the
+  2022 `CAMERAOFFSET` (54.3 / 47.4, 6.3 px rms) within reading error; a 55.5 deg yaw gives 18 px. So the live
+  camera, zoom range and FOV are the 2022 constants. (An earlier sand-strip angle measurement was wrong.)
+  The minimap keeps the 2022 angle: its painted image is not rotated in the live client (whale shadow
+  middle-left, trees top-right / left match the unrotated `map_minimap_single.png`).
+  The game-start shot (blue nexus, "Game is about to begin") shows the own base
   top-right with the lane leaving to the bottom-left, and the minimap has blue top-right: the live client puts
   Blue at +x (2022 scripts: -x). Applied as `SimMap.side()`; the tests keep the 2022 layout.
 - Top bar in the live client: red bar left, blue bar right for both the blue and the red player (own team is

@@ -31,7 +31,7 @@ var _red_cursor: int = 0
 @onready var _camera: Camera3D = $Camera3D
 @onready var _environment: WorldEnvironment = $WorldEnvironment
 var _map: MapView
-var _look_at := Vector2(40, -23)   # ground point the camera looks at (CameraFixedToLane: z = -23), near the own (blue, +x) lanetower
+var _look_at := Vector2(96, -23)   # ground point the camera looks at (CameraFixedToLane: z = -23); starts on the own (blue, +x) nexus like the client
 var _zoom := ZOOM_MAX              # TClientCameraComponent.FZoom: distance = zoom * 10 along CAMERAOFFSET
 const ZOOM_MIN := 2.6              # coGameplayCameraMinZoom
 const ZOOM_MAX := 3.8              # coGameplayCameraMaxZoom (the default zoom)
@@ -66,7 +66,7 @@ func _ready() -> void:
 	_hud.spawner_jump.connect(_spawner_jump)
 	_hud.match_left.connect(func(): get_tree().reload_current_scene())   # sandbox: Continue restarts the match
 	_selection_decal = _make_decal()
-	_place_camera(Vector2(-40, -23))
+	_place_camera(_look_at)
 
 
 func _process(delta: float) -> void:
@@ -294,11 +294,10 @@ func _place_camera(look_at_2d: Vector2) -> void:
 	# Original camera offset direction (Constants.Client.pas:34), scaled to see the lane.
 	_look_at = look_at_2d
 	_camera.fov = rad_to_deg(CAMERA_FOV)
-	# Live-client camera (owner's request, docs/reference-material.md): the 2022 CAMERAOFFSET (-0.3947, 0.8121,
-	# 0.4297) has the same pitch (54.3 deg) and zoom, but the live client looks 55.5 deg across the lane instead of
-	# 47.4 (lane on screen at 29.2 deg, measured on the reference screenshots, ours was 36.7). Blue sits at +x
-	# (SimMap), so the own base is top-right and the lane leaves it to the bottom-left like the reference.
-	var offset := Vector3(-0.3305, 0.8121, 0.4809).normalized() * _zoom * 10.0
+	# CAMERAOFFSET (Constants.Client.pas:34, z sign flipped for Godot). Verified against the live client by fitting
+	# the spawner tile corners + nexus of a reference screenshot: pitch 52-54 deg, yaw 49 deg, distance 39 at
+	# zoom 3.8, same FOV (docs/reference-material.md). Blue sits at +x (SimMap), so the own base is top-right.
+	var offset := Vector3(-0.394721269607544, 0.812130928039551, 0.429695725440979) * _zoom * 10.0
 	var target := Vector3(look_at_2d.x, 0, look_at_2d.y)
 	_camera.position = target + offset
 	_camera.look_at(target, Vector3.UP)

@@ -85,9 +85,10 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
   skip off-screen / non-finite projections (the polygon errors are gone). `tools/screenshot.gd` has `zoom=node`.
 
 - **Checkpoint 38: live-client camera.** Measured on the reference screenshots (ellipse fit of the platform ring
-  and the sand strip angle): pitch/zoom/FOV as the 2022 constant, yaw 55.5 deg instead of 47.4 (lane at
-  29.2 deg on screen): `main.gd` offset (-0.3305, 0.8121, 0.4809). The minimap keeps the 2022 angle (painted
-  image). **Sides swapped to the live client's** (blue at +x: own base top-right, lane to the bottom-left, blue
+  and the sand strip angle): pitch/zoom/FOV as the 2022 constant. **Checkpoint 41 corrected the yaw**: a fit of
+  the spawner tile corners + nexus in the game-start reference gives pitch 52-54 / yaw 49 / distance 39 = the
+  2022 `CAMERAOFFSET`; `main.gd` uses the constant verbatim again (the 55.5 deg sand-strip value was wrong).
+  **Sides swapped to the live client's** (blue at +x: own base top-right, lane to the bottom-left, blue
   top-right on the minimap): `SimMap.side()` / `legacy_sides` (tests keep the 2022 layout). **Lane rocks fixed**:
   `.bcc` items carry `<Size>` (BridgeParts 0.01) that `convert_map.py` now multiplies into the decoration scale
   (they were 100x too big: giant slabs = the "lifted ground"). CLAUDE.md decision recorded.
