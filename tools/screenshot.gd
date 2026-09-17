@@ -46,7 +46,9 @@ func _initialize() -> void:
 			size = arg.trim_prefix("size=")
 	var parts := size.split("x")
 	DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_BORDERLESS, true)   # else the taskbar clamps the height
-	DisplayServer.window_set_position(Vector2i.ZERO)
+	# On the primary screen, not the desktop origin (that is whichever monitor sits at 0,0). The capture comes from
+	# the viewport texture, so the shot is the full requested size even when the window overhangs a smaller screen.
+	DisplayServer.window_set_position(DisplayServer.screen_get_position(DisplayServer.SCREEN_PRIMARY))
 	DisplayServer.window_set_size(Vector2i(int(parts[0]), int(parts[1])))
 	if _targets.is_empty():
 		_targets = [3.0]

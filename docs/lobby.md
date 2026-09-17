@@ -339,6 +339,17 @@ For a playable single-player loop (load -> menu -> play sandbox/vs AI -> match -
 5. **Ingame** — already built (`docs/hud.md`).
 6. **Final screen** — already built (`docs/hud.md`, "victory/defeat banner"); wire its "Continue" to return to
    `GAMESTATE_MAINMENU`/dashboard (step 2), closing the loop.
+**GUI canvas (verified, checkpoint 66).** `TGameStateManager.SetClientWindow` sets `GUI.VirtualSize :=
+CLIENT_DEFAULT_DIMENSIONS` in every branch: the whole menu is authored on a fixed **1280x720** canvas and scaled to
+the client window, so at 1920x1080 every element is 1.5x larger with an identical layout. `SetGameWindow` instead
+sets `GUI.VirtualSize := ZERO`, so the in-match HUD is absolute pixels (with the `.small` switch below 1710).
+Measured against `reference/rolmedia/lobby`: the navbar edge sits at y=54 in the 1280x720 shot and y=81 in the
+1920x1080 one (both virtual 54), and the 1280 shot upscaled 1.5x matches the 1920 one about four times better than
+an absolute-pixel overlay. `game/ui/menu/menu_layout.gd` holds the canvas; every menu control lays out against
+`MenuLayout.layout_size()`. Window sizing (`ClientSettings.menu_window_size`) ports SetClientWindow's arithmetic:
+`ScaledWindowSize` fits the screen to the canvas' 16:9, msDownscaling resolves to msDisabled when the screen holds
+the canvas and to msFullscreen otherwise.
+
 7. **SettingsMenu** — built (checkpoint 65): `game/settings.gd` (`ClientSettings`, the TOptionManager options with
    the original defaults, `user://Settings.ini` in the original's section/key layout, snapshot on open, Save/Cancel,
    RevertCategory, the TSettingsWrapper quality presets) and `game/ui/menu/settings_menu.gd` (SettingsMenu.dui +
@@ -347,6 +358,12 @@ For a playable single-player loop (load -> menu -> play sandbox/vs AI -> match -
    / Exit to desktop / Back to game), opened by Escape or the minimap's menu button. Not built: the Keybindings rows
    and KeybindingDialog, the two Menu categories' content (menu resolution/scaling/language, menu mixer), the
    SystemPanel button that opens the dialog from the main menu.
+8. **SystemPanel** (`MainMenu/SystemPanel/SystemPanel.dui`, menu.scss `.system-panel`) — built (checkpoint 66):
+   the three 16x16 buttons at -4/4 top-right (Position -4 4, Size auto 16, `100ch 100%` each with Margin-Left 5),
+   above the shell like its ZOffset 20000. Minimize minimizes the window, options opens the settings dialog on the
+   Menu category (`OnDialogOpen`: `IsClientWindow` -> otMenu), close opens the **ExitDialog** (`ExitDialog.dui`,
+   450x160, Quit / Cancel - the feedback button needs a feedback service, so the `feedback. = nil` layout is used).
+   The in-game menu's Quit uses the same dialog (`client.CloseForcePrompt`).
 
 Can wait (all need the closed-source master server or are non-essential polish): login/Steam auth,
 LoginQueue, Maintenance, ServerDown (no server to go down), real matchmaking/ranked/2v2v-queue, Shop,

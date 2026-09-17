@@ -9,8 +9,8 @@ first line of the step; if it differs from the session's model, checkpoint and s
 owner can switch (`/model` mid-session keeps the context). Effort is fixed: Opus medium, Fable low; a step that resists two
 Opus attempts goes to Fable instead of a higher effort.
 
-## State (2026-09-17, checkpoint 65)
-- Phases 1-3 done, 826 tests pass. Sandbox `game/main.tscn`: blue deck on keys 1-9,0,-,= or by clicking a card
+## State (2026-09-17, checkpoint 66)
+- Phases 1-3 done, 835 tests pass. Sandbox `game/main.tscn`: blue deck on keys 1-9,0,-,= or by clicking a card
   (drops/spells then need a left click on the ground, spawners go to the next free field); red AI plays Black.
 - **Phase 4 (HUD): step 1 done.** `game/ui/` holds the code-built HUD from `docs/hud.md`: top bar (clock, nexus
   bars), resource panel (rows, income fill, tier book + tech timer), deck panel (stage groups, locked tier plates
@@ -291,7 +291,27 @@ Then checkpoint (tests, Status, CONTINUE.md, commit + push, give the new-chat pr
    defaults from `Constants.Client.pas:63` + KeybindingManager), the Menu categories' content, SystemPanel (opens the
    dialog from the main menu), the `$fade-in`/`$scale-in` dialog animations, GUI click sounds. Open check: whether the
    HUD stays faintly visible under the blurred backdrop like the original (our shot showed only the scene).
-   Next: **[Opus]** (8) SystemPanel (MainMenu/SystemPanel: minimise / options / close top-right) so the settings open from the
+   **(8) done (checkpoint 66):** `system_panel.gd` (SystemPanel.dui + menu.scss `.system-panel`: three 16x16 buttons
+   at -4/4 top-right, moved in front of the shell like its ZOffset 20000), `exit_dialog.gd` (ExitDialog.dui, 450x160,
+   Quit/Cancel; also the in-game menu's Quit = `CloseForcePrompt`), the settings dialog's two **Menu** categories
+   (MenuSettings.dui: language list, scaling mode, resolution with the rows deactivated on msFullscreen, fullscreen
+   frame, bring-to-front; MenuSoundSettings.dui: the menu's own mixer), opened from the panel with `in_game = false`
+   so it starts on the Menu category (`OnDialogOpen`: `IsClientWindow` -> otMenu).
+   **The big finding of this step (owner spotted it):** the menu client draws on a fixed **1280x720 canvas** scaled
+   to its window (`GUI.VirtualSize := CLIENT_DEFAULT_DIMENSIONS`), while the game window has none - see CLAUDE.md
+   Decisions and `docs/lobby.md`. `menu_layout.gd` holds the canvas, every menu control lays out against
+   `MenuLayout.layout_size(self)`, and `ClientSettings.menu_window_size` ports SetClientWindow's arithmetic. The
+   window now follows the client state: menu = borderless 1280x720 centred on the monitor, match = borderless over
+   the monitor's full bounds (windowed fullscreen, never a mode switch). `project.godot` opens centred on the
+   primary screen and `tools/screenshot.gd` positions there too (the desktop origin is the owner's second monitor).
+   The Play screen's sub-navbar was re-derived from SubNavbarBackground.png (2560x55 -> 27.5 canvas px) and the scss
+   (`Padding-Bottom 15%` -> 23.4 content = `$navbar-sub-size`, `.btn-nav` padding 2/1, `Fontsize 90%` -> 18); its old
+   constants were screenshot measurements taken at 1600 wide and never divided by that shot's 1.25 scale.
+   Open: no English Play/queue reference at a known scale exists in `reference/rolmedia/lobby`, so the sub-navbar
+   font is stylesheet-derived, not screenshot-verified (the Shop shot uses the *secondary* sub-navbar).
+   Next: **[Opus]** (9) the Keybindings tab (`KeybindingSettings.dui` + `KeybindingDialog.dui`, EnumKeybinding from
+   `Constants.Client.pas:63` and the KeybindingManager defaults), then the remaining polish lists below.
+   Earlier notes: SystemPanel (MainMenu/SystemPanel: minimise / options / close top-right) so the settings open from the
    menu with `in_game = false` (Menu categories enabled, MenuSettings.dui/MenuSoundSettings.dui content), or the
    Keybindings tab. Then the remaining polish lists below.
 1. **[Opus]** Particles polish; **[Fable]** for (e) the rotation sign convention if an effect looks mirrored: (a) `AtFireTarget` / `ClonesToTarget` effects; (c) light particles as
@@ -323,6 +343,10 @@ Then checkpoint (tests, Status, CONTINUE.md, commit + push, give the new-chat pr
 3. Later: audit the Steam patch notes newer than 2022-01-19 (CLAUDE.md Decisions) and apply via the extractor.
 
 ## Rules that bit us
+- Menu layout numbers are **1280x720 canvas units**: a feature measured on a 1600- or 1920-wide menu screenshot must
+  be divided by that shot's scale (width / 1280) before it goes into the code. The in-match HUD is the opposite.
+- `DisplayServer.screen_get_rect()` does not exist; use `screen_get_position()` + `screen_get_size()`.
+- Never position a window at `Vector2i.ZERO`: the desktop origin is the owner's secondary monitor.
 - Inner class names must not shadow Godot classes (`class Slider` failed to compile: "hides a native class").
 - A tint drawn in a Control's `_draw` is covered by its child nodes (the blur ColorRect): make the tint a node too.
 - Run `--import` before `-s tests/run_tests.gd` when new class_name scripts or assets were added.

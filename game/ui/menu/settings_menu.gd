@@ -87,6 +87,7 @@ class Select extends Control:
 	var getter: Callable
 	var setter: Callable
 	var options: Array = []          # [[value, text]]
+	var deactivated := false         # `.deactivated`: opacity 0.55, no input
 	var caption: Label
 	var arrow: Label
 	var menu: SettingsMenu
@@ -111,7 +112,7 @@ class Select extends Control:
 		mouse_entered.connect(func(): arrow.modulate.a = 1.0)
 		mouse_exited.connect(func(): arrow.modulate.a = 0.7)
 		gui_input.connect(func(ev: InputEvent):
-			if ev is InputEventMouseButton and ev.pressed and ev.button_index == MOUSE_BUTTON_LEFT:
+			if ev is InputEventMouseButton and ev.pressed and ev.button_index == MOUSE_BUTTON_LEFT and not deactivated:
 				menu.open_dropdown(self))
 
 	func _draw() -> void:
@@ -119,6 +120,7 @@ class Select extends Control:
 		draw_rect(Rect2(Vector2.ZERO, size), BORDER_CYAN, false, 1.0)
 
 	func refresh() -> void:
+		modulate.a = 0.55 if deactivated else 1.0
 		var value: int = getter.call()
 		for o in options:
 			if o[0] == value:
@@ -243,7 +245,7 @@ func _content_rect() -> Rect2:
 
 
 func _layout() -> void:
-	var view := get_viewport_rect().size
+	var view := MenuLayout.layout_size(self)
 	size = view
 	_blur.size = view
 	_tint.size = view
@@ -359,7 +361,7 @@ func _build_pages() -> void:
 	content.size.x = content.size.x * 0.7 - 30.0
 	var builders := {
 		Category.GAMEPLAY: _build_gameplay, Category.SOUND: _build_sound, Category.GRAPHICS: _build_graphics,
-		Category.KEYBINDING: Callable(), Category.MENU: Callable(), Category.SOUND_META: Callable(),
+		Category.MENU: _build_menu_display, Category.SOUND_META: _build_menu_sound, Category.KEYBINDING: Callable(),
 	}
 	for cat: int in builders:
 		var page := Control.new()
@@ -372,7 +374,8 @@ func _build_pages() -> void:
 			var revert := XlButton.new(Lang.t("revertsettings"))
 			revert.position = Vector2(content.size.x - BUTTON_W, content.size.y - BUTTON_H)
 			var revert_category: int = {Category.GAMEPLAY: ClientSettings.Category.GAMEPLAY, Category.SOUND: ClientSettings.Category.SOUND,
-				Category.GRAPHICS: ClientSettings.Category.GRAPHICS}[cat]
+				Category.GRAPHICS: ClientSettings.Category.GRAPHICS, Category.MENU: ClientSettings.Category.MENU,
+				Category.SOUND_META: ClientSettings.Category.SOUND_META}[cat]
 			revert.pressed.connect(func():
 				ClientSettings.revert_category(revert_category)
 				if cat == Category.GRAPHICS:
@@ -516,6 +519,58 @@ func _build_graphics(page: Control) -> void:
 			w.deactivated = off))
 
 
+## MenuSettings.dui (otMenu, listed as "Graphics" under the Menu headline): the client window's language and
+## display options. The original ran the menu in its own 1280x720 client window; here they size the one window
+## (`ClientSettings._apply_menu_window`). Only English is extracted, so the language list has one entry.
+func _build_menu_display(page: Control) -> void:
+	var y := 0.0
+	var M := ClientSettings.Category.MENU
+	y = _text_row(page, Lang.t("settings_menu_language"), y, 24, FONT_WHITE)
+	y = _add(page, Select.new(self, [[0, "100% - English (English)"]],
+		func(): return 0, func(_v: int): pass), y, 24.0)   # settings.AvailableLanguages: Steam's list, one here
+	y += ROW_PITCH   # .spacer
+	y = _text_row(page, Lang.t("settings_menu_display"), y, 24, FONT_WHITE)
+	y = _text_row(page, Lang.t("settings_menu_scaling_mode"), y, 18)
+	y = _select(page, "settings_menu_scaling_mode_", ["msDownscaling", "msFullscreen", "msDisabled"],
+		ClientSettings.menu_scaling, ClientSettings.set_menu_scaling, y)
+	# the resolution rows carry `.deactivated` while the scaling is msFullscreen
+	var fullscreen_only: Array = []
+	var caption := HudStyle.label(Lang.t("settings_menu_resolution"), 18, FONT_DEFAULT, HudStyle.FONT_REGULAR, HORIZONTAL_ALIGNMENT_LEFT)
+	y = _add(page, caption, y)
+	y = _select(page, "settings_menu_resolution_", ["mr1024x576", "mr1280x720", "mr1600x900", "mr1920x1080", "mr2560x1440", "mrCustom"],
+		ClientSettings.menu_resolution, ClientSettings.set_menu_resolution, y)
+	fullscreen_only.append(_rows.back())
+	y = _check(page, "settings_menu_fullscreen_frame", "", "ClientFullscreenFrame", y, M)
+	y += ROW_PITCH   # .spacer
+	y = _check(page, "settings_menu_bringtofront_on_match_found", "", "BringToFrontOnMatchFound", y, M)
+	_rows.insert(_rows.size() - 2, _Gate.new(func():
+		var off := ClientSettings.menu_scaling() == ClientSettings.MenuScaling.FULLSCREEN
+		caption.modulate.a = 0.55 if off else 1.0
+		for w in fullscreen_only:
+			w.deactivated = off))
+
+
+## MenuSoundSettings.dui (otSoundMeta): the menu client's own mixer, same rows as the game's minus effects/pings.
+func _build_menu_sound(page: Control) -> void:
+	var y := 0.0
+	var S := ClientSettings.Category.SOUND_META
+	y = _text_row(page, Lang.t("settings_sound_meta_caption"), y, 24, FONT_WHITE)
+	y = _check(page, "settings_sound_check", "", "PlayMaster", y, S)
+	y = _add(page, VolumeBar.new(func(): return ClientSettings.get_int(S, "MasterVolume"), func(v: int): ClientSettings.set_int(S, "MasterVolume", v)), y)
+	y = _check(page, "settings_sound_background_check", "", "Background", y, S)
+	var nested: Array = []
+	for pair in [["settings_sound_music_check", "PlayMusic", "MusicVolume"], ["settings_sound_gui_check", "PlayGUISound", "GUISoundVolume"]]:
+		y = _check(page, pair[0], "", pair[1], y, S, 35.0)
+		nested.append(_rows.back())
+		var option: String = pair[2]
+		y = _add(page, VolumeBar.new(func(): return ClientSettings.get_int(S, option), func(v: int): ClientSettings.set_int(S, option, v)), y, ROW_H, 35.0)
+		nested.append(_rows.back())
+	_rows.insert(_rows.size() - nested.size(), _Gate.new(func():
+		var off := not ClientSettings.get_bool(S, "PlayMaster")
+		for w in nested:
+			w.deactivated = off))
+
+
 func _build_buttons() -> void:
 	# .window-buttons: 58 high, centred 35 px below the window's bottom edge; children Margin 0 10.
 	var total := 2 * BUTTON_W + 40.0
@@ -580,7 +635,7 @@ func close_dropdown() -> void:
 
 
 func save_and_close() -> void:
-	ClientSettings.save()
+	ClientSettings.save(in_game)
 	closed.emit()
 	queue_free()
 

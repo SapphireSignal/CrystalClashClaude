@@ -6,6 +6,7 @@ extends Control
 
 signal settings_requested
 signal surrender_requested
+signal exit_requested
 signal closed
 
 const WINDOW := Vector2(270, 330)
@@ -56,7 +57,7 @@ func _ready() -> void:
 	var entries := [
 		["settings", "", func(): settings_requested.emit()],
 		["surrender", "_danger", func(): surrender_requested.emit(); close()],
-		["quit", "", func(): get_tree().quit()],
+		["quit", "", func(): exit_requested.emit()],   # client.CloseForcePrompt: always asks
 	]
 	for e in entries:
 		var b := SettingsMenu.XlButton.new(Lang.t(e[0]), e[1])
@@ -81,7 +82,7 @@ func _size_button(b: SettingsMenu.XlButton, r: Rect2) -> void:
 
 
 func _layout() -> void:
-	var view := get_viewport_rect().size
+	var view := MenuLayout.layout_size(self)
 	size = view
 	_blur.size = view
 	_tint.size = view

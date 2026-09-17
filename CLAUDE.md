@@ -138,6 +138,17 @@ Act as two people at once:
   for engine-level checks (camera, lighting, HUD pixels, effect scale). When the files arrive: put them read-only in
   `reference/crystal-clash/` (gitignored, `.gdignore`), point the extractors/converters at it, inventory the changes
   against 2022 first, then regenerate data/maps/effects/GUI and patch changed logic. Drop the Steam patch-notes audit.
+- 2026-09-17 **GUI canvases differ between the two windows** (verified numerically against `reference/rolmedia/lobby`):
+  the **menu client** draws on a fixed **1280x720** canvas scaled to its window (`GUI.VirtualSize :=
+  CLIENT_DEFAULT_DIMENSIONS` in every `SetClientWindow` branch), so menu `.scss` numbers are canvas units and a
+  larger menu window only magnifies; the **game window** has no canvas (`GUI.VirtualSize := ZERO`), so the HUD is
+  absolute pixels with the `.small` switch below 1710. `game/ui/menu/menu_layout.gd` owns the menu canvas. Never
+  derive a menu layout number from a screenshot without dividing by that shot's scale (width / 1280).
+- 2026-09-17 **The window follows the client state**: MainMenu = a borderless 1280x720 window (coMenuClientResolution)
+  centred on the monitor; LoadGame/Game = `dmBorderlessFullscreenWindow`, i.e. a borderless window covering the
+  monitor's full bounds (`BorderStyle := bsNone` + `SetBounds(TargetMonitor...)`), never a fullscreen mode switch.
+  The owner's main monitor is 1680x1080 (the desktop origin is on their 1920x1080 secondary), so tools must place
+  windows on the primary screen, never at (0,0).
 - 2026-09-17 Reference media: `reference/rolmedia/` (Rise of Legions, the game we build now: **the only visual
   reference**) and `reference/ccmedia/` (the owner's Crystal Clash screenshots, kept for the later refresh). Both
   filled by the owner only. Never read or
@@ -235,4 +246,6 @@ screen's Continue returns to MainMenu (preload page, then the dashboard) like `T
 Settings: `game/settings.gd` (`ClientSettings`: original option names/defaults, `user://Settings.ini` in the original
 layout, snapshot/Save/Cancel/Revert, graphics quality presets) + `game/ui/menu/settings_menu.gd` (SettingsMenu.dui,
 Gameplay/Sound/Graphics tabs) + `ingame_menu.gd` (HUD/Menu.dui via Escape / minimap button; Surrender ends the match).
-The HUD reads hotkey badges, health bar mode and the technical panel from it. See `CONTINUE.md`.
+The HUD reads hotkey badges, health bar mode and the technical panel from it. The SystemPanel (minimize/settings/
+close) and the ExitDialog are in, the menu runs on its 1280x720 canvas and the window changes with the client state.
+See `CONTINUE.md`.

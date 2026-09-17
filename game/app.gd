@@ -21,6 +21,9 @@ var _preloaded: PackedScene = null
 var _match_loading: LoadingScreen = null
 var _first_loading := true      # TGameStateLoadCoreGame.FirstLoading: cleared when the first match was loaded
 var _scenario := "es1v1"        # the Play screen's choice, RGameFoundData.scenario_uid stand-in
+var _menu_settings: SettingsMenu = null   # diSettings opened from the SystemPanel
+var _exit_dialog: ExitDialog = null       # client.Close -> ExitDialogVisible
+var _system_panel: SystemPanel = null     # kept in front of the shell (its ZOffset 20000)
 
 
 func _ready() -> void:
@@ -42,6 +45,7 @@ func _process(_delta: float) -> void:
 			_scenario = scenario
 			change_game_state(GAMESTATE_LOADGAMESTATE))
 		_menu_layer.add_child(menu)
+		_menu_layer.move_child(_system_panel, -1)   # .system-panel ZOffset 20000: above the navbar overlay
 	elif _state == GAMESTATE_LOADGAMESTATE and _match_loading.done:
 		change_game_state(GAMESTATE_INGAME)   # EnterCore
 
@@ -55,7 +59,13 @@ func change_game_state(id: String) -> void:
 		_loading_screen = null
 		_menu_layer = null
 		_match_loading = null
+		_menu_settings = null
+		_exit_dialog = null
+		_system_panel = null
 	_state = id
+	# The original runs the menu in its own client window and the match in the game window, which is fullscreen by
+	# default (coEngineDisplayMode = dmBorderlessFullscreenWindow): the window changes with the state.
+	ClientSettings.apply(id != GAMESTATE_MAINMENU)
 	_state_root = Node.new()
 	_state_root.name = id
 	add_child(_state_root)
@@ -64,7 +74,15 @@ func change_game_state(id: String) -> void:
 			var layer := CanvasLayer.new()
 			_state_root.add_child(layer)
 			_menu_layer = layer
+			# GUI.VirtualSize = 1280x720 for the menu client: the canvas scales with the window (MenuLayout)
+			MenuLayout.apply(layer)
+			get_viewport().size_changed.connect(func(): MenuLayout.apply(layer))
 			layer.add_child(MenuBackground.new())   # TGameStateMenu.EnterState (coMenuAnimatedBackground)
+			# MainMenu.dui includes the SystemPanel above everything, so it is there during the loading page too
+			_system_panel = SystemPanel.new()
+			_system_panel.settings_requested.connect(_open_menu_settings)
+			_system_panel.exit_requested.connect(_open_exit_dialog)
+			layer.add_child(_system_panel)
 			_loading_screen = MenuLoadingScreen.new()
 			_loading_screen.logo_clicked.connect(func(url: String): OS.shell_open(url))
 			layer.add_child(_loading_screen)
@@ -90,3 +108,24 @@ func change_game_state(id: String) -> void:
 			# screen of a server match is not built). Deferred: the game frees itself from inside its own signal.
 			game.match_left.connect(func(): change_game_state.call_deferred(GAMESTATE_MAINMENU))
 			_state_root.add_child(game)
+
+
+## SystemPanel's options button: OnDialogOpen outside a match starts on the Menu category (`IsClientWindow`).
+func _open_menu_settings() -> void:
+	if _menu_settings != null or _menu_layer == null:
+		return
+	_menu_settings = SettingsMenu.new()
+	_menu_settings.in_game = false
+	_menu_settings.closed.connect(func(): _menu_settings = null)
+	_menu_layer.add_child(_menu_settings)
+	_menu_layer.move_child(_menu_settings, -1)
+
+
+## SystemPanel's close button: TGameStateManager.Close -> CanProgramClose shows the exit dialog.
+func _open_exit_dialog() -> void:
+	if _exit_dialog != null or _menu_layer == null:
+		return
+	_exit_dialog = ExitDialog.new()
+	_exit_dialog.closed.connect(func(): _exit_dialog = null)
+	_menu_layer.add_child(_exit_dialog)
+	_menu_layer.move_child(_exit_dialog, -1)

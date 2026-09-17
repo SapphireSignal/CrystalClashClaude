@@ -142,7 +142,7 @@ func _tile(h: float, icon_path: String, title: String, caption: String, url: Str
 
 
 func _layout() -> void:
-	var view := get_viewport_rect().size
+	var view := MenuLayout.layout_size(self)
 	size = view
 	var content := Rect2(PADDING, NAVBAR_SIZE + PADDING, view.x - 2 * PADDING, view.y - NAVBAR_SIZE - 2 * PADDING)
 	var left := Rect2(content.position, Vector2(0.57 * content.size.x, content.size.y))

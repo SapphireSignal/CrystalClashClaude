@@ -68,7 +68,7 @@ func _process(delta: float) -> void:
 
 
 func _layout() -> void:
-	var view := get_viewport_rect().size
+	var view := MenuLayout.layout_size(self)
 	var content := Rect2(PADDING, PADDING, view.x - 2 * PADDING, view.y - 2 * PADDING)   # the page's content rect
 	var cw := content.size.x
 	var ch := content.size.y

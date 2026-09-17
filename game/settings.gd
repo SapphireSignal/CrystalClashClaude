@@ -19,6 +19,12 @@ enum DisplayMode { BORDERLESS_FULLSCREEN_WINDOW, WINDOWED } # EnumDisplayMode
 enum GraphicsQuality { VERY_LOW, LOW, MEDIUM, HIGH, VERY_HIGH, CUSTOM }   # EnumGraphicsQuality
 enum TextureQuality { MAXIMUM, HIGH, MEDIUM, LOW, MINIMUM }               # EnumTextureQuality
 enum ShadowQuality { OFF, VERY_LOW, LOW, MEDIUM, HIGH, ULTRA_HIGH }        # EnumShadowQuality
+enum MenuScaling { DOWNSCALING, FULLSCREEN, DISABLED }                     # EnumMenuScaling
+enum MenuResolution { R1024X576, R1280X720, R1600X900, R1920X1080, R2560X1440, CUSTOM }   # EnumMenuResolution
+
+## TSettingsWrapper.MENU_RESOLUTIONS (mrCustom has no size of its own).
+const MENU_RESOLUTIONS := [Vector2i(1024, 576), Vector2i(1280, 720), Vector2i(1600, 900),
+	Vector2i(1920, 1080), Vector2i(2560, 1440)]
 
 const SECTIONS := {
 	Category.ENGINE: "Engine", Category.SOUND: "Sound", Category.SOUND_META: "SoundMeta", Category.GRAPHICS: "Graphics",
@@ -28,7 +34,7 @@ const SECTIONS := {
 
 ## TOptionManager.DefaultOption per option; the sound-meta values (the menu's own mixer) share the sound defaults.
 const DEFAULTS := {
-	Category.GENERAL: {"HasSecretAccess": "False", "FirstStart": "True"},
+	Category.GENERAL: {"HasSecretAccess": "False", "FirstStart": "True", "Language": ""},
 	Category.ENGINE: {
 		"DisplayMode": "0", "ShadowBiasMin": "0.01", "ShadowBiasMax": "0.02", "ShadowSlopeBias": "0.5",
 		"CameraFoV": "0.6853981635", "VSyncLevel": "1",
@@ -56,7 +62,11 @@ const DEFAULTS := {
 		"ClickPrecision": "1.0", "ScrollSpeed": "40.0", "ShowTechnicalPanel": "True",
 		"ShowNumericChargeCooldown": "False", "ShowDeckHotkeys": "False",
 	},
-	Category.MENU: {"AnimatedBackground": "True"},
+	Category.MENU: {
+		"AnimatedBackground": "True", "DeckbuildingGridSize": "3", "DeckbuildingSacrificeGridSize": "12",
+		"LimitFramerate": "50", "ClientResolution": "1280x720",   # TGameStateManager.CLIENT_DEFAULT_DIMENSIONS
+		"ClientScaling": "0", "ClientFullscreenFrame": "False", "BringToFrontOnMatchFound": "True",
+	},
 	Category.SANDBOX: {},
 	Category.KEYBINDING: {},
 }
@@ -160,7 +170,7 @@ static func load_snapshot() -> void:
 
 
 ## TOptionManager.SaveSettings: writes the overrides to the ini and applies the engine-level options.
-static func save() -> void:
+static func save(in_game: bool = true) -> void:
 	_ensure_loaded()
 	var file := ConfigFile.new()
 	for category: int in _values:
@@ -169,7 +179,7 @@ static func save() -> void:
 	var err := file.save(FILE)
 	if err != OK:
 		push_error("saving %s failed: %s" % [FILE, error_string(err)])
-	apply()
+	apply(in_game)
 	_notify()
 
 
@@ -187,17 +197,78 @@ static func _notify() -> void:
 			c.call()
 
 
-## The options Godot owns: display mode (coEngineDisplayMode), vsync (coGraphicsVSync) and the master mixer
-## (coSoundPlayMaster / coSoundMasterVolume; the other channels get their buses with the audio phase).
-## The display mode is applied on Save only: at start the project's window settings stand (the tools and the
-## owner's window setup rely on them), like the original applying coEngineDisplayMode through its own launcher.
-static func apply() -> void:
-	var window := DisplayServer.MAIN_WINDOW_ID
-	var borderless := display_mode() == DisplayMode.BORDERLESS_FULLSCREEN_WINDOW
-	if DisplayServer.window_get_mode(window) != DisplayServer.WINDOW_MODE_MINIMIZED:
-		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN if borderless else DisplayServer.WINDOW_MODE_WINDOWED, window)
-		DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_BORDERLESS, borderless, window)
+## The options Godot owns: the window (display mode in a match, the menu client's scaling/resolution outside one),
+## vsync (coGraphicsVSync) and the master mixer (coSoundPlayMaster / coSoundMasterVolume; the other channels get
+## their buses with the audio phase). Applied on Save only: at start the project's window settings stand (the tools
+## and the owner's window setup rely on them), like the original applying its window options through its launcher.
+##
+## The original ran the menu in its own small client window (1280x720) and the match in the game window, so the two
+## sets never met. This port has one window, so `in_game` picks which set owns it: the game's display mode in a
+## match, the menu client's scaling + resolution outside one.
+static func apply(in_game: bool = true) -> void:
+	if in_game:
+		_apply_game_window()
+	else:
+		_apply_menu_window()
 	apply_startup()
+
+
+static func _apply_game_window() -> void:
+	var window := DisplayServer.MAIN_WINDOW_ID
+	if DisplayServer.window_get_mode(window) == DisplayServer.WINDOW_MODE_MINIMIZED:
+		return
+	if display_mode() == DisplayMode.BORDERLESS_FULLSCREEN_WINDOW:
+		# dmBorderlessFullscreenWindow is exactly that: `BorderStyle := bsNone` plus `SetBounds(TargetMonitor...)`,
+		# a borderless window over the whole monitor (its full bounds, taskbar included) - never a fullscreen mode
+		# switch, so alt-tab and a second monitor keep working.
+		var monitor := DisplayServer.window_get_current_screen(window)
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED, window)
+		DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_BORDERLESS, true, window)
+		DisplayServer.window_set_position(DisplayServer.screen_get_position(monitor), window)
+		DisplayServer.window_set_size(DisplayServer.screen_get_size(monitor), window)
+		return
+	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED, window)
+	DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_BORDERLESS, false, window)
+	# dmWindowed: a plain window, fitted to the usable area so it cannot hang off the screen edges
+	var screen := DisplayServer.screen_get_usable_rect(DisplayServer.window_get_current_screen(window))
+	var wanted := DisplayServer.window_get_size(window)
+	var fitted := Vector2i(mini(wanted.x, screen.size.x), mini(wanted.y, screen.size.y))
+	DisplayServer.window_set_size(fitted, window)
+	DisplayServer.window_set_position(screen.position + (screen.size - fitted) / 2, window)
+
+
+## TGameStateManager.SetClientWindow: the menu runs in a borderless window sized from the chosen resolution, the
+## scaling mode and the monitor. The GUI itself is always the 1280x720 canvas scaled to that window (MenuLayout).
+static func _apply_menu_window() -> void:
+	var window := DisplayServer.MAIN_WINDOW_ID
+	if DisplayServer.window_get_mode(window) == DisplayServer.WINDOW_MODE_MINIMIZED:
+		return
+	var screen := DisplayServer.screen_get_usable_rect(DisplayServer.window_get_current_screen(window))
+	var wanted := menu_window_size(screen.size)
+	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED, window)
+	DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_BORDERLESS, true, window)   # GameWindow.BorderStyle := bsNone
+	DisplayServer.window_set_size(wanted, window)
+	DisplayServer.window_set_position(screen.position + (screen.size - wanted) / 2, window)
+
+
+## SetClientWindow's size arithmetic. `ScaledWindowSize` is the screen fitted to the canvas' 16:9, so the window
+## never letterboxes; msDownscaling picks msFullscreen when the screen cannot hold the canvas at 1:1, else
+## msDisabled (the chosen resolution verbatim). Our one deviation: a chosen resolution larger than the monitor
+## falls back to the fitted size instead of hanging off the screen edges.
+static func menu_window_size(screen: Vector2i) -> Vector2i:
+	var canvas := MENU_RESOLUTIONS[MenuResolution.R1280X720]
+	var wide := screen.x * canvas.y > screen.y * canvas.x
+	var scaled := Vector2i(screen.y * canvas.x / canvas.y, screen.y) if wide 			else Vector2i(screen.x, screen.x * canvas.y / canvas.x)
+	var scaling := menu_scaling()
+	if scaling == MenuScaling.DOWNSCALING:
+		var fits := scaled.y >= canvas.y if wide else scaled.x >= canvas.x
+		scaling = MenuScaling.DISABLED if fits else MenuScaling.FULLSCREEN
+	if scaling == MenuScaling.FULLSCREEN:
+		return scaled
+	var wanted := menu_dimensions()
+	if wanted.x > screen.x or wanted.y > screen.y:
+		return scaled
+	return wanted
 
 
 static func apply_startup() -> void:
@@ -306,3 +377,34 @@ static func set_graphics_quality(quality: int) -> void:
 	set_shadow_quality(PRESET_SHADOW[quality])
 	for option in PRESET_OPTIONS:
 		set_bool(Category.GRAPHICS, option, PRESET_ACTIVE[quality].has(option))
+
+
+static func menu_dimensions() -> Vector2i:
+	var parts := get_string(Category.MENU, "ClientResolution").split("x")
+	if parts.size() != 2 or not parts[0].is_valid_int() or not parts[1].is_valid_int():
+		return MENU_RESOLUTIONS[MenuResolution.R1280X720]
+	return Vector2i(int(parts[0]), int(parts[1]))
+
+
+## DetermineMenuResolution: the entry whose size matches the stored dimension, else mrCustom.
+static func menu_resolution() -> int:
+	var current := menu_dimensions()
+	for i in MENU_RESOLUTIONS.size():
+		if MENU_RESOLUTIONS[i] == current:
+			return i
+	return MenuResolution.CUSTOM
+
+
+static func set_menu_resolution(resolution: int) -> void:
+	if resolution == MenuResolution.CUSTOM:
+		return   # SetMenuResolution writes nothing for mrCustom
+	var size: Vector2i = MENU_RESOLUTIONS[resolution]
+	set_string(Category.MENU, "ClientResolution", "%dx%d" % [size.x, size.y])
+
+
+static func menu_scaling() -> int:
+	return get_int(Category.MENU, "ClientScaling")
+
+
+static func set_menu_scaling(scaling: int) -> void:
+	set_int(Category.MENU, "ClientScaling", scaling)

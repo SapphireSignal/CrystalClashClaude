@@ -176,7 +176,7 @@ func _on_button_input(ev: InputEvent, b: NavButton) -> void:
 
 
 func _layout() -> void:
-	var view := get_viewport_rect().size
+	var view := MenuLayout.layout_size(self)
 	var w := view.x
 	size = Vector2(w, SIZE)
 	# .navbar-wrapper: Size 100% auto -> the art's aspect

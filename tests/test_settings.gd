@@ -77,3 +77,30 @@ func test_surrender_ends_the_match() -> void:
 	runner.check_eq(sim.finished, true, "surrender finishes the match")
 	runner.check_eq(sim.winner_team, Simulation.TEAM_BLUE, "the other team wins")
 	runner.check_eq(lost, [Simulation.TEAM_RED], "team_lost fired for the surrendering team")
+
+
+func test_menu_window_size() -> void:
+	_reset()
+	# SetClientWindow: msDownscaling on a screen that holds the canvas resolves to msDisabled (chosen size)
+	runner.check_eq(ClientSettings.menu_window_size(Vector2i(1680, 1032)), Vector2i(1280, 720), "default 1280x720 on a 1680x1032 desktop")
+	ClientSettings.set_menu_resolution(ClientSettings.MenuResolution.R1600X900)
+	runner.check_eq(ClientSettings.menu_window_size(Vector2i(1680, 1032)), Vector2i(1600, 900), "a fitting choice is used verbatim")
+	# a choice larger than the monitor falls back to the 16:9 fit of the screen (1680 wide -> 945 high)
+	ClientSettings.set_menu_resolution(ClientSettings.MenuResolution.R1920X1080)
+	runner.check_eq(ClientSettings.menu_window_size(Vector2i(1680, 1032)), Vector2i(1680, 945), "an oversized choice fits the screen at 16:9")
+	# msFullscreen always uses the fitted size; on a 16:9 desktop that is the whole screen
+	ClientSettings.set_menu_scaling(ClientSettings.MenuScaling.FULLSCREEN)
+	runner.check_eq(ClientSettings.menu_window_size(Vector2i(1920, 1080)), Vector2i(1920, 1080), "fullscreen fills a 16:9 desktop")
+	runner.check_eq(ClientSettings.menu_window_size(Vector2i(1680, 1032)), Vector2i(1680, 945), "fullscreen letterboxes a 16:10 desktop by width")
+	# a desktop too small for the canvas: msDownscaling must resolve to msFullscreen, not the chosen size
+	ClientSettings.set_menu_scaling(ClientSettings.MenuScaling.DOWNSCALING)
+	ClientSettings.set_menu_resolution(ClientSettings.MenuResolution.R1280X720)
+	runner.check_eq(ClientSettings.menu_window_size(Vector2i(1024, 600)), Vector2i(1024, 576), "a small desktop scales the canvas down")
+	_reset()
+
+
+func test_menu_canvas_scale() -> void:
+	# GUI.VirtualSize = 1280x720: the menu canvas scales uniformly with the window
+	runner.check_eq(MenuLayout.scale_for(Vector2(1280, 720)), 1.0, "1:1 at the canvas size")
+	runner.check_eq(MenuLayout.scale_for(Vector2(1920, 1080)), 1.5, "1.5x at 1920x1080")
+	runner.check_eq(MenuLayout.scale_for(Vector2(1680, 945)), 1680.0 / 1280.0, "uniform on the fitted size")

@@ -25,6 +25,7 @@ var _ready_effects: Dictionary = {}   # entity id -> [[ParticleEffect, wela grou
 var _hud: Hud
 var _menu: IngameMenu = null          # hud.IsMenuOpen
 var _settings: SettingsMenu = null    # diSettings
+var _exit_dialog: ExitDialog = null   # ExitDialog.dui
 var _selection_decal: MeshInstance3D
 var _armed_slot: int = -1      # card clicked in the deck panel, played at the next left click on the ground
 var _jump_return: Variant = null   # camera look-at to return to after a spawner jump
@@ -94,6 +95,7 @@ func _toggle_menu() -> void:
 	_menu.closed.connect(func(): _menu = null)
 	_menu.settings_requested.connect(_open_settings)
 	_menu.surrender_requested.connect(func(): sim.surrender(HUMAN_TEAM))
+	_menu.exit_requested.connect(_open_exit_dialog)
 	$HUD.add_child(_menu)
 
 
@@ -105,6 +107,15 @@ func _open_settings() -> void:
 	_settings.in_game = true
 	_settings.closed.connect(func(): _settings = null)
 	$HUD.add_child(_settings)
+
+
+## The game menu's Quit (client.CloseForcePrompt): the exit dialog over the menu.
+func _open_exit_dialog() -> void:
+	if _exit_dialog != null:
+		return
+	_exit_dialog = ExitDialog.new()
+	_exit_dialog.closed.connect(func(): _exit_dialog = null)
+	$HUD.add_child(_exit_dialog)
 
 
 ## The final screen's Continue (or its timeout): TGameStateCoreGame.EnterMainMenu hands over to the client state
@@ -163,12 +174,14 @@ func _unhandled_key_input(event: InputEvent) -> void:
 	if not event.is_pressed() or event.is_echo():
 		return
 	if event.keycode == KEY_ESCAPE:
-		if _settings != null:
+		if _exit_dialog != null:
+			_exit_dialog.close()
+		elif _settings != null:
 			_settings.discard()
 		else:
 			_toggle_menu()
 		return
-	if _menu != null or _settings != null:
+	if _menu != null or _settings != null or _exit_dialog != null:
 		return
 	var slot := SLOT_KEYS.find(event.keycode)
 	if slot >= 0 and slot < sim.commanders[HUMAN_TEAM].slots.size():

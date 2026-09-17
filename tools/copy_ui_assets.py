@@ -22,6 +22,7 @@ FOLDERS = [
     "Shared/FactionIcons", "MainMenu/Shared/Card",
     "Shared/Logos", "Shared/AnimatedBackground", "MainMenu/LoadingScreen",
     "MainMenu/Navbar", "MainMenu/Dashboard", "Shared/CurrencyIcons", "MainMenu/Teambuilding",
+    "MainMenu/SystemPanel",
     "LoadingScreen", "Shared/Tutorial",
 ]
 FILES = ["Shared/Spinner.png", "HUD/Selection.png", "HUD/SelectionBuilding.png", "Shared/button_xl.tga", "Shared/button_xl_hover.tga",

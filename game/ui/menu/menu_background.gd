@@ -31,7 +31,7 @@ func _process(_delta: float) -> void:
 	# TGameStateMenu.Idle, with the engine's floating timestamp in ms.
 	var t := Time.get_ticks_msec() / 1.0
 	var offset := Vector2(sin(t / 3000.0), (sin(t / 924.0) * 0.3 + 0.7) * cos(t / 3000.0)) * OFFSET_SCALE
-	var screen := get_viewport_rect().size
+	var screen := MenuLayout.layout_size(self)
 	for l in _layers:
 		var pic: TextureRect = l[0]
 		var depth: float = l[1]

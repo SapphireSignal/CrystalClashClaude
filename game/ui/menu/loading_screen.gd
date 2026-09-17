@@ -153,7 +153,7 @@ func _bar_frame_content() -> Rect2:   # padding box of the bar: Padding 25% 3% 2
 
 
 func _layout() -> void:
-	var view := get_viewport_rect().size
+	var view := MenuLayout.layout_size(self)
 	size = view
 	# .background: Size auto 100%, centred (the art is 16:9; every child is relative to it)
 	var bh := view.y

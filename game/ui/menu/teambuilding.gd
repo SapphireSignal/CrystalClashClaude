@@ -8,11 +8,13 @@ extends Control
 
 signal start_requested
 
-const SUB_SIZE := 23.0            # $navbar-sub-size
 const SUB_PADDING_X := 0.045      # .navbar-sub Padding-Left/Right 4.5%
-const SUB_TOP := 62.0             # strip top: $navbar-size + Padding-Bottom 15 % (reference queue shot: strip 68..100 at 1600 wide)
-const SUB_TAB_CENTER_Y := 85.0    # tab text centre measured on the reference (1600x900 and 1920x1080 agree: absolute px)
-const SUB_FONT := 18              # .navbar-sub .btn-nav Fontsize 90 % of the 20 px tab row
+const SUB_TOP := 54.0             # $navbar-size: the strip sits directly below the navbar
+const SUB_PADDING_BOTTOM := 0.15  # .navbar-sub Padding-Bottom 15 % (of the strip height)
+const SUB_BUTTON_PADDING_Y := 3.0 # .btn-nav Padding-Top 2 + Padding-Bottom 1
+const SUB_FONT_FACTOR := 0.9      # .btn-nav Fontsize 90 % (of its own height)
+# The strip is `Size : 100% auto`, so its height comes from SubNavbarBackground.png (2560x55 -> 27.5 at the
+# 1280 canvas width) and the content box below the 15 % padding is 23.4 high, i.e. $navbar-sub-size (23).
 const CONTENT_PADDING := [40.0, 10.0, 10.0, 10.0]   # .content-sub Padding : 40 10 10 10
 const FONT_DEFAULT := Dashboard.FONT_DEFAULT
 const FONT_SUCCESS := Color(0, 1, 0, 1)   # $font-color-highlight-strong
@@ -189,16 +191,17 @@ func _refresh() -> void:
 
 
 func _layout() -> void:
-	var view := get_viewport_rect().size
+	var view := MenuLayout.layout_size(self)
 	size = view
 	var w := view.x
 	# sub-navbar: background 100% auto below the navbar, buttons SUB_SIZE high with Padding-Top 2 / Bottom 1
 	var sub_top := SUB_TOP
 	var sub_h := w * _sub_background.texture.get_height() / _sub_background.texture.get_width()
 	HudStyle.place(_sub_background, Rect2(0, sub_top, w, sub_h))
-	var bh := SUB_SIZE - 3.0
-	var font_size := SUB_FONT
-	var tab_top := SUB_TAB_CENTER_Y - bh / 2.0
+	var content_h := sub_h * (1.0 - SUB_PADDING_BOTTOM)   # the buttons fill the strip's content box
+	var bh := content_h - SUB_BUTTON_PADDING_Y
+	var font_size := int(round(bh * SUB_FONT_FACTOR))
+	var tab_top := sub_top + (content_h - bh) / 2.0
 	var x := SUB_PADDING_X * w
 	var right_x := w - SUB_PADDING_X * w
 	for b in _tabs:
