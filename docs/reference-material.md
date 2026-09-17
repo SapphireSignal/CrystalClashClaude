@@ -127,3 +127,12 @@ into its flying height (owner observation).
 - Card bar keybinds: under each card slot the charge count (left) and the player's configured key label (right,
   e.g. 1 2 3 ... and 0 - = for the spawner slots, "-" when unbound). Rebindable in settings; the HUD must show
   the user's own binding. Locked tier slots show "02:48 / 05:48" with a lock icon.
+
+## Animations and effects in the repo (checked 2026-09-16)
+Skeletal animations are inside the FBX files (VoidSkeleton.FBX carries hundreds of animation curves); each unit
+script declares the clips as frame ranges: ANIMATION_STAND, ANIMATION_ATTACK, ANIMATION_WALK, ANIMATION_SPAWN,
+ANIMATION_ABILITY_*, ATTACK_LOOP, ATTACK_AIR, UNLEASH. Deaths, spawns, hits, projectiles, casts and the nexus
+destruction are particle effects (`Graphics/Effects/ParticleEffects/**/*.pfx`, e.g. `black_death.pfx`,
+`NexusDie0-5.pfx`, `tower_nexus_shot_charge.pfx`, `SpawnerImpact.pfx`) plus mesh effects declared in the scripts
+(`TMeshEffectComponent`: ghost, glow, ice, dissolve). Projectiles have their own meshes (`.xml` + FBX). Godot
+imports the FBX clips directly; `.pfx` needs a converter to GPUParticles / CPUParticles (phase 5).
