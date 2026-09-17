@@ -5,6 +5,8 @@ class_name Simulation
 signal entity_spawned(entity: SimEntity)
 signal entity_died(entity: SimEntity)
 signal attack_fired(attacker: SimEntity, target: SimEntity, damage: float)
+signal projectile_spawned(projectile: Projectile)
+signal projectile_removed(projectile: Projectile, hit: bool)
 signal game_tick(counter: int)
 signal game_event(name: String)
 signal team_lost(team: int)
@@ -27,6 +29,7 @@ var _next_id: int = 1
 var commanders: Dictionary = {}      # team -> Commander
 var nexus_ids: Dictionary = {}       # team -> entity id
 var fired_events: Dictionary = {}
+var projectiles: Dictionary = {}     # id -> Projectile
 var build_zones: Dictionary = {}     # zone id -> BuildZone
 var _spawn_rotations: Dictionary = {} # zone id -> Array[Vector2i] of fields not yet spawned this cycle
 
@@ -210,6 +213,7 @@ func step() -> void:
 			continue
 		_think(e)
 		_move(e)
+	_move_projectiles()
 	_cleanup_dead()
 
 
@@ -303,7 +307,52 @@ func _resolve_pending_fire(e: SimEntity) -> void:
 		return
 	var dmg := e.attack_damage()
 	attack_fired.emit(e, target, dmg)
-	deal_damage(target, dmg, e.attack_damage_type(), e)
+	var pattern: String = e.bb.get_value("eiWelaUnitPattern", SimConstants.GROUP_MAINWEAPON, "").replace("\\", "/")
+	if pattern.begins_with("Projectiles/"):
+		_launch_projectile(pattern, e, target, dmg, e.attack_damage_type())
+	else:
+		deal_damage(target, dmg, e.attack_damage_type(), e)
+
+
+# ---------------------------------------------------------------- projectiles
+
+## TWelaEffectProjectileComponent.Fire: the projectile carries the shooter's weapon values.
+func _launch_projectile(pattern: String, shooter: SimEntity, target: SimEntity, dmg: float, damage_type: int) -> Projectile:
+	var p := Projectile.new(pattern, league)
+	p.id = _next_id
+	_next_id += 1
+	p.team = shooter.team
+	p.source_id = shooter.id
+	p.target_id = target.id
+	p.position = shooter.position
+	p.last_target_position = target.position
+	p.damage = dmg
+	p.damage_type = damage_type
+	p.created_at = time_ms
+	projectiles[p.id] = p
+	projectile_spawned.emit(p)
+	return p
+
+
+## TMovementComponent.IdleDirect with range 0 toward the (homing) target, then FireAtTarget on arrival.
+func _move_projectiles() -> void:
+	for id in projectiles.keys():
+		var p: Projectile = projectiles[id]
+		var target: SimEntity = entities.get(p.target_id)
+		if target != null and target.alive:
+			p.last_target_position = target.position
+		var to_target := p.last_target_position - p.position
+		var dist := to_target.length()
+		var walking := p.speed * SimConstants.TICK_MS
+		if dist <= walking:
+			p.position = p.last_target_position
+			var hit := target != null and target.alive
+			if hit:
+				deal_damage(target, p.damage, p.damage_type, entities.get(p.source_id))
+			projectiles.erase(id)
+			projectile_removed.emit(p, hit)
+		else:
+			p.position += to_target / dist * walking
 
 
 func deal_damage(target: SimEntity, amount: float, damage_type: int, _source: SimEntity) -> float:

@@ -273,6 +273,52 @@ func test_sandbox_free_cards() -> void:
 	runner.check_near(c.gold, 300.0, "sandbox pays nothing")
 
 
+func test_archer_projectile() -> void:
+	var sim := Simulation.new(4, 4)
+	var archer := sim.spawn("Units/White/Archer", Simulation.TEAM_BLUE, Vector2(-5, -23))
+	var footman := sim.spawn("Units/White/Footman", Simulation.TEAM_RED, Vector2(4, -23))
+	footman.speed = 0.0
+	footman.summoning_sick_until = 1 << 40   # target dummy: never thinks
+	var launched: Array = []
+	var hits: Array = []
+	var on_launch := func(p): launched.append([sim.time_ms, p.speed])
+	var on_removed := func(p, hit): hits.append([sim.time_ms, hit, p.position])
+	sim.projectile_spawned.connect(on_launch)
+	sim.projectile_removed.connect(on_removed)
+	while hits.is_empty() and sim.time_ms < 5000:
+		sim.step()
+	sim.projectile_spawned.disconnect(on_launch)
+	sim.projectile_removed.disconnect(on_removed)
+	runner.check_eq(launched.size(), 1, "archer launched one projectile")
+	runner.check_eq(hits.size(), 1, "projectile arrived")
+	if launched.size() == 1 and hits.size() == 1:
+		runner.check_near(launched[0][1], 0.02, "archer projectile speed 20 u/s")
+		runner.check(hits[0][1], "projectile hit the footman")
+		var flight: int = hits[0][0] - launched[0][0]
+		# 9 units at 20 u/s = 450 ms, quantised to 32 ms ticks
+		runner.check(flight >= 448 and flight <= 480, "flight time ~450 ms (got %d)" % flight)
+		runner.check_near(footman.health, 32.0 - 20.0 * 0.7, "20 ranged dmg vs medium armor = 14")
+		runner.check_eq(hits[0][2], footman.position, "impact at the target position")
+
+
+func test_projectile_misses_dead_target() -> void:
+	var sim := Simulation.new(4, 4)
+	var archer := sim.spawn("Units/White/Archer", Simulation.TEAM_BLUE, Vector2(-5, -23))
+	var footman := sim.spawn("Units/White/Footman", Simulation.TEAM_RED, Vector2(4, -23))
+	footman.speed = 0.0
+	while sim.projectiles.is_empty() and sim.time_ms < 5000:
+		sim.step()
+	runner.check_eq(sim.projectiles.size(), 1, "projectile in flight")
+	sim.deal_damage(footman, 1e6, SimConstants.DamageType.TRUE, archer)
+	var results: Array = []
+	var on_removed := func(_p, hit): results.append(hit)
+	sim.projectile_removed.connect(on_removed)
+	while sim.projectiles.size() > 0 and sim.time_ms < 8000:
+		sim.step()
+	sim.projectile_removed.disconnect(on_removed)
+	runner.check_eq(results, [false], "projectile flew to the last position and fizzled")
+
+
 func test_drop_formation() -> void:
 	var sim := Simulation.new(1, 4)
 	var squad := sim.drop_squad("Units/White/Footman", Simulation.TEAM_BLUE, Vector2(0, -23), 4)

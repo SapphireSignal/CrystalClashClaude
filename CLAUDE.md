@@ -57,7 +57,7 @@ Act as two people at once:
 - Language: GDScript (C# only if a system genuinely needs it; record why)
 - Simulation: fixed tick rate **decoupled from render**. Match the original's tick rate if the source defines
   one; otherwise 30 Hz for RTS determinism. Simulation must be deterministic (needed for multiplayer + replays).
-- Target platform: Windows desktop (primary). Renderer: Forward+.
+- Target platform: Windows desktop (primary). Renderer: **Compatibility (OpenGL 3.3)** so old and integrated GPUs work; Forward+ is not used.
 - Folder structure:
   - `game/` — scenes, scripts, resources (`sim/`, `units/`, `cards/`, `ui/`, `maps/`, `net/`)
   - `assets/` — converted art, audio, VFX
@@ -85,10 +85,10 @@ Act as two people at once:
 - 2026-09-16 Simulation: fixed **32 ms** tick (the original's TARGET_FRAMETIME), seeded per-match RNG, integer
   milliseconds for all timers (original used variable-dt frames and unseeded random; player-invisible change).
   Game tick 1000 ms, warm-up 10000 ms as original. Server-authoritative + event replication like original.
-- 2026-09-16 Performance is a priority (original had poor FPS). Forward+ renderer, pooled units, no per-frame
-  allocations in sim. In-game settings menu kept simple.
-- 2026-09-16 Low-spec support: the original ran on old DX11 machines. Forward+ is the default; all shaders and
-  post effects must also work on the Compatibility (OpenGL 3.3) renderer, offered as a "low spec" mode.
+- 2026-09-16 Performance is a priority (original had poor FPS). Pooled units, no per-frame allocations in sim.
+  In-game settings menu kept simple.
+- 2026-09-16 Renderer: **Compatibility (OpenGL 3.3)**, chosen by the owner so old and integrated GPUs work like
+  the original DX11 game did. Only use shader/post-effect features that Compatibility supports (glow yes, SSAO no).
 - 2026-09-16 Economy detail from the source: gold spent on cards is refunded 1:1 as wood; wood spent on spawners
   accumulates as "spent wood" which auto-buys income upgrades. Sandbox mode pays nothing (`Commander.free_cards`).
 - 2026-09-16 Sim is pure GDScript classes (no Nodes) in `game/sim/`; rendering nodes mirror sim state.

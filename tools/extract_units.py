@@ -138,7 +138,7 @@ def parse_script(path: Path) -> dict:
 
 def extract_units() -> dict:
     units = {}
-    for path in sorted(SCRIPTS.glob("Units/**/*.ets")):
+    for path in sorted(list(SCRIPTS.glob("Units/**/*.ets")) + list(SCRIPTS.glob("Projectiles/**/*.ets"))):
         units[str(path.relative_to(SCRIPTS).with_suffix("")).replace("\\", "/")] = parse_script(path)
     return units
 

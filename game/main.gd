@@ -24,6 +24,8 @@ func _ready() -> void:
 	sim = Simulation.new(randi(), 4)
 	sim.entity_spawned.connect(_on_spawned)
 	sim.entity_died.connect(_on_died)
+	sim.projectile_spawned.connect(_on_projectile_spawned)
+	sim.projectile_removed.connect(func(p, _hit): _on_died(p))
 	sim.team_lost.connect(func(t): print("team %d lost" % t))
 	sim.spawn_bases()
 	for team in [Simulation.TEAM_BLUE, Simulation.TEAM_RED]:
@@ -133,7 +135,20 @@ func _on_spawned(e: SimEntity) -> void:
 	_views[e.id] = mesh
 
 
-func _on_died(e: SimEntity) -> void:
+func _on_projectile_spawned(p: Projectile) -> void:
+	var mesh := MeshInstance3D.new()
+	var sphere := SphereMesh.new()
+	sphere.radius = 0.2
+	sphere.height = 0.4
+	mesh.mesh = sphere
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(1.0, 0.9, 0.3)
+	mesh.material_override = mat
+	_units_root.add_child(mesh)
+	_views[p.id] = mesh
+
+
+func _on_died(e) -> void:
 	var view: MeshInstance3D = _views.get(e.id)
 	if view:
 		view.queue_free()
@@ -142,10 +157,14 @@ func _on_died(e: SimEntity) -> void:
 
 func _sync_views() -> void:
 	for id in _views:
+		var view: MeshInstance3D = _views[id]
+		var p: Projectile = sim.projectiles.get(id)
+		if p != null:
+			view.position = Vector3(p.position.x, 1.2, p.position.y)
+			continue
 		var e: SimEntity = sim.entities.get(id)
 		if e == null:
 			continue
-		var view: MeshInstance3D = _views[id]
 		var y := 0.2 if e.is_spawner() else (2.0 if e.is_building() else 0.9)
 		view.position = Vector3(e.position.x, y, e.position.y)
 		if e.front.length_squared() > 0.0:
