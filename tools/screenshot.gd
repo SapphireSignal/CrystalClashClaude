@@ -1,7 +1,7 @@
 extends SceneTree
 ## Runs game/main.tscn for a while and saves screenshots of the HUD for comparison with
 ## reference/rolmedia/ingame. Usage (windowed, not headless):
-##   godot --path <proj> -s tools/screenshot.gd --log-file <proj>/.tmp/godot.log -- <seconds> [<seconds> ...] [select] [hover=<slot>] [finish] [zoom=nexus|unit|node] [at=node] [screen=X,Y] [size=WxH, default 1679x1079] [play=<slot>]
+##   godot --path <proj> -s tools/screenshot.gd --log-file <proj>/.tmp/godot.log -- <seconds> [<seconds> ...] [select] [hover=<slot>] [finish] [zoom=nexus|unit|node] [at=node] [screen=X,Y] [size=WxH, default 1920x1080] [play=<slot>]
 ## Writes .tmp/shot_<seconds>.png for each requested time; "select" selects a unit (or the blue nexus), "hover=N" shows deck slot N's card hint.
 
 var _targets: Array = []
@@ -13,7 +13,7 @@ var _finish := false
 var _zoom := ""
 var _at := ""
 var _screen := Vector2(-1, -1)   # screen=X,Y: put the at= target on this pixel (matches a reference shot's framing)
-var size := "1679x1079"   # the owner's live-client window (small HUD layout); comparisons must use it      # at=node: look at the first lane node at the default zoom
+var size := "1920x1080"   # the reference/rolmedia screenshots' size (normal HUD layout); size=1680x1050 for the small one      # at=node: look at the first lane node at the default zoom
 var _play := -1
 
 
