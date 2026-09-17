@@ -2,7 +2,7 @@
 
 Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
 
-## State (2026-09-17, checkpoint 60)
+## State (2026-09-17, checkpoint 61)
 - Phases 1-3 done, 799 tests pass. Sandbox `game/main.tscn`: blue deck on keys 1-9,0,-,= or by clicking a card
   (drops/spells then need a left click on the ground, spawners go to the next free field); red AI plays Black.
 - **Phase 4 (HUD): step 1 done.** `game/ui/` holds the code-built HUD from `docs/hud.md`: top bar (clock, nexus
@@ -211,7 +211,21 @@ Then checkpoint (tests, Status, CONTINUE.md, commit + push, give the new-chat pr
    and the sandbox's Continue reloads `app.tscn` (step 6 rewires it). `tools/copy_ui_assets.py` copies
    `Shared/Logos`, `Shared/AnimatedBackground`, `MainMenu/LoadingScreen`, `Shared/Spinner.png`. Verified with
    `.tmp/menu_shot.gd` (not committed; instantiates MenuBackground + MenuLoadingScreen, saves `.tmp/menu_*.png`).
-   Next: (2) MainMenu shell + Navbar + Dashboard (news tiles / online counter stubbed: master server), (3) Teambuilding
+   **(2) done (checkpoint 61):** `game/ui/menu/main_menu.gd` (MainMenu.dui shell, `Menu` enum = mtStart..mtShop,
+   `PROFILE`/`SERVER_STATE` stubs for the missing master server), `navbar.gd` (navbar.scss + navbar_player.scss:
+   54 px bar with `Padding 3 0`, buttons `text + 15 px` wide at 43 % font, Start 53 px with Home.png, Play with
+   `play_button(_hover).png` and MinWidth 204.2ch, selected = ExtraBold + `chosen_tab_indicator.png`, Shop gold,
+   Collection/Leaderboards level locks with `Shared/Lock.png`; right: two currency boxes, member icon, premium
+   indicator darkened, name+level bar; hints via `tooltip_text` for now), `dashboard.gd` (dashboard.scss: Header.png
+   at native size, players-online, announcement box, disabled social tile with clickable icons, divider at 59 %,
+   right tiles: Scill banner 173 / tournaments 82 / Steam / Discord / patch notes 80 with hover border, URLs from
+   `TGameStateManager.BrowseTo`). The dashboard was designed for 1280 wide: at 1920 the banners clip (kept).
+   `app.gd` shows the shell after the preload; the preload is now a synchronous `load` one frame after the loading
+   page (a threaded load raced the menu's use of HudStyle/Lang and failed to parse `hud.gd`). Play -> LoadGame ->
+   sandbox. Verified with `.tmp/menu_shot.gd` (shell over the background) and `.tmp/app_flow.gd` (full flow, presses
+   Play after 2 s; both not committed). Not built: SystemPanel (minimise/settings/close), hover-menu, notifications,
+   the styled `.hint` tooltip, `$cyan-glow` on the highlighted banner, the `new-flag` badge.
+   Next: (3) Teambuilding
    screen with Play jumping into the sandbox (no matchmaking), (4) the in-match LoadingScreen, (6) Final screen's
    Continue back to the dashboard, (7) SettingsMenu tabs. New scene `game/ui/menu/` + a `game/app.tscn` state
    machine (GAMESTATE_* from `Constants.Client.pas:51-58`); the sandbox `main.tscn` becomes the ingame state.

@@ -3,9 +3,9 @@ extends Node
 ## BaseConflict.Constants.Client.pas:51-58). Each state owns its scene subtree; ChangeGameState frees the old
 ## state's nodes (LeaveState) and builds the new one (EnterState). docs/lobby.md section 1 has the flow.
 ##
-## Built so far: MainMenu (the menu's loading page over the animated background while preloading) and
-## Game (the sandbox in game/main.tscn). The dashboard, teambuilding and the in-match LoadingScreen follow;
-## until then MainMenu jumps into the sandbox as soon as the preload finishes.
+## Built so far: MainMenu (the menu's loading page over the animated background while preloading, then the
+## MainMenu shell with navbar + dashboard) and Game (the sandbox in game/main.tscn). Teambuilding and the
+## in-match LoadingScreen follow; until then the navbar's Play starts the sandbox directly.
 
 const GAMESTATE_INGAME := "Game"
 const GAMESTATE_LOADGAMESTATE := "LoadGame"
@@ -15,7 +15,9 @@ const MAIN_SCENE := "res://game/main.tscn"
 var _state := ""
 var _state_root: Node = null   # everything the current state created
 var _loading_screen: MenuLoadingScreen = null
+var _menu_layer: CanvasLayer = null
 var _is_preloading := false     # TGameStateMainMenu.IsPreLoading
+var _preloaded: PackedScene = null
 
 
 func _ready() -> void:
@@ -24,14 +26,16 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	if _state == GAMESTATE_MAINMENU and _is_preloading:
-		var status := ResourceLoader.load_threaded_get_status(MAIN_SCENE)
-		if status == ResourceLoader.THREAD_LOAD_LOADED:
-			_is_preloading = false
-			_loading_screen.visible = false
-			change_game_state(GAMESTATE_LOADGAMESTATE)   # no dashboard yet: play at once
-		elif status == ResourceLoader.THREAD_LOAD_FAILED or status == ResourceLoader.THREAD_LOAD_INVALID_RESOURCE:
+		# Synchronous load one frame after the loading page appeared: the scene is one script, its heavy assets
+		# load in-game. (A threaded load raced the menu's own use of the shared UI classes and failed to parse.)
+		_preloaded = load(MAIN_SCENE)
+		if _preloaded == null:
 			push_error("preload of %s failed" % MAIN_SCENE)
-			_is_preloading = false
+		_is_preloading = false
+		_loading_screen.visible = false
+		var menu := MainMenu.new()   # client.IsApiReady and not IsPreloading: the shell appears
+		menu.play_requested.connect(func(): change_game_state(GAMESTATE_LOADGAMESTATE))
+		_menu_layer.add_child(menu)
 
 
 func change_game_state(id: String) -> void:
@@ -39,6 +43,7 @@ func change_game_state(id: String) -> void:
 		_state_root.queue_free()
 		_state_root = null
 		_loading_screen = null
+		_menu_layer = null
 	_state = id
 	_state_root = Node.new()
 	_state_root.name = id
@@ -47,15 +52,15 @@ func change_game_state(id: String) -> void:
 		GAMESTATE_MAINMENU:
 			var layer := CanvasLayer.new()
 			_state_root.add_child(layer)
+			_menu_layer = layer
 			layer.add_child(MenuBackground.new())   # TGameStateMenu.EnterState (coMenuAnimatedBackground)
 			_loading_screen = MenuLoadingScreen.new()
 			_loading_screen.logo_clicked.connect(func(url: String): OS.shell_open(url))
 			layer.add_child(_loading_screen)
 			_is_preloading = true
-			ResourceLoader.load_threaded_request(MAIN_SCENE)
 		GAMESTATE_LOADGAMESTATE:
 			# TGameStateLoadCoreGame: assets loaded and the game socket connected -> Game
 			change_game_state(GAMESTATE_INGAME)
 		GAMESTATE_INGAME:
-			var scene: PackedScene = ResourceLoader.load_threaded_get(MAIN_SCENE) if ResourceLoader.load_threaded_get_status(MAIN_SCENE) == ResourceLoader.THREAD_LOAD_LOADED else load(MAIN_SCENE)
+			var scene: PackedScene = _preloaded if _preloaded != null else load(MAIN_SCENE)
 			_state_root.add_child(scene.instantiate())

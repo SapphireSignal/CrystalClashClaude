@@ -225,4 +225,6 @@ grey tint like the source, faint arc; its `LaneNode.pfx` ring pulse renders (low
 the wave-rotation glow. Pre-match screens: `docs/lobby.md` (state flow, layouts, GUI units, build order) is the spec;
 `game/app.tscn` (`app.gd`) is the client state machine (MainMenu -> LoadGame -> Game, main scene now) with the
 menu's animated background (`game/ui/menu/menu_background.gd`, bg.anb parallax) and loading page
-(`menu_loading_screen.gd`) over it; without a dashboard yet it jumps into the sandbox after preloading. See `CONTINUE.md`.
+(`menu_loading_screen.gd`) over it, then the MainMenu shell (`main_menu.gd`: `navbar.gd` with the original buttons,
+level locks and player/currency panel; `dashboard.gd` with header, announcement, social icons and news tiles;
+profile/server values are local stubs). Play starts the sandbox until Teambuilding exists. See `CONTINUE.md`.
