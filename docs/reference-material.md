@@ -68,3 +68,8 @@ These are current and take precedence over Codex's older captures. Facts read fr
 - Queue: PLAY button turns into a timer, "In Queue. Please be patient... 00:00, 9 players online, Leave queue".
   "Choose your deck!" modal lists decks with icon + name + tier badge. Tutorial tab: "Learn the basics of the game in
   a quick guided tutorial", Start.
+- Tooltips: every lobby button has a hover tooltip (e.g. "- Deckbuilder - Build your own Decks and upgrade your
+  cards!"); hovering the username shows the experience bar "105705 / 320000" and "Click to preview Rewards!".
+  The original repo ships its text tables in `reference/rise-of-legions/Lang/*.csv` (cards, cards_abilities,
+  cards_meta, collection, collection_quests, ...; several languages per row). Use them for all in-game text and
+  verify against the screenshots for wording that changed after 2022.
