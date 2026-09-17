@@ -8,7 +8,7 @@ extends Control
 ## There is no master server or account: PROFILE and SERVER_STATE hold the local player's stand-in values
 ## (name/level/currencies, players online, the announcement, the patch-notes date = the repo snapshot's).
 
-signal play_requested
+signal play_requested(scenario: String)   # EnumScenarioType id chosen on the Play screen
 
 enum Menu { START, GAME, DECK, COLLECTION, LEADERBOARDS, SHOP }
 
@@ -34,7 +34,7 @@ func _ready() -> void:
 	add_child(dashboard)
 	var deck := Deck.from_scripts(load("res://game/main.gd").HUMAN_DECK)   # the sandbox deck stands in for the chosen deck
 	teambuilding = Teambuilding.new(PROFILE, Lang.t("scenario_sandbox"), deck.league())
-	teambuilding.start_requested.connect(func(): play_requested.emit())
+	teambuilding.start_requested.connect(func(): play_requested.emit(teambuilding.chosen))
 	add_child(teambuilding)
 	navbar = Navbar.new(PROFILE)              # .overlay ZOffset 1000: drawn last
 	navbar.menu_selected.connect(set_current_menu)

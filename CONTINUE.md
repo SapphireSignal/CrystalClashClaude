@@ -2,7 +2,7 @@
 
 Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
 
-## State (2026-09-17, checkpoint 62)
+## State (2026-09-17, checkpoint 63)
 - Phases 1-3 done, 799 tests pass. Sandbox `game/main.tscn`: blue deck on keys 1-9,0,-,= or by clicking a card
   (drops/spells then need a left click on the ground, spawners go to the next free field); red AI plays Black.
 - **Phase 4 (HUD): step 1 done.** `game/ui/` holds the code-built HUD from `docs/hud.md`: top bar (clock, nexus
@@ -239,8 +239,21 @@ Then checkpoint (tests, Status, CONTINUE.md, commit + push, give the new-chat pr
    left (no dialog). `MainMenu` mounts it for mtGame; Start -> `play_requested` -> app LoadGame -> sandbox. All
    scenario types start the same sandbox for now. Not built: queue window / queue timer in the Play button,
    scenario/difficulty/deck dialogs, match hints, the `$pulsate` animation on Start, DEBUG button.
-   Next: (4) the in-match LoadingScreen
-   screen with Play jumping into the sandbox (no matchmaking), (4) the in-match LoadingScreen, (6) Final screen's
+   **(4) done (checkpoint 63):** `game/ui/menu/loading_screen.gd` (LoadingScreen.dui + loading.scss + tutorial.scss,
+   TGameStateLoadCoreGame `Gamestates.pas:3123-3296`): background `auto 100%` centred, progress bar 36.33 % wide at -5 %
+   with the fill clipped inside its padding box (25/3/24/3 %, top/bottom of the height), state text 30 % below
+   (`loading_initializing` -> asset category by progress -> `loading_finalizing`), first-time hint 90 % above (first
+   match of the session only), `.match` stacks 25 % wide at 25 %/75 % x 48 % (rows 200 high, padding 35, gold bold
+   username 40 %, Deckslot 60 % high right-anchored for team 2, UnknownDeck icon, deck name 59 %), VS icon 7.214 %;
+   `.tutorial` slide 655 high centred with the logo 40 % at 3 % and the caption at -16.2 %. Timing: match display 10 s
+   then slide (random offset) every 5 s, minimum 10 s, Progress = max(prev, min(loader, minimum fraction)); the sandbox
+   scene is already preloaded so the bar is the minimum timer and the game starts at 10 s (the slides only show for the
+   tutorial scenario, `esTutorial` from `MainMenu.play_requested(scenario)`). Players = the local player on team
+   `Main.HUMAN_TEAM` (the AI is not a player, like PvE). Engine default FontSize = 24 (`Engine.GUI.pas:5926`).
+   `tools/copy_ui_assets.py` copies `LoadingScreen/` (now incl. jpg) and `Shared/Tutorial/`. Verified with
+   `.tmp/app_flow.gd` (shots at 4/9 s) and `.tmp/loading_shot.gd` (tutorial stage; both not committed). Not built:
+   loading music, the game-server connection/abort paths.
+   Next: (6) Final screen's
    Continue back to the dashboard, (7) SettingsMenu tabs. New scene `game/ui/menu/` + a `game/app.tscn` state
    machine (GAMESTATE_* from `Constants.Client.pas:51-58`); the sandbox `main.tscn` becomes the ingame state.
    Note `docs/lobby.md` section 3: `ch` = % of container height (re-derive the `ch` uses in `docs/hud.md`).

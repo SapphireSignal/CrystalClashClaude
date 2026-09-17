@@ -4,8 +4,8 @@ extends Node
 ## state's nodes (LeaveState) and builds the new one (EnterState). docs/lobby.md section 1 has the flow.
 ##
 ## Built so far: MainMenu (the menu's loading page over the animated background while preloading, then the
-## MainMenu shell with navbar + dashboard) and Game (the sandbox in game/main.tscn). Teambuilding and the
-## in-match LoadingScreen follow; until then the navbar's Play starts the sandbox directly.
+## MainMenu shell with navbar, dashboard and the Play screen), LoadGame (the in-match LoadingScreen for the
+## original's minimum loading time) and Game (the sandbox in game/main.tscn).
 
 const GAMESTATE_INGAME := "Game"
 const GAMESTATE_LOADGAMESTATE := "LoadGame"
@@ -18,6 +18,9 @@ var _loading_screen: MenuLoadingScreen = null
 var _menu_layer: CanvasLayer = null
 var _is_preloading := false     # TGameStateMainMenu.IsPreLoading
 var _preloaded: PackedScene = null
+var _match_loading: LoadingScreen = null
+var _first_loading := true      # TGameStateLoadCoreGame.FirstLoading: cleared when the first match was loaded
+var _scenario := "es1v1"        # the Play screen's choice, RGameFoundData.scenario_uid stand-in
 
 
 func _ready() -> void:
@@ -34,16 +37,23 @@ func _process(_delta: float) -> void:
 		_is_preloading = false
 		_loading_screen.visible = false
 		var menu := MainMenu.new()   # client.IsApiReady and not IsPreloading: the shell appears
-		menu.play_requested.connect(func(): change_game_state(GAMESTATE_LOADGAMESTATE))
+		menu.play_requested.connect(func(scenario: String):
+			_scenario = scenario
+			change_game_state(GAMESTATE_LOADGAMESTATE))
 		_menu_layer.add_child(menu)
+	elif _state == GAMESTATE_LOADGAMESTATE and _match_loading.done:
+		change_game_state(GAMESTATE_INGAME)   # EnterCore
 
 
 func change_game_state(id: String) -> void:
 	if _state_root != null:   # LeaveState
+		if _state == GAMESTATE_LOADGAMESTATE:
+			_first_loading = false
 		_state_root.queue_free()
 		_state_root = null
 		_loading_screen = null
 		_menu_layer = null
+		_match_loading = null
 	_state = id
 	_state_root = Node.new()
 	_state_root.name = id
@@ -59,8 +69,18 @@ func change_game_state(id: String) -> void:
 			layer.add_child(_loading_screen)
 			_is_preloading = true
 		GAMESTATE_LOADGAMESTATE:
-			# TGameStateLoadCoreGame: assets loaded and the game socket connected -> Game
-			change_game_state(GAMESTATE_INGAME)
+			# TGameStateLoadCoreGame: the loading screen with the match's players; without a master server the
+			# game data is the local player on their team with the sandbox deck (the AI is not a player)
+			var layer := CanvasLayer.new()
+			_state_root.add_child(layer)
+			_match_loading = LoadingScreen.new()
+			_match_loading.players = [{
+				"username": MainMenu.PROFILE["name"], "team_id": load("res://game/main.gd").HUMAN_TEAM,
+				"deckname": Lang.t("scenario_sandbox"), "deck_icon": "",
+			}]
+			_match_loading.first_loading = _first_loading
+			_match_loading.tutorial = _scenario == "esTutorial"
+			layer.add_child(_match_loading)
 		GAMESTATE_INGAME:
 			var scene: PackedScene = _preloaded if _preloaded != null else load(MAIN_SCENE)
 			_state_root.add_child(scene.instantiate())
