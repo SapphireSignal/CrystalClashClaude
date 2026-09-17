@@ -140,7 +140,7 @@ func _mouse_world_2d() -> Vector2:
 func _place_camera(look_at_2d: Vector2) -> void:
 	# Original camera offset direction (Constants.Client.pas:34), scaled to see the lane.
 	_look_at = look_at_2d
-	var offset := Vector3(-0.3947, 0.8121, -0.4297).normalized() * _camera_distance
+	var offset := Vector3(-0.3947, 0.8121, 0.4297).normalized() * _camera_distance   # own base bottom-left, lane runs to the top-right
 	var target := Vector3(look_at_2d.x, 0, look_at_2d.y)
 	_camera.position = target + offset
 	_camera.look_at(target, Vector3.UP)
