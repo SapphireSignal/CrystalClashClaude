@@ -72,7 +72,7 @@ func _add_water(water: Dictionary, dir: String, lights: Dictionary) -> void:
 		if light.get("enabled", false):
 			var d: Array = light["direction"]
 			var col: Array = light["color"]
-			mat.set_shader_parameter("sun_direction", Vector3(d[0], d[1], d[2]))
+			mat.set_shader_parameter("sun_direction", Vector3(d[0], d[1], -d[2]))   # world space: World is mirrored on Z
 			mat.set_shader_parameter("sun_color", Vector3(col[0], col[1], col[2]))
 			break
 	mesh.material_override = mat
@@ -180,18 +180,22 @@ func _mesh_of(path: String) -> Mesh:
 	return mesh
 
 
-static func _environment_material(diffuse: String, foliage: bool) -> StandardMaterial3D:
+static func _environment_material(diffuse: String, foliage: bool) -> Material:
 	var key := diffuse + ("|foliage" if foliage else "")
 	if _material_cache.has(key):
 		return _material_cache[key]
-	var mat := StandardMaterial3D.new()
 	var path := ENV_DIR + diffuse
-	if diffuse != "" and ResourceLoader.exists(path):
-		mat.albedo_texture = load(path)
-	if foliage:   # leaves: cut-out alpha, both sides
-		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
-		mat.alpha_scissor_threshold = 0.5
-		mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	var texture: Texture2D = load(path) if diffuse != "" and ResourceLoader.exists(path) else null
+	if foliage:   # leaves: cut-out alpha, both sides lit (game/maps/foliage.gdshader)
+		var leaf := ShaderMaterial.new()
+		leaf.shader = preload("res://game/maps/foliage.gdshader")
+		if texture != null:
+			leaf.set_shader_parameter("albedo_texture", texture)
+		_material_cache[key] = leaf
+		return leaf
+	var mat := StandardMaterial3D.new()
+	if texture != null:
+		mat.albedo_texture = texture
 	mat.roughness = 1.0
 	mat.metallic_specular = 0.2
 	_material_cache[key] = mat

@@ -131,7 +131,15 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
   build grid, decal; camera/mouse/HUD convert z_global = -z_sim; map lights `top_level` with mirrored direction.
   Verified at the lane node and the base (`.tmp/mirror_fixed.png`): wall shadows and texture details now on the
   reference's sides. Next checks: rock wall pieces vs reference at high zoom (facing sign if still one rock
-  off), water look at the node (reference: deep blue with waves), top bar red-left/blue-right.
+  off), top bar red-left/blue-right.
+- **Checkpoint 48: mirrored-world fallout fixed.** Foliage under the mirrored node drew its back faces with
+  normals pointing away (trees at half brightness): `game/maps/foliage.gdshader` (alpha cut-out, cull off,
+  back faces flip the normal) replaces the StandardMaterial for vegetation + grass; tree patch medians now
+  99/120/62 vs reference 92/112/58. Water shader gets the mirrored `sun_direction`. **Water still grey-teal
+  instead of the reference's deep blue**: our port draws refraction + flat sky colour only (checkpoint 33);
+  the original reflects the sky/scene (SSR) and its extinction makes deep water saturated blue. Next: port the
+  reflection/extinction path of `Water.fx` (reference/delphi3d-engine) or tune sky_color/fresnel against the
+  node reference patch (ref water ~ (30,110,150) at the top-left of `image-1789614715701.webp`).
 
 ## FIX FIRST (owner's request, before anything else)
 1. **Done (checkpoint 37): lane node capture circle verified.** The ring renders (mesh, y 0.01, orientation:
