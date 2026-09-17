@@ -60,7 +60,7 @@ func _process(delta: float) -> bool:
 				var units: Array = _main.sim.alive_entities(-1).filter(func(e): return e.is_lane_node() if _zoom == "node" else e.has("upUnit"))
 				if not units.is_empty():
 					target = units[0]
-			_main._zoom = 2.6
+			_main._zoom = 2.6   # close-up for detail checks only: the game itself never zooms
 			_main._place_camera(target.position)
 		if _at == "node":
 			var nodes: Array = _main.sim.alive_entities(-1).filter(func(e): return e.is_lane_node())
