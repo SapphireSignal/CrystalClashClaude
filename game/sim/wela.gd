@@ -87,6 +87,8 @@ var ignore_own_radius: bool = false    # TWelaTargetingRadialComponent.IgnoreOwn
 var approach: bool = false             # TBrainApproachComponent: walk toward this group's attention targets
 var link_time: int = 250               # TBrainWelaLinkComponent.LinkTime: re-acquire cadence (DEFAULT_LINK_BUILD_TIME)
 var preemptive_link: bool = false      # TBrainWelaLinkComponent.Preemptive: stands still while linked
+var build_check_group: int = -1        # .SetBuildCheckGroup: that group's cooldown gates (and restarts on) every new link
+var max_new_targets: int = 0           # TWelaTargetingComponent.MaxNewTargetCount: new targets per think (0 = unlimited)
 var fires_at_create_group: int = -1    # TLinkBrainComponent.FiresAtCreate([g]) on a link entity
 var prioritize_most_distant: bool = false   # TWelaTargetingRadialComponent.PrioritizeMostDistant
 var prioritize_damage_types: int = 0   # TWelaEfficiencyDamageTypeComponent.Prioritize (targets whose weapon has any)
@@ -293,6 +295,8 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 						w.link_time = int(c[1][0])
 					elif c[0] == "Preemptive":
 						w.preemptive_link = true
+					elif c[0] == "SetBuildCheckGroup":
+						w.build_check_group = UnitDb.group_id(c[1][0][0], map)
 			"TWelaLinkEffectComponent":
 				for c in calls:
 					if c[0] == "CreatorGroup":
@@ -344,6 +348,8 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 							w.validate_group = UnitDb.group_id(c[1][0][0], map)
 						elif c[0] == "IgnoreOwnCollisionradius":
 							w.ignore_own_radius = true
+						elif c[0] == "MaxNewTargetCount":
+							w.max_new_targets = int(c[1][0])
 						elif c[0] == "PrioritizeMostDistant":
 							w.prioritize_most_distant = true
 						elif c[0] == "PicksRandomTargetsWithRepetition":

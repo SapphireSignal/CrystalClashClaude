@@ -2374,3 +2374,27 @@ func test_golems_big_melee_splinter() -> void:
 		sim.step()
 	sim.deal_damage(big, 35.0, SimConstants.DamageType.TRUE, hitter)
 	runner.check_eq(sim.projectiles.size(), 1, "ready again after 3 s")
+
+
+func test_golems_small_caster_crystal_speed() -> void:
+	var sim := Simulation.new(2, 4)
+	var caster := sim.spawn("Units/Golems/GolemsSmallCasterGolem", Simulation.TEAM_BLUE, Vector2(-40, -23))
+	var a := sim.spawn("Units/White/Monk", Simulation.TEAM_BLUE, Vector2(-38, -23))
+	var b := sim.spawn("Units/White/Monk", Simulation.TEAM_BLUE, Vector2(-42, -23))
+	var far := sim.spawn("Units/White/Monk", Simulation.TEAM_BLUE, Vector2(-25, -23))
+	for m in [caster, a, b, far]:
+		m.locked_until = 1 << 30
+	var t := sim.time_ms
+	while sim.time_ms < t + 500:
+		sim.step()
+	var linked := int(a.has("upHasCrystalSpeed")) + int(b.has("upHasCrystalSpeed"))
+	runner.check_eq(linked, 1, "crystal speed: one ally linked at once (MaxNewTargetCount 1)")
+	while sim.time_ms < t + 3500:
+		sim.step()
+	runner.check(a.has("upHasCrystalSpeed") and b.has("upHasCrystalSpeed"), "the second ally 3 s later")
+	runner.check(not far.has("upHasCrystalSpeed"), "not beyond 8")
+	runner.check(not caster.has("upHasCrystalSpeed"), "never the caster itself")
+	runner.check_eq(a.cooldown(SimConstants.GROUP_MAINWEAPON), int(a.bb.get_int("eiCooldown", 1, 0) * 0.7), "main weapon cooldown x0.7 while linked")
+	sim._kill(caster)
+	sim.step()
+	runner.check(not a.has("upHasCrystalSpeed"), "the buff ends with the link")

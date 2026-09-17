@@ -909,6 +909,10 @@ func _think_link(e: SimEntity, w: Wela) -> void:
 		return
 	if w.next_at > time_ms and links == 0:
 		return   # LinkTime: re-acquire cadence
+	# SetBuildCheckGroup (Crystal Speed): new links only when that group's cooldown ran out; it restarts each time
+	var build_wela: Wela = e.wela(w.build_check_group) if w.build_check_group >= 0 else null
+	var build_ready := build_wela == null or (time_ms >= build_wela.cooldown_ready_at and _wela_ready(e, build_wela))
+	var new_links := 0
 	var candidates: Array = [e] if w.target_self else entities.values()
 	for other: SimEntity in candidates:
 		var linked: bool = other.link_buffs.has(key)
@@ -918,13 +922,18 @@ func _think_link(e: SimEntity, w: Wela) -> void:
 		var validator: Wela = e.wela(w.validate_group) if w.validate_group >= 0 else null
 		if linked and (not in_range or (validator != null and not validator.target_allowed(other, e))):
 			_break_link_key(other, key)
-		elif not linked and in_range and links < max_links and other.is_targetable() and w.target_allowed(other, e):
+		elif not linked and in_range and links < max_links and other.is_targetable() and w.target_allowed(other, e) 			and build_ready and (w.max_new_targets <= 0 or new_links < w.max_new_targets):
 			if w.link_pay_cost and links == 0:   # the first link costs one energy at once
 				e.mana -= w.mana_cost
 				w.link_paid_until = time_ms + 1000
 			links += 1
+			new_links += 1
 			w.next_at = time_ms + w.link_time
 			var payload := "Links/" + w.link_pattern.get_file().replace("Aura", "")
+			if not Buff.exists(payload) and UnitDb.has_unit(w.link_pattern):   # TWarheadLinkApplyScriptComponent on the link entity
+				for comp in UnitDb.raw(w.link_pattern).get("components", []):
+					if comp["class"] == "TWarheadLinkApplyScriptComponent" and not comp.get("args", []).is_empty():
+						payload = Wela.script_key(str(comp["args"][0]))
 			var b: Buff
 			if Buff.exists(payload):
 				b = apply_buff(other, payload, {}, e)
@@ -964,6 +973,8 @@ func _think_link(e: SimEntity, w: Wela) -> void:
 							_fire_link_group(e, other, b, cg)
 					elif lw.link_brain:   # TLinkBrainComponent([0,1,2]): the other groups fire too (gatling splash)
 						_fire_link_group(e, other, b, lw.group)
+	if build_wela != null and build_ready and links > 0:   # eiFire in [group + build group]: the build cooldown restarts
+		build_wela.cooldown_ready_at = time_ms + e.cooldown(build_wela.group)
 
 
 ## TWelaTargetingRadialComponent.Cone: the target is inside when the angle between the world-space cone
