@@ -195,6 +195,13 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
    material (roughness, Material.png) with a side-by-side crop.
 Then checkpoint (tests, Status, CONTINUE.md, commit + push, give the new-chat prompt and STOP).
 
+## Findings from `reference/rolmedia/` (2026-09-17, check against the .dui/source, then fix)
+- `ingame/base_blue_units_hud_1920x1080.jpg`: the deck slots show only the charge count bottom-left, **no hotkey
+  badge** (same as the Crystal Clash shots): check the hotkey element's default Visibility / the show-hotkeys
+  setting in the 2022 .dui + scss before keeping ours visible.
+- Same shot: top bar has the **red bar left and the blue (own, 66 %) bar right**; ours draws the own blue bar left.
+  Check `GameInfo.dui` for the fixed order.
+
 ## Next step (in order, one at a time, run the game after each)
 1. Particles polish: (a) `AtFireTarget` / `ClonesToTarget` effects; (c) light particles as
    OmniLight3D (100 emitters), `ptTrace` ribbons, nested `ptEffect`; (d) deactivation (`DeactivateOn*`,
