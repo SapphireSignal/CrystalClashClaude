@@ -3,6 +3,14 @@
 Two read-only places hold real-game references. Nothing here is copied into the repo; later phases read
 from these paths directly. Rights: the developers gave the owner permission to use everything.
 
+## `reference/rolmedia/` inventory (2026-09-17)
+Steam community screenshots of the Rise of Legions client (uploaded 2019-2021, native resolution, no overlays):
+`ingame/` 15 files (8 with the HUD at 1920x1080: red nexus fights, lane fights by the water and the wall, base
+spawner fight with the unit panel, blue base; 1280x720 and 1600x900 variants; 4 `nohud_*` capture-mode shots for
+camera/lighting; a Victory banner) and `lobby/` 10 files (leaderboards de/fr/ru, collection ru, queue en, victory
+summaries 1v1 ru and 2v2 es, deck-unlocked pt, maintenance splash "Rise of Legions Crystal Dawn"). The HUD is the
+*normal* layout at 1920x1080 (window >= 1710 wide), unlike the owner's Crystal Clash shots (small layout).
+
 ## `reference/ccmedia/` (Crystal Clash) and `reference/rolmedia/` (Rise of Legions), gitignored
 `reference/rolmedia/` is the reference for the current build (the 2022 Rise of Legions). `reference/ccmedia/` was
 `reference/media/` until 2026-09-17:
