@@ -2,12 +2,15 @@
 
 Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
 
-## State (2026-09-16, checkpoint 13)
-- Phase 2 core sim works and is tested (265 tests). All 12 White units and 6 White spells work, plus
-  overheal, projectile splash and the dynamic drop zone. Generic factory spawns
-  (`TWelaEffectFactoryComponent`), unit-property target efficiency and multi-target attacks
-  (`eiWelaTargetCount` + `TModifierWelaTargetCountComponent`) are wired in `wela.gd`/`simulation.gd`
-  but have no tests yet; they get exercised by Black.
+## State (2026-09-16, checkpoint 14)
+- Phase 2 core sim works and is tested (302 tests). All 12 White units and 6 White spells work, plus
+  overheal, projectile splash and the dynamic drop zone.
+- Black steps 1a+1b done: souls (`_release_soul`, `gain_mana`, `Wela.Kind.ON_RESOURCE`), VoidSkeleton
+  Undying (`Wela.Kind.PREVENT_DEATH`, buff `instant_heal`/`kills_on_expiry`), VoidBane cone cleave
+  (`eiWelaAreaOfEffectCone` in `_fire_splash`), Reaper (`changes_max`), soul-donor deathrattle
+  (`_on_before_death` with counts/allies/repetition), VoidBowman Grievous Wounds (buff `on_hit_*`,
+  Bleeding `charges`, `taken_heal_mult`, percent DoT). Extractor now maps template `GROUP_*` symbols
+  (GROUP_SOUL=11) and parses `function ApplyEffect` modifier bodies.
 - `game/sim/`: `simulation.gd` (loop, think chain over welas, chained fire groups, auras, splash, spells,
   combat hooks, projectiles, buffs, economy, movement, spawners, card play, ammo, tech-ups, lane nodes,
   charms), `wela.gd` (weapon/ability groups parsed from unit and spell components), `buff.gd` (modifier,
@@ -20,13 +23,8 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
 - `reference/media/` (local, gitignored): folder for real-game screenshots/videos the owner drops in.
 
 ## Next step (in order, one at a time, test after each)
-1. **Black faction** using `docs/factions/black.md`. Implement in this order, each with a test against the
-   numbers in the doc:
-   a. Souls: every unit death spawns a soul (`GROUP_SOUL`) that flies to a random non-full `upSoulGatherer`
-      within 12 (allies preferred); `reMana` = souls. Unit test with VoidSkeleton (cap 1) + dying Footman.
-   b. VoidSkeleton Undying (prevent death paying 1 mana, `Undying.dws`), VoidBane cleave (cone splash on
-      group 1: `eiWelaAreaOfEffectCone`) + Reaper (+15 max HP per soul: `TAutoBrainOnResourceComponent`)
-      + death-rattle soul donation, VoidBowman Grievous Wounds (`BlessingGrievousWounds.dws` -> Bleeding).
+1. **Black faction** using `docs/factions/black.md`. Continue in this order, each with a test against the
+   numbers in the doc (a. souls and b. VoidSkeleton/VoidBane/VoidBowman are done):
    c. Frozen/Banished/Bleeding modifiers (already in modifiers.json; check `buff.gd` handles their
       beacon/immunity groups), VoidWorm frostshot projectile (`TAutoBrainOnDealDamageComponent`), Frostgoyle
       fury, VoidCauldron blast, VoidSlime status mirror (skip the 25 generated groups if too big: note it),

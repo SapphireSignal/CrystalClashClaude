@@ -784,3 +784,114 @@ func test_unit_walks_lane_to_enemy_nexus() -> void:
 		runner.check(p.x > 30.0 and p.y > -36 and p.y < -10, "footman was on the lane inside the walkzone")
 	for f in squad:
 		runner.check(f.position.y > -36 and f.position.y < -10, "footman stayed inside the walkzone")
+
+
+func test_souls_fly_to_gatherer() -> void:
+	var sim := Simulation.new(3, 4)
+	var skeleton := sim.spawn("Units/Black/VoidSkeleton", Simulation.TEAM_BLUE, Vector2(0, -23))
+	runner.check_eq(skeleton.mana_cap, 1, "void skeleton stores 1 soul")
+	runner.check_eq(skeleton.mana, 0, "starts empty")
+	var footman := sim.spawn("Units/White/Footman", Simulation.TEAM_BLUE, Vector2(3, -23))
+	var souls: Array = []
+	var on_proj := func(p): if p.gives_mana: souls.append(p)
+	sim.projectile_spawned.connect(on_proj)
+	sim._kill(footman)
+	runner.check(souls.is_empty(), "SoulGatherProjectileSpawner waits one frame")
+	sim.step()
+	runner.check_eq(souls.size(), 1, "one soul projectile per death")
+	if not souls.is_empty():
+		runner.check_eq(souls[0].target_id, skeleton.id, "soul flies to the gatherer")
+		runner.check_near(souls[0].speed, 0.01, "soul speed 10/1000")
+	for i in 20:   # 3 units at 10 u/s = 300 ms
+		sim.step()
+	runner.check_eq(skeleton.mana, 1, "gatherer received the soul")
+	var enemy := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(2, -23))
+	sim._kill(enemy)
+	for i in 30:
+		sim.step()
+	runner.check_eq(souls.size(), 1, "full gatherer receives nothing")
+	runner.check_eq(skeleton.mana, 1, "soul cap holds")
+	skeleton.mana = 0
+	enemy = sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(2, -23))
+	sim._kill(enemy)
+	for i in 30:
+		sim.step()
+	runner.check_eq(skeleton.mana, 1, "enemy souls are eligible when no own gatherer wants them")
+	sim.projectile_spawned.disconnect(on_proj)
+	runner.check_eq(sim.alive_entities().size(), 1, "spawner entities vanish after firing")
+
+
+func test_void_skeleton_undying() -> void:
+	var sim := Simulation.new(3, 4)
+	var skeleton := sim.spawn("Units/Black/VoidSkeleton", Simulation.TEAM_BLUE, Vector2(0, -23))
+	sim._kill(skeleton)
+	runner.check(not skeleton.alive, "without a soul the skeleton just dies")
+	skeleton = sim.spawn("Units/Black/VoidSkeleton", Simulation.TEAM_BLUE, Vector2(0, -23))
+	skeleton.mana = 1
+	skeleton.health = 20.0
+	sim._kill(skeleton)
+	runner.check(skeleton.alive, "undying cancels death")
+	runner.check_eq(skeleton.mana, 0, "paid 1 soul")
+	runner.check_near(skeleton.health, 105.0, "healed to full")
+	runner.check(skeleton.has("upUnhealable"), "undying cannot be healed")
+	runner.check_near(sim.heal(skeleton, 10.0, 0, null), 0.0, "heal refused")
+	var start := sim.time_ms
+	while skeleton.alive and sim.time_ms < start + 20000:
+		sim.step()
+	runner.check(not skeleton.alive, "dies when undying ends")
+	runner.check(sim.time_ms - start >= 15000 and sim.time_ms - start < 15100, "undying lasts 15 s (got %d)" % (sim.time_ms - start))
+
+
+func test_void_bane_cleave_reaper_and_soul_donation() -> void:
+	var sim := Simulation.new(3, 4)
+	var bane := sim.spawn("Units/Black/VoidBane", Simulation.TEAM_BLUE, Vector2(0, -23))
+	runner.check_eq(bane.mana_cap, 14, "void bane stores 14 souls")
+	sim.gain_mana(bane, 3)
+	runner.check_eq(bane.mana, 3, "3 souls stored")
+	runner.check_near(bane.max_health, 190.0 + 45.0, "reaper: +15 max hp per soul")
+	runner.check_near(bane.health, 235.0, "cap increase fills")
+	var front_monk := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(1.5, -23))
+	var behind_monk := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(-1.5, -23))
+	bane.target_id = front_monk.id
+	sim._fire_group(bane, 1, front_monk)
+	runner.check_near(front_monk.health, 265.0 - 27.0, "cone cleave hits the target for 27")
+	runner.check_near(behind_monk.health, 265.0, "cleave misses units behind the bane")
+	var skeleton := sim.spawn("Units/Black/VoidSkeleton", Simulation.TEAM_BLUE, Vector2(0, -20))
+	var souls: Array = []
+	var on_proj := func(p): if p.gives_mana: souls.append(p)
+	sim.projectile_spawned.connect(on_proj)
+	sim._kill(bane)
+	runner.check_eq(souls.size(), 3, "death rattle: one soul donor projectile per stored soul")
+	for p in souls:
+		runner.check_eq(p.target_id, skeleton.id, "donations go to a non-full allied gatherer")
+	sim.step()
+	runner.check_eq(souls.size(), 4, "plus the bane's own soul")
+	sim.projectile_spawned.disconnect(on_proj)
+
+
+func test_void_bowman_grievous_wounds() -> void:
+	var sim := Simulation.new(3, 4)
+	var bowman := sim.spawn("Units/Black/VoidBowman", Simulation.TEAM_BLUE, Vector2(0, -23))
+	runner.check(bowman.has("upBlessedGrievousWounds"), "enchanted at spawn")
+	var monk := sim.spawn("Units/White/Monk", Simulation.TEAM_RED, Vector2(5, -23))
+	monk.locked_until = 1 << 30   # a passive victim: the monk would kill the 60 hp bowman otherwise
+	while not monk.has("upBleeding") and sim.time_ms < 8000:
+		sim.step()
+	runner.check(monk.has("upBleeding"), "first hit applies bleeding")
+	var bleeding: Buff = null
+	for b in monk.buffs:
+		if b.name == "Bleeding":
+			bleeding = b
+	if bleeding == null:
+		return
+	runner.check_eq(bleeding.charges, 1, "one stack")
+	runner.check_near(sim.heal(monk, 10.0, 0, null), 6.0, "bleeding reduces healing by 40%")
+	var hp := monk.health
+	var t := sim.time_ms
+	while sim.time_ms < t + 1000:
+		sim.step()
+	runner.check(monk.health < hp - 0.5 * 265.0 * 0.005 * 0.99, "bleed tick 0.5% max hp per stack per second")
+	while bleeding.charges < 2 and sim.time_ms < 12000:
+		sim.step()
+	runner.check_eq(bleeding.charges, 2, "further hits stack bleeding")
+	runner.check(bleeding.expires_at > sim.time_ms + 9000, "stacking refreshes the 10 s duration")

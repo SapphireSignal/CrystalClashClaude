@@ -114,6 +114,8 @@ func _place_camera(look_at_2d: Vector2) -> void:
 
 
 func _on_spawned(e: SimEntity) -> void:
+	if e.think_once_waits:   # one-tick helper entities (soul gather spawner) have no body
+		return
 	var mesh := MeshInstance3D.new()
 	if e.is_spawner():
 		var box := BoxMesh.new()

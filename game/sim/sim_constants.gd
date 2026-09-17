@@ -12,6 +12,7 @@ const OVERHEAL_LIMIT_FACTOR: float = 2.0
 
 const GROUP_APPROACH: int = 0
 const GROUP_MAINWEAPON: int = 1
+const GROUP_SOUL: int = 11           # UnitTemplate: soul release on death
 
 const MAP_BOUNDS: float = 150.0
 const BUILDGRID_SIZE := Vector2i(8, 3)

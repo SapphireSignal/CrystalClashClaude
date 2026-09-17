@@ -71,11 +71,14 @@ func spawn(unit_id: String, team: int, pos: Vector2, front: Vector2 = Vector2.ZE
 		nexus_ids[team] = e.id
 	if e.is_building():
 		map.pathfinding.block_permanent_area(pos, e.collision_radius)
-	elif not e.is_spawner() and not e.is_lane_node() and not e.has("upCharm"):
+	elif e.is_targetable() and not e.is_lane_node() and not e.has("upCharm"):
 		_enter_tile(e)
 		_stand(e)
 	if e.has("upCharm") and commanders.has(team):
 		_register_charm(e)
+	for w in e.welas:   # TWarheadApplyScriptComponent.ApplyToSelfAtCreate (VoidBowman's Grievous Wounds)
+		if w.apply_script_to_self_at_create and Buff.exists(w.apply_script):
+			apply_buff(e, w.apply_script, {}, e)
 	entity_spawned.emit(e)
 	return e
 
@@ -164,6 +167,8 @@ func apply_buff(e: SimEntity, script_name: String, params: Dictionary = {}, sour
 	if source != null:
 		b.source_id = source.id
 	e.add_buff(b)
+	if b.instant_heal > 0.0:
+		e.health = minf(e.max_health, e.health + b.instant_heal)
 	if b.stops_movement and e.moving:
 		_stand(e)
 	for w in e.welas:   # TAutoBrainOnUnitPropertyComponent.TriggerOn (HeavyGunner gains mana when blessed)
@@ -184,14 +189,27 @@ func _update_buffs(e: SimEntity) -> void:
 			b.next_tick_at += b.tick_interval
 			if b.tick_times > 0:
 				b.tick_times -= 1
-			if b.dot_damage > 0.0:
-				deal_damage(e, b.dot_damage, b.dot_type, entities.get(b.source_id))
+			if b.dot_damage > 0.0 and not _has_any(e, b.dot_not_props):
+				var dot: float = b.dot_damage * (e.max_health if b.dot_percent_of_max else 1.0)
+				if b.dot_scales_with_charges:
+					dot *= b.charges
+				deal_damage(e, dot, b.dot_type, entities.get(b.source_id))
 			if b.hot_heal > 0.0:
 				heal(e, b.hot_heal, SimConstants.DamageType.HOT, entities.get(b.source_id))
 			if b.mana_per_tick > 0:
 				e.mana = mini(e.mana_cap, e.mana + b.mana_per_tick)
-		if b.is_expired(time_ms):
+		if b.is_expired(time_ms) and e.alive:
 			e.remove_buff(b)
+			if b.kills_on_expiry:   # Undying runs out
+				_kill(e)
+				return
+
+
+func _has_any(e: SimEntity, props: Array) -> bool:
+	for p in props:
+		if e.has(p):
+			return true
+	return false
 
 
 ## TAutoBrainPreventDeathComponent (Homeland rescue, Guarded): the first matching buff intercepts death,
@@ -232,6 +250,16 @@ func _try_prevent_death(e: SimEntity) -> bool:
 				e.link_buffs.erase(key)
 		e.remove_buff(b)
 		_charge_creator_for_rescue(b)
+		return true
+	for w in e.welas:   # the unit's own TAutoBrainPreventDeathComponent (VoidSkeleton group 4: pays 1 soul)
+		if w.kind != Wela.Kind.PREVENT_DEATH or w.used or not _wela_ready(e, w):
+			continue
+		e.mana -= w.mana_cost
+		e.health = e.bb.get_float("eiWelaDamage", w.group, 1.0)
+		if w.apply_script != "" and Buff.exists(w.apply_script):
+			apply_buff(e, w.apply_script, {}, e)
+		if w.remove_after_use:
+			w.used = true
 		return true
 	return false
 
@@ -380,14 +408,17 @@ func _pick_targets(e: SimEntity, w: Wela, range: float, count: int) -> Array[Sim
 	for other: SimEntity in entities.values():
 		if not other.alive or other == e or not other.is_targetable() or other.team == 0:
 			continue
-		if w.target_allies != (other.team == e.team):
+		if not w.target_any_team and w.target_allies != (other.team == e.team):
 			continue
 		if not w.target_allowed(other, e):
 			continue
 		var dist := e.position.distance_to(other.position) - other.collision_radius
 		if dist > range:
 			continue
-		var key := dist + (100000.0 if other.has("upLowPrio") else 0.0) - _property_efficiency(w, other) * 1000000.0
+		var key := rng.randf() * range if w.picks_random_targets else dist
+		key += (100000.0 if other.has("upLowPrio") else 0.0) - _property_efficiency(w, other) * 1000000.0
+		if w.prefer_allies and other.team != e.team:
+			key += 10000000.0
 		scored.append([key, other])
 	scored.sort_custom(func(a, b): return a[0] < b[0])
 	var out: Array[SimEntity] = []
@@ -473,6 +504,9 @@ func step() -> void:
 			continue
 		if e.is_lane_node():
 			_think_lane_node(e)
+			continue
+		if e.think_once_waits and not e.thought_once:   # TThinkImpulseOnceComponent.WaitOneFrame
+			_think_once(e)
 			continue
 		_update_buffs(e)
 		if not e.alive:
@@ -696,6 +730,9 @@ func _fire_group(e: SimEntity, group: int, target: SimEntity) -> void:
 		attack_fired.emit(e, target, amount)
 	if w.projectile != "":
 		_launch_projectile(w.projectile, e, target, amount, dtype, group)
+	elif w.changes_max and w.resource == "reHealth":   # eiResourceCapTransaction: raise the cap and fill it
+		target.max_health += amount
+		target.health += amount
 	elif w.kills:
 		if target.alive and target != e:
 			target.exiled = w.exiles
@@ -743,6 +780,10 @@ func _fire_splash(e: SimEntity, group: int, center: Vector2) -> void:
 	if w == null:
 		return
 	var radius := e.bb.get_float("eiWelaAreaOfEffect", group, 0.0)
+	var cone := e.bb.get_float("eiWelaAreaOfEffectCone", group, 0.0)   # full angle; a cone starts at the owner
+	var front := (center - e.position).normalized()
+	if cone > 0.0:
+		center = e.position
 	var amount := e.damage(group)
 	var dtype := e.damage_type(group)
 	for other: SimEntity in entities.values():
@@ -752,8 +793,13 @@ func _fire_splash(e: SimEntity, group: int, center: Vector2) -> void:
 			continue
 		if not w.target_allowed(other, e):
 			continue
-		if other.position.distance_to(center) - other.collision_radius > radius:
+		var offset := other.position - center
+		if offset.length() - other.collision_radius > radius:
 			continue
+		if cone > 0.0 and offset.length() > 0.0001:
+			var width_angle := atan(other.collision_radius / maxf(0.01, offset.length()))
+			if absf(front.angle_to(offset.normalized())) - width_angle > cone / 2.0:
+				continue
 		if w.heals:
 			heal(other, amount, dtype, e)
 		else:
@@ -794,9 +840,37 @@ func deal_damage(target: SimEntity, amount: float, damage_type: int, source: Sim
 	var from_overheal := minf(final, target.overheal)   # THealthComponent.OnDamage: overheal absorbs first
 	target.overheal -= from_overheal
 	target.health -= final - from_overheal
+	if final > 0.0 and source != null and source.alive:
+		_on_dealt_damage(source, target)
 	if target.health <= 0.0:
 		_kill(target, source)
 	return final
+
+
+## TAutoBrainOnDealDamageComponent inside a buff (Grievous Wounds): when ready and the victim passes the
+## constraints, apply the script, or refresh its duration and add a stack when it is already there.
+func _on_dealt_damage(source: SimEntity, target: SimEntity) -> void:
+	for b in source.buffs:
+		if b.on_hit_script == "" or time_ms < b.on_hit_ready_at or target == source or not target.alive:
+			continue
+		if _has_any(target, b.on_hit_must_not_have):
+			continue
+		var ok := true
+		for p in b.on_hit_must_have:
+			if not target.has(p):
+				ok = false
+		if not ok:
+			continue
+		b.on_hit_ready_at = time_ms + b.on_hit_cooldown_ms
+		var existing: Buff = null
+		for tb in target.buffs:
+			if tb.name == b.on_hit_script:
+				existing = tb
+		if existing != null:   # TWelaEffectResetCooldownComponent + reWelaCharge +1 on the beacon group
+			existing.expires_at = time_ms + existing.duration_ms
+			existing.charges = mini(existing.charge_cap, existing.charges + 1)
+		elif Buff.exists(b.on_hit_script):
+			apply_buff(target, b.on_hit_script, {}, source)
 
 
 ## TModifierMultiplyDealtDamageComponent (Archer Relentless): multiply by eiWelaModifier of the value group
@@ -836,6 +910,8 @@ func _on_take_damage(target: SimEntity, amount: float, _damage_type: int) -> flo
 func heal(target: SimEntity, amount: float, damage_type: int, _source: SimEntity) -> float:
 	if not target.alive or target.has("upUnhealable"):
 		return 0.0
+	for b in target.buffs:   # TBuffTakenDamageMultiplierComponent.ApplyOnHeal (Bleeding: 60 %)
+		amount *= b.taken_heal_mult
 	var healed := minf(amount, target.max_health - target.health)
 	target.health += healed
 	var over := 0.0
@@ -883,6 +959,7 @@ func _kill(e: SimEntity, killer: SimEntity = null) -> void:
 		if other.linked_from(e.id):
 			_break_link(e, other)
 	entity_died.emit(e)
+	_release_soul(e)
 	if e.has("upNexus") and not finished:
 		finished = true
 		winner_team = TEAM_BLUE if e.team == TEAM_RED else TEAM_RED
@@ -891,23 +968,54 @@ func _kill(e: SimEntity, killer: SimEntity = null) -> void:
 		spawn("Units/Neutral/LaneNode", 0, e.position)   # Lanetower.ets group 2: TAutoBrainOnDeath -> LaneNode
 
 
+## UnitTemplate/BuildingTemplate GROUP_SOUL: every death (unless exiled or upSoulless) spawns
+## Projectiles/Black/SoulGatherProjectileSpawner at the corpse; next tick it sends one soul projectile
+## to a random non-full upSoulGatherer within 12 (allies preferred, enemies eligible) and vanishes.
+func _release_soul(e: SimEntity) -> void:
+	if e.exiled or e.has("upSoulless"):
+		return
+	var pattern: String = e.bb.get_value("eiWelaUnitPattern", SimConstants.GROUP_SOUL, "").replace("\\", "/")
+	if pattern != "" and UnitDb.has_unit(pattern):
+		spawn(pattern, e.team, e.position)
+
+
+## TWarheadSpottyResourceComponent(reMana) / eiResourceTransaction: souls and other mana gains, capped.
+func gain_mana(e: SimEntity, amount: int) -> void:
+	var fitted := mini(e.mana_cap - e.mana, amount)
+	if fitted <= 0:
+		return
+	e.mana += fitted
+	for w in e.welas:   # TAutoBrainOnResourceComponent: once, or once per unit that fit (TimesForEach)
+		if w.kind != Wela.Kind.ON_RESOURCE or not w.resource_triggers.has("reMana") or not _wela_ready(e, w):
+			continue
+		for i in (fitted if w.times_for_each > 0 else 1):
+			_fire_group(e, w.group, e)
+
+
 ## TAutoBrainOnBeforeDeath (deathrattles): fire the group's projectile at the current target, or at a
 ## random enemy in range when the wela picks random targets.
 func _on_before_death(e: SimEntity, _killer: SimEntity) -> void:
 	for w in e.welas:
-		if w.kind != Wela.Kind.ON_DEATH or w.projectile == "":
+		if w.kind != Wela.Kind.ON_DEATH or w.projectile == "" or not w.owner_ready(e):
 			continue
+		var count := e.target_count(w.group)
 		var target: SimEntity = entities.get(e.target_id)
 		if w.picks_random_targets or target == null or not target.alive:
 			var candidates: Array[SimEntity] = []
 			for other: SimEntity in entities.values():
-				if other.alive and other.team != e.team and other.is_targetable() and w.target_allowed(other) \
+				if other.alive and other.team != 0 and w.target_allies == (other.team == e.team) and other.is_targetable() \
+					and w.target_allowed(other, e) \
 					and other.position.distance_to(e.position) - other.collision_radius - e.collision_radius <= e.range_of(w.group):
 					candidates.append(other)
-			if candidates.is_empty():
-				continue
-			target = candidates[rng.randi_range(0, candidates.size() - 1)]
-		_launch_projectile(w.projectile, e, target, e.damage(w.group), e.damage_type(w.group), w.group)
+			for i in count:
+				if candidates.is_empty():
+					break
+				var index := rng.randi_range(0, candidates.size() - 1)
+				_launch_projectile(w.projectile, e, candidates[index], e.damage(w.group), e.damage_type(w.group), w.group)
+				if not w.picks_with_repetition:
+					candidates.remove_at(index)
+		elif count > 0:
+			_launch_projectile(w.projectile, e, target, e.damage(w.group), e.damage_type(w.group), w.group)
 
 
 ## Targeting (Server.Welas.pas:1740-1790): efficiency first (missing health for heals), then upLowPrio last,
@@ -1013,7 +1121,9 @@ func _move_projectiles() -> void:
 			p.position = p.last_target_position
 			var hit := target != null and target.alive
 			if hit:
-				if p.aoe > 0.0:
+				if p.gives_mana:
+					gain_mana(target, int(p.damage))
+				elif p.aoe > 0.0:
 					_projectile_splash(p, target)
 				else:
 					deal_damage(target, p.damage, p.damage_type, entities.get(p.source_id))

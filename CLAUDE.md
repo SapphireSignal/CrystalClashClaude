@@ -127,7 +127,12 @@ HailOfArrows field), entity spells fire the card's group at the unit (SolarFlare
 with stored charges, PromiseOfLife charm field with guard charges and the 3-charm cap). Overheal, splash
 on projectiles with the splash-factor pool, and the dynamic drop zone (31.5 around the nexus, 30 around
 own lanetowers, inside the Drop polygon) are in. All 12 White units and all 6 White spells work.
-Generic factory spawns, unit-property target efficiency and multi-target attacks are wired (untested until
-Black). `docs/factions/black.md` is the full Black faction spec for the next step. 265 tests pass. `game/main.tscn` is a sandbox with capsule
+Black started (`docs/factions/black.md` is the spec): souls (every death spawns the soul-gather spawner from
+UnitTemplate group 11, one soul projectile to a random non-full gatherer within 12, `gain_mana` fires
+`TAutoBrainOnResourceComponent` groups), VoidSkeleton Undying (own prevent-death wela paying 1 soul,
+Undying buff full-heals and kills after 15 s), VoidBane cone cleave, Reaper (+15 max HP per soul) and
+soul-donor deathrattle (target count scaled by mana, random with repetition), VoidBowman Grievous Wounds
+(self-applied blessing, on-hit Bleeding with stacks, 0.5 % max HP per stack per second, 60 % healing).
+302 tests pass. `game/main.tscn` is a sandbox with capsule
 units on the Compatibility renderer: keys 1-9,0,-,= play the 12 deck slots, a simple red AI plays back.
 See `CONTINUE.md`.

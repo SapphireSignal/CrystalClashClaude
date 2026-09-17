@@ -25,6 +25,7 @@ var mana_cap: int = 0
 var charges: Dictionary = {}         # group -> reWelaCharge balance kept per group (spell modes, fields)
 var thinks_once: bool = false        # TThinkImpulseOnceComponent: spell effect acts once on creation
 var thought_once: bool = false
+var think_once_waits: bool = false   # TThinkImpulseOnceComponent.WaitOneFrame: acts on the next tick instead
 
 # Main weapon state (group 1)
 var target_id: int = 0
@@ -105,6 +106,9 @@ func setup(p_unit_id: String, p_league: int) -> void:
 	for comp in data.get("components", []):
 		if comp["class"] == "TThinkImpulseOnceComponent":
 			thinks_once = true
+			for c in comp.get("calls", []):
+				if c[0] == "WaitOneFrame":
+					think_once_waits = true
 
 
 func charges_of(group: int) -> int:
@@ -240,8 +244,12 @@ func target_count(group: int = SimConstants.GROUP_MAINWEAPON) -> int:
 	var n := bb.get_int("eiWelaTargetCount", group, 1)
 	var w := wela(group)
 	if w != null and w.target_count_add_group >= 0:
-		n += bb.get_int("eiWelaModifier", w.target_count_add_group, 0)
-	return maxi(1, n)
+		var add := bb.get_int("eiWelaModifier", w.target_count_add_group, 0)
+		if add > 0 and w.target_count_scale_resource == "reMana":
+			add *= mana
+		if add > 0:
+			n += add
+	return n
 
 
 func attention_range() -> float:

@@ -5,7 +5,8 @@ class_name Wela
 ## (Monk Dragon Punch, Avenger double shot), auras/links (Suntower Homeland), ground self-target AoE
 ## (Monument of Light), on-healed triggers and cooldown resets (Defender).
 
-enum Kind { FIGHT, SUB, ON_TAKE_DAMAGE, DEALT_DAMAGE_MULT, RESOURCE_REGEN, ON_DEATH, LINK, ON_HEALED, SELF_GROUND, ON_PROPERTY }
+enum Kind { FIGHT, SUB, ON_TAKE_DAMAGE, DEALT_DAMAGE_MULT, RESOURCE_REGEN, ON_DEATH, LINK, ON_HEALED, SELF_GROUND, ON_PROPERTY,
+	PREVENT_DEATH, ON_RESOURCE }
 
 var group: int
 var kind: Kind
@@ -20,6 +21,7 @@ var not_self: bool = false
 var efficiency_missing_health: bool = false
 var efficiency_max_health: int = 0   # 1 = prefer highest max health, -1 = lowest
 var picks_random_targets: bool = false
+var picks_with_repetition: bool = false   # PicksRandomTargetsWithRepetition
 var blocking: bool = false         # TBrainWelaFightComponent.Blocking: attack does not run while this is busy
 var passive: bool = false          # ThinksPassively: never claims the unit / no stand
 # resource compare constraint (own vs target): "coGreater" etc, factor applied to the target value
@@ -34,6 +36,9 @@ var ready_absolute: bool = false
 var ready_props: Array = []        # TWelaReadyUnitPropertyComponent.MustHave on the owner
 var ready_not_props: Array = []
 var target_health_full: bool = false   # TWelaTargetConstraintResourceComponent.CheckFull
+var target_mana_not_full: bool = false # TWelaTargetConstraintResourceComponent.CheckResource(reMana).CheckNotFull
+var target_any_team: bool = false      # SetTargetTeamConstraint(tcAll)
+var prefer_allies: bool = false        # SetTargetTeamConstraintPriority(tcAllies): allies first when any qualifies
 # effects
 var heals: bool = false
 var damages: bool = false
@@ -90,6 +95,12 @@ var prioritize_props: Array = []
 var prioritize_reversed: bool = false
 # TModifierWelaTargetCountComponent: eiWelaTargetCount += eiWelaModifier of the value group
 var target_count_add_group: int = -1
+var target_count_scale_resource: String = ""   # TModifierWelaTargetCountComponent.ScaleWithResource
+var remove_after_use: bool = false   # TWelaEffectRemoveAfterUseComponent on its own group
+var used: bool = false
+var resource_triggers: Array = []    # TAutoBrainOnResourceComponent.TriggerOn
+var changes_max: bool = false        # TWarheadSpottyResourceComponent.ChangesMax (raises the cap and fills it)
+var apply_script_to_self_at_create: bool = false   # TWarheadApplyScriptComponent.ApplyToSelfAtCreate
 
 
 ## 'Modifiers\Stun.dws' -> "Stun", 'Links\Homeland.dws' -> "Links/Homeland", 'Spells\White\SolarFlare.dws'
@@ -159,8 +170,14 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 					for c in calls:
 						if c[0] == "SetTargetTeamConstraint":
 							w.target_allies = c[1][0] == "tcAllies"
+							w.target_any_team = c[1][0] == "tcAll"
+						elif c[0] == "SetTargetTeamConstraintPriority":
+							w.prefer_allies = c[1][0] == "tcAllies"
 						elif c[0] == "PicksRandomTargets":
 							w.picks_random_targets = true
+						elif c[0] == "PicksRandomTargetsWithRepetition":
+							w.picks_random_targets = true
+							w.picks_with_repetition = true
 			"TWelaEfficiencyMissingHealthComponent":
 				get.call(g, Kind.SUB).efficiency_missing_health = true
 			"TWelaEfficiencyUnitPropertyComponent":
@@ -184,6 +201,8 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 				for c in calls:
 					if c[0] == "SetValueGroup":
 						w.target_count_add_group = UnitDb.group_id(c[1][0][0], map)
+					elif c[0] == "ScaleWithResource":
+						w.target_count_scale_resource = c[1][0]
 			"TWelaEfficiencyMaxHealthComponent":
 				var w: Wela = get.call(g, Kind.SUB)
 				w.efficiency_max_health = 1
@@ -227,7 +246,26 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 						w.reset_cooldown_groups = c[1][0].map(func(s): return UnitDb.group_id(s, map))
 			"TWarheadApplyScriptComponent":
 				if not args.is_empty():
-					get.call(g, Kind.SUB).apply_script = script_key(str(args[0]))
+					var w: Wela = get.call(g, Kind.SUB)
+					w.apply_script = script_key(str(args[0]))
+					for c in calls:
+						if c[0] == "ApplyToSelfAtCreate":
+							w.apply_script_to_self_at_create = true
+			"TWelaEffectRemoveAfterUseComponent":
+				var w: Wela = get.call(g, Kind.SUB)
+				for c in calls:
+					if c[0] == "TargetGroup" and c[1][0].map(func(s): return UnitDb.group_id(s, map)).has(g):
+						w.remove_after_use = true
+			"TAutoBrainPreventDeathComponent":
+				get.call(g, Kind.PREVENT_DEATH).kind = Kind.PREVENT_DEATH
+			"TAutoBrainOnResourceComponent":
+				var w: Wela = get.call(g, Kind.ON_RESOURCE)
+				w.kind = Kind.ON_RESOURCE
+				for c in calls:
+					if c[0] == "TriggerOn":
+						w.resource_triggers.append_array(c[1][0])
+					elif c[0] == "TimesForEach":
+						w.times_for_each = 1
 			"TWelaReadyCostComponent":
 				for gg in groups:
 					var w: Wela = get.call(gg, Kind.SUB)
@@ -281,9 +319,14 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 						"TargetFactor": w.compare_target_factor = float(c[1][0])
 			"TWelaTargetConstraintResourceComponent":
 				var w: Wela = get.call(g, Kind.SUB)
+				var resource := "reHealth"
 				for c in calls:
-					if c[0] == "CheckFull":
+					if c[0] == "CheckResource":
+						resource = c[1][0]
+					elif c[0] == "CheckFull" and resource == "reHealth":
 						w.target_health_full = true
+					elif c[0] == "CheckNotFull" and resource == "reMana":
+						w.target_mana_not_full = true
 			"TWelaTargetConstraintNotSelfComponent":
 				for gg in groups:
 					get.call(gg, Kind.SUB).not_self = true
@@ -324,6 +367,8 @@ static func parse(components: Array, bb: Blackboard, map: Dictionary = {}) -> Ar
 						res = c[1][0]
 					elif c[0] == "TargetGroup" and not c[1][0].is_empty():
 						target_group = UnitDb.group_id(c[1][0][0], map)
+					elif c[0] == "ChangesMax":
+						get.call(g, Kind.SUB).changes_max = true
 				if res == "reWelaCharge" and target_group >= 0:
 					get.call(g, Kind.SUB).charge_gain_group = target_group
 				else:
@@ -392,6 +437,8 @@ func target_allowed(target: SimEntity, owner: SimEntity = null) -> bool:
 		if not shared:
 			return false
 	if target_health_full and target.health < target.max_health:
+		return false
+	if target_mana_not_full and target.mana >= target.mana_cap:
 		return false
 	if owner != null and compare_resource == "reHealth":
 		if not _compare(owner.health, compare_op, target.health * compare_target_factor):

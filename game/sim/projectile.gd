@@ -16,6 +16,7 @@ var damage_type: int
 var created_at: int
 var aoe: float = 0.0          # splash radius on impact (eiWelaAreaOfEffect passed from the shooter or own)
 var splash_factor: float = 10000.0   # eiWelaSplashfactor: total damage pool = damage * factor
+var gives_mana: bool = false         # TWarheadSpottyResourceComponent(reMana): +damage mana on impact (souls)
 
 
 func _init(p_unit_id: String, league: int) -> void:
@@ -27,3 +28,8 @@ func _init(p_unit_id: String, league: int) -> void:
 		aoe = maxf(aoe, bb.get_float("eiWelaAreaOfEffect", g, 0.0))
 	for g in bb.groups_of("eiWelaSplashfactor"):
 		splash_factor = bb.get_float("eiWelaSplashfactor", g, 10000.0)
+	for comp in UnitDb.raw(unit_id).get("components", []):
+		if comp["class"] == "TWarheadSpottyResourceComponent":
+			for c in comp.get("calls", []):
+				if c[0] == "SetResourceType" and c[1][0] == "reMana":
+					gives_mana = true

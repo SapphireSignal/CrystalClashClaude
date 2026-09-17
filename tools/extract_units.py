@@ -71,6 +71,7 @@ def parse_value(raw: str):
     return raw  # expression we do not evaluate; kept verbatim
 
 
+FIXED_GROUPS = {"GROUP_BUILDING_LIFETIME": 10, "GROUP_SOUL": 11}
 RE_INCLUDE = re.compile(r"\{\$INCLUDE\s+'(\w+Template)\.dws'\}")
 _template_cache: dict = {}
 
@@ -96,9 +97,11 @@ def parse_set_lines(body: str, values: dict) -> None:
         if not m:
             continue
         indexed, event, groups, index, raw = m.groups()
-        groups = [int(g) for g in re.findall(r"\d+", groups)] or []
         if "GROUP_" in m.group(3):
-            groups = [0]  # GROUP_DROP_SPAWNER / GROUP_SPELL_SPAWNER / GROUP_TEMPLATE_SPAWNER are all 0
+            # BaseConflict.Constants.pas: spawner groups are 0, GROUP_BUILDING_LIFETIME 10, GROUP_SOUL 11
+            groups = [FIXED_GROUPS.get(g, 0) for g in re.findall(r"GROUP_\w+", groups)]
+        else:
+            groups = [int(g) for g in re.findall(r"\d+", groups)] or []
         value = parse_value(raw)
         key = event if not indexed else f"{event}.{index}"
         entry = values.setdefault(key, {})
@@ -175,8 +178,8 @@ def parse_modifier(path: Path) -> dict:
         return {}
     params = [p.split(":")[0].strip() for p in m.group(1).split(";")[1:] if ":" in p]
     body = m.group(2)
-    raw = re.search(r"function ApplyRaw\(.*?\)\s*:\s*\w+;(.*?)^end;", text, re.S | re.M)
-    if raw:  # some scripts split the server part into ApplyRaw (Invincibility.dws)
+    raw = re.search(r"function Apply(?:Raw|Effect)\(.*?\)\s*:\s*\w+;(.*?)^end;", text, re.S | re.M)
+    if raw:  # some scripts split the server part into ApplyRaw/ApplyEffect (Invincibility, BlessingGrievousWounds)
         body = raw.group(1) + "\n" + body
     body = strip_comments(body)
     body = re.sub(r"\{\$IFDEF CLIENT\}.*?\{\$ENDIF\}", "", body, flags=re.S)
