@@ -72,6 +72,7 @@ func _ready() -> void:
 func setup(sim: Simulation, own_team: int, camera: Camera3D) -> void:
 	_sim = sim
 	_own_team = own_team
+	deck.set_small(_is_small())   # before build(): the deck's own small-layout sizes
 	deck.build(sim.commanders[own_team])
 	_layout()
 	minimap.setup(sim, own_team, camera)
@@ -84,6 +85,11 @@ func setup(sim: Simulation, own_team: int, camera: Camera3D) -> void:
 
 ## Panels are designed at 1920x1080 (docs/hud.md) and pinned to the window's edges / centre, so any window
 ## size and aspect shows the same layout (the original client anchors its .dui panels the same way).
+func _is_small() -> bool:
+	var window := DisplayServer.window_get_size()
+	return window.x < SMALL_LAYOUT_MAX.x or window.y < SMALL_LAYOUT_MAX.y
+
+
 func _layout() -> void:
 	var view := get_viewport_rect().size   # the canvas (1920 wide, height by the window's aspect); size is 0 under a CanvasLayer
 	var w := view.x
@@ -91,8 +97,7 @@ func _layout() -> void:
 	# core_game_scaling.scss `.core-game.small` (window narrower than 1710 or lower than 816 px): resources,
 	# minimap, game-info, tooltip at 80 % of their art, deck slots 66x64 instead of 85x90 (panel 64 high),
 	# card hint 267 wide with its top 208 px above the bottom.
-	var window := DisplayServer.window_get_size()
-	var small := window.x < SMALL_LAYOUT_MAX.x or window.y < SMALL_LAYOUT_MAX.y
+	var small := _is_small()
 	var s := 0.8 if small else 1.0
 	var deck_s := 66.0 / DeckPanel.SLOT_W if small else 1.0
 	var hint_s := 267.0 / CardHint.WIDTH if small else 1.0

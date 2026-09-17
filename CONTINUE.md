@@ -154,6 +154,13 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
   walls (ref pixel (1500,1000) = sand where our 2022 heightmap is 12 units under water): live map data, not
   reproducible from the repo (note as delta); (c) top bar red-left/blue-right; (d) rock wall pieces check.
 
+- **Checkpoint 50: deck panel small layout done properly.** `DeckPanel.set_small()` (called by the HUD before
+  build): panel 64 high, 66x64 slot wrappers (frame overflows 2 px: circles rest on the screen edge), spawner
+  margin 48, locked groups shifted 38 %; the tier plate spans the full panel height (top 11 px above the deck
+  art, timer 10 px below its top) like the reference. Verified on the 1679x1079 grid (`.tmp/deck_grid.png`).
+  Still open in the HUD: top bar red-left/blue-right; the sandbox deck has 7 stage-1 cards (reference decks
+  show 3/3/3/3, so their plates are 3 wide).
+
 ## FIX FIRST (owner's request, before anything else)
 1. **Done (checkpoint 37): lane node capture circle verified.** The ring renders (mesh, y 0.01, orientation:
    start +Z about +Y, gaps across the lane, arcs along it, exactly `DrawCircle` Up=UNITZ Left=UNITX); it was

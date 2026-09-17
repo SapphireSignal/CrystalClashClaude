@@ -13,6 +13,13 @@ const SLOT_W := 85.0
 const SLOT_H := 90.0
 const SLOT_STEP := 87.0        # 1 px padding each side
 const SPAWNER_MARGIN := 80.0
+## `.core-game.small` (core_game_scaling.scss): the deck panel is 64 px high with 66x64 slots, spawner margin 48,
+## locked groups shifted 38 % (normal: 75 high, 85x90 slots, margin 80, 55 %). The HUD scales the panel by
+## 66/85 for the slots, so the panel height and margin are given in that scaled design space.
+var panel_height := HEIGHT
+var locked_shift := 0.55
+var spawner_margin := SPAWNER_MARGIN
+var slot_height := SLOT_H   # build-slot-wrapper height: 90 normal, 64 small (the 66 px frame then overflows the bottom by 2 px)
 const HOTKEYS := ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "="]
 const GLOW_PERIOD_MS := 2000.0     # $glow keyframes: opacity 1 -> 0.6 -> 1, scale 1.02 -> 1 -> 1.02, ease-in-out
 const OVERRIDE_SHADER := preload("res://game/ui/color_override.gdshader")
@@ -44,6 +51,15 @@ var _views: Array[SlotView] = []
 var _jump: TextureButton
 
 
+## Applied before build(): the small layout of core_game_scaling.scss.
+func set_small(small: bool) -> void:
+	var slot_scale := 66.0 / SLOT_W
+	panel_height = 64.0 / slot_scale if small else HEIGHT
+	locked_shift = 0.38 if small else 0.55
+	spawner_margin = 48.0 / slot_scale if small else SPAWNER_MARGIN
+	slot_height = 64.0 / slot_scale if small else SLOT_H
+
+
 func build(commander: Commander) -> void:
 	for child in get_children():
 		child.queue_free()
@@ -60,7 +76,7 @@ func build(commander: Commander) -> void:
 		if indices.is_empty():
 			continue
 		if tier == 0:
-			x += SPAWNER_MARGIN
+			x += spawner_margin
 		var g := _build_group(commander, tier, indices)
 		g.root.position = Vector2(x, 0)
 		add_child(g.root)
@@ -71,13 +87,13 @@ func build(commander: Commander) -> void:
 	_jump.texture_hover = HudStyle.tex("HUD/DeckPanel/nexus_jump_btn_hover.png")
 	_jump.ignore_texture_size = true
 	_jump.stretch_mode = TextureButton.STRETCH_SCALE
-	var jump_h := HEIGHT * 0.8
-	HudStyle.place(_jump, Rect2(x + 8, HEIGHT - jump_h, 67.0 / 61.0 * jump_h, jump_h))
+	var jump_h := panel_height * 0.8
+	HudStyle.place(_jump, Rect2(x + 8, panel_height - jump_h, 67.0 / 61.0 * jump_h, jump_h))
 	_jump.tooltip_text = Lang.t("core_spawner_jump")
 	_jump.pressed.connect(func(): spawner_jump.emit())
 	add_child(_jump)
 	x += 8 + _jump.size.x
-	size = Vector2(x, HEIGHT)
+	size = Vector2(x, panel_height)
 
 
 func _build_group(commander: Commander, tier: int, indices: Array) -> Group:
@@ -86,12 +102,12 @@ func _build_group(commander: Commander, tier: int, indices: Array) -> Group:
 	g.root = Control.new()
 	g.root.mouse_filter = MOUSE_FILTER_IGNORE
 	g.width = SLOT_STEP * indices.size()
-	g.root.size = Vector2(g.width, HEIGHT)
+	g.root.size = Vector2(g.width, panel_height)
 	if tier >= 2:
 		g.plate = _build_plate(indices.size())   # ZOffset -5: behind the deco (-4) and the slots
-		g.plate.position = Vector2(0, HEIGHT - 75)
+		g.plate.position = Vector2(0, 0)   # 100 % of the panel height
 		g.root.add_child(g.plate)
-	var deco_h := HEIGHT * 0.8
+	var deco_h := panel_height * 0.8
 	var deco := "spawner" if tier == 0 else "main"
 	var left := HudStyle.tex("HUD/DeckPanel/deck_%s_left.png" % deco)
 	var mid := HudStyle.tex("HUD/DeckPanel/deck_%s_mid.png" % deco)
@@ -99,7 +115,7 @@ func _build_group(commander: Commander, tier: int, indices: Array) -> Group:
 	var scale := deco_h / left.get_height()
 	var lw := left.get_width() * scale
 	var rw := right.get_width() * scale
-	var deco_y := HEIGHT - deco_h
+	var deco_y := panel_height - deco_h
 	g.root.add_child(HudStyle.picture(left, Rect2(-lw * 0.3, deco_y, lw, deco_h)))
 	g.root.add_child(HudStyle.picture(mid, Rect2(lw * 0.7, deco_y, g.width - lw * 0.7 - rw * 0.7, deco_h)))
 	g.root.add_child(HudStyle.picture(right, Rect2(g.width - rw * 0.7, deco_y, rw, deco_h)))
@@ -109,7 +125,7 @@ func _build_group(commander: Commander, tier: int, indices: Array) -> Group:
 	g.root.add_child(slots_root)
 	for k in indices.size():
 		var view := _build_slot(commander, indices[k])
-		view.root.position = Vector2(k * SLOT_STEP + 1, HEIGHT - SLOT_H)
+		view.root.position = Vector2(k * SLOT_STEP + 1, panel_height - slot_height)
 		slots_root.add_child(view.root)
 		g.slots.append(view)
 		_views.append(view)
@@ -126,18 +142,18 @@ func _build_plate(count: int) -> Control:
 	var plate := Control.new()
 	plate.mouse_filter = MOUSE_FILTER_STOP
 	var w := SLOT_STEP * count
-	plate.size = Vector2(w, 75)
+	plate.size = Vector2(w, panel_height)
 	if count == 1:
-		plate.add_child(HudStyle.picture(HudStyle.tex("HUD/DeckPanel/tier_block_single.png"), Rect2((w - 84) / 2.0, 0, 84, 75)))
+		plate.add_child(HudStyle.picture(HudStyle.tex("HUD/DeckPanel/tier_block_single.png"), Rect2((w - 84) / 2.0, 0, 84, panel_height)))
 	else:
 		var end := HudStyle.tex("HUD/DeckPanel/tier_block_multi_end.png")
 		var mid := HudStyle.tex("HUD/DeckPanel/tier_block_multi_mid.png")
 		var x := 41.0
 		while x < w - 41:   # whole tiles first, the ends drawn over them: no fractional seam
-			plate.add_child(HudStyle.picture(mid, Rect2(x, 0, 45, 75)))
+			plate.add_child(HudStyle.picture(mid, Rect2(x, 0, 45, panel_height)))
 			x += 45
-		plate.add_child(HudStyle.picture(end, Rect2(0, 0, 41, 75)))
-		var right_end := HudStyle.picture(end, Rect2(w - 41, 0, 41, 75))
+		plate.add_child(HudStyle.picture(end, Rect2(0, 0, 41, panel_height)))
+		var right_end := HudStyle.picture(end, Rect2(w - 41, 0, 41, panel_height))
 		right_end.flip_h = true
 		plate.add_child(right_end)
 	return plate
@@ -148,13 +164,13 @@ func _build_plate_top(count: int) -> Control:
 	var top := Control.new()
 	top.mouse_filter = MOUSE_FILTER_IGNORE
 	var w := SLOT_STEP * count
-	top.size = Vector2(w, 75)
-	var timer := HudStyle.label("00:00", int(75 * 0.25), HudStyle.WHITE, HudStyle.FONT_SEMIBOLD)
+	top.size = Vector2(w, panel_height)
+	var timer := HudStyle.label("00:00", int(panel_height * 0.25), HudStyle.WHITE, HudStyle.FONT_SEMIBOLD)
 	timer.name = "Timer"
-	HudStyle.place(timer, Rect2(0, 75 * 0.07, w - 24, 22))
+	HudStyle.place(timer, Rect2(0, panel_height * 0.07, w - 24, 22))
 	top.add_child(timer)
-	var lock_h := 75 * 0.15
-	top.add_child(HudStyle.picture(HudStyle.tex("HUD/DeckPanel/lock_icon.png"), Rect2(w / 2.0 + 24, 75 * 0.11, lock_h * 19.0 / 26.0, lock_h)))
+	var lock_h := panel_height * 0.15
+	top.add_child(HudStyle.picture(HudStyle.tex("HUD/DeckPanel/lock_icon.png"), Rect2(w / 2.0 + 24, panel_height * 0.11, lock_h * 19.0 / 26.0, lock_h)))
 	return top
 
 
@@ -233,7 +249,7 @@ func refresh(sim: Simulation, commander: Commander) -> void:
 		var locked := commander.tier < g.tier
 		g.plate.visible = locked
 		g.plate_top.visible = locked
-		g.root.get_node("Slots").position.y = SLOT_H * 0.55 if locked else 0.0
+		g.root.get_node("Slots").position.y = SLOT_H * locked_shift if locked else 0.0
 		if locked:
 			g.timer.text = HudStyle.int_to_time(_time_to_tier(sim, g.tier))
 			for v in g.slots:
