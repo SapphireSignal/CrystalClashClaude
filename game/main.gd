@@ -43,8 +43,10 @@ var _red_cursor: int = 0
 ## The sandbox human is team 2 (Red, +x side): the HUD, textures and effects still paint the own team blue
 ## (GetDisplayedTeam maps own -> 1) like the original client: own base top-right, lane leaving bottom-left,
 ## hover outline in the real team colour. The AI is team 1 (Blue, -x).
-const HUMAN_TEAM := Simulation.TEAM_RED
-const AI_TEAM := Simulation.TEAM_BLUE
+## The 2022 sandbox (CreateTestserverGameInfo / the sandbox branch, BaseConflict.Game.Server.pas:379-393) inserts the
+## team-2 commander at slot 0 and then the team-1 commander at slot 0: the local player is team 1 (Blue at -x).
+const HUMAN_TEAM := Simulation.TEAM_BLUE
+const AI_TEAM := Simulation.TEAM_RED
 
 ## The original engine is left-handed (DirectX); Godot is right-handed. `World` is scaled -1 on Z so the
 ## sim / map coordinates (used verbatim inside it) render as the exact mirror Godot would otherwise show,
@@ -514,17 +516,20 @@ func _on_spawned(e: SimEntity) -> void:
 		model.rotation.y = atan2(e.front.x, e.front.y)
 		_units_root.add_child(model)
 		_views[e.id] = model
+		_attach_vertex_visuals(e, model)
 		_spawn_effects(e, "create", model)
 		if e.card_drop:
 			_play_drop(e, model)
 		if e.spawner_placed:
 			_play_spawner_place(e, model)
 		return
-	if e.is_spell_effect() or not e.is_targetable():   # spell effects, fields: only their particle effects
+	if e.is_spell_effect() or not e.is_targetable() or _has_vertex_visuals(e):   # spell effects, fields, quad sprites
 		var holder := Node3D.new()
 		holder.position = Vector3(e.position.x, 0.0, e.position.y)
+		holder.rotation.y = atan2(e.front.x, e.front.y)
 		_units_root.add_child(holder)
 		_views[e.id] = holder
+		_attach_vertex_visuals(e, holder)
 		_spawn_effects(e, "create", holder)
 		return
 	var mesh := MeshInstance3D.new()
@@ -557,13 +562,15 @@ func _on_projectile_spawned(p: Projectile) -> void:
 		model.position = Vector3(p.position.x, 1.2, p.position.y)
 		_units_root.add_child(model)
 		_views[p.id] = model
+		_attach_vertex_visuals(p, model)
 		_spawn_effects(p, "create", model)
 		return
-	if UnitDb.has_unit(p.unit_id) and not UnitDb.raw(p.unit_id).get("effects", []).is_empty():
-		var holder := Node3D.new()   # effect-only projectiles (magic shots): their particle effects are the visual
+	if UnitDb.has_unit(p.unit_id) and (not UnitDb.raw(p.unit_id).get("effects", []).is_empty() or _has_vertex_visuals(p)):
+		var holder := Node3D.new()   # effect-only projectiles (magic shots, sprites, trails): no mesh
 		holder.position = Vector3(p.position.x, 1.2, p.position.y)
 		_units_root.add_child(holder)
 		_views[p.id] = holder
+		_attach_vertex_visuals(p, holder)
 		_spawn_effects(p, "create", holder)
 		return
 	var mesh := MeshInstance3D.new()
@@ -638,6 +645,38 @@ func _on_projectile_removed(p: Projectile, _hit: bool) -> void:
 
 ## TParticleEffectComponent: plays the script's effects for an activation ("create", "fire", "die", ...).
 ## Attached effects follow the parent view; one-shot effects are placed at the entity's position.
+func _has_vertex_visuals(e) -> bool:
+	if not UnitDb.has_unit(e.unit_id):
+		return false
+	var raw := UnitDb.raw(e.unit_id)
+	return not raw.get("quads", []).is_empty() or not raw.get("traces", []).is_empty()
+
+
+## TVertexQuadComponent / TVertexTraceComponent of the script (units.json `quads` / `traces`): sprites and
+## ribbons on the view. Quads scale with the group's eiModelSize (FModelsize); traces track from creation
+## unless they activate on fire / prefire.
+func _attach_vertex_visuals(e, view: Node3D) -> void:
+	if not UnitDb.has_unit(e.unit_id):
+		return
+	var raw := UnitDb.raw(e.unit_id)
+	var sizes: Dictionary = raw.get("visuals", {}).get("model_sizes", {})
+	for quad in raw.get("quads", []):
+		var model_size := float(sizes.get("*", 1.0))
+		for g in quad.get("groups", []):
+			if sizes.has(str(g)):
+				model_size = float(sizes[str(g)])
+				break
+		var node := VertexQuad.create(quad, model_size)
+		if node != null:
+			view.add_child(node)
+	for trace in raw.get("traces", []):
+		var node := VertexTrace.create(trace)
+		node.set_meta("activate", trace.get("activate", "create"))
+		view.add_child(node)
+		if not trace.has("activate"):   # OnAfterCreate: Activate unless ActivateOnFire
+			node.activate()
+
+
 func _spawn_effects(e, activation: String, parent: Node3D) -> void:
 	if not UnitDb.has_unit(e.unit_id):
 		return
@@ -846,6 +885,9 @@ func _sync_views() -> void:
 				view.play_attack()
 				_spawn_effects(e, "fire", view)
 				_spawn_effects(e, "prefire", view)
+				for child in view.get_children():
+					if child is VertexTrace and child.get_meta("activate", "create") in ["fire", "prefire"]:
+						child.activate()
 		else:
 			var y := 0.2 if e.is_spawner() else (2.0 if e.is_building() else 0.9)
 			var ep2 := _lerp_pos(id, e.position, alpha)

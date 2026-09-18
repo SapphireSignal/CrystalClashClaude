@@ -11,8 +11,8 @@ const GLOW_TIME_IN := 0.5
 const GLOW_TIME_OUT := 1.0
 ## EntityComponents.Client.pas:510-513 / SetUpShader :3052-3063: with the Glow post-effect the tile lerps only 0.032
 ## toward cyan and glows through the blurred glow stage; without it the world lerp is GLOW_COLOR_INTENSITY 0.4.
-## We have no Glow post-effect, so the tiles use the 0.4 branch (reference/rolmedia base shots measure (70,188,187)
-## on lit tiles = lerp(lit diffuse, cyan, 0.4)).
+## reference/rolmedia base shots measure (70,188,187) on lit tiles = lerp(gamma-lit diffuse (128,143,143), cyan, 0.4),
+## i.e. the no-Glow-post branch (the Glow branch would give (128,181,181)): the tiles use 0.4.
 const GLOW_COLOR_INTENSITY := 0.4
 const SINK := 0.04
 

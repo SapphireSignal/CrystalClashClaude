@@ -321,8 +321,44 @@ its 2 s; particles/water untouched (their own shaders). Rules learned: Godot mul
 after `light()` (pass the texel through a varying, set ALBEDO white); `get_shader_parameter` returns null for a
 uniform at its default (never wrap it in `float()`/`bool()` blindly).
 
+**Checkpoint 74 (owner's report on 73, 2026-09-17):**
+- **Black line through the towers across the lane** = the terrain chunk seam (4x4 chunks, edges at x = +-75 where the
+  lanetowers stand): the gamma shader clamped UVs but sampled with `repeat_enable`, which wraps at coarser mip levels.
+  `UV_CLAMP` define -> `repeat_disable` samplers (hardware CLAMP_TO_EDGE like the glTF).
+- **"Everything glowy" / bright tile grid**: the build tiles were still PBR-lit while the terrain used the gamma port.
+  The lighting now lives in `game/maps/gamma_light.gdshaderinc` (uniforms, globals, varyings, `light()`), included by
+  `gamma_lit.gdshader` and `build_tile.gdshader`. Reference lit tiles (70,188,187) = lerp(gamma-lit diffuse (128,143,143),
+  cyan, 0.4): the no-Glow-post branch matches the rolmedia shots (the Glow branch would give (128,181,181)). Ours now
+  (77,219,218): G/B still ~+30 (the `buildgrid_activate.pfx` additive flashes over the active tiles; check the pfx
+  intensity next). The jungle interior is still lighter than the reference (SSAO `PostEffectSSAO` default on in the
+  2022 presets, not built; palm self-shadowing): next lighting item.
+- **Rubberband / units not smooth**: the sim is smooth (headless probes `.tmp/walk_probe.gd`, `.tmp/crowd_probe.gd`:
+  0 backward steps, 24 blocked-tile stalls in 24000 unit-ticks). The pop was `UnitModel._cut_animations`: keys one frame
+  outside the range were clamped onto the clip edges, so a walk loop ended on the *next take's first pose*. Now only
+  keys inside the range are copied and the exact edge poses are sampled (`_sample_track`).
+- **Red errors after a match**: `app.gd` connected `size_changed` to a lambda capturing the menu layer and never
+  disconnected it (`_menu_resize` now disconnected in LeaveState).
+- **Own units outlined red / info panel**: sandbox human is now **team 1** (see CLAUDE.md Decisions): the outline
+  follows the raw team id like the source, so own = blue, enemy = red. The unit panel health bar is red for every
+  unit (`docs/hud.md`: HEALTH_RED, the original's `.health` bar) and the ground marker under a clicked unit is
+  `HUD/Selection.png` (`HUD_SELECTION_TEXTURE`, Constants.Client.pas:303): both faithful.
+- **"Watchtower radius ring stays after it dies"**: faithful. A destroyed lanetower leaves a neutral LaneNode whose
+  `TTextureRangeIndicatorComponent` is `IsPermanent` (LaneNode.ets:41-56); the tower's own indicator only shows
+  with the drop zone (`DrawOnShowSpawnZone([dzDrop])`, Lanetower.ets:231).
+- **Yellow placeholder projectile spheres**: TVertexQuadComponent (sprites: lens flares, souls, arrows) and
+  TVertexTraceComponent (ribbons/trails) are now extracted (`units.json` `quads` 35 / `traces` 56 scripts; texture
+  expressions with skin suffix / script variables resolved) and rendered by `game/effects/vertex_quad.gd`
+  (+ `vertex_quad.gdshader`: ScreenSpace / CameraOriented / fixed orientation, additive, colour) and
+  `game/effects/vertex_trace.gd` (TVertexTrace port: sampling distance, texture offset, fade, widening, roll-up,
+  camera-facing ribbon). `tools/convert_particles.py` copies `Graphics/Effects/Textures` to
+  `assets/effects/vertex_textures/`. Views: quads/traces attach to unit and projectile views; the yellow sphere is
+  only the last resort. Not built: TPointLightComponent, `VisibleWithResource` traces, trace deactivate-on-move.
+- **FPS (250-360 on an RTX 4090)**: not profiled yet; suspects are per-frame GDScript (`_sync_views`,
+  `_sync_buff_effects` polling, the CPU particle player, `find_children` in the hover outline) and the drop-zone
+  SubViewport. Next: profile with `--debug` / `Performance` monitors and cut the per-frame work.
+
 Still open from the owner's earlier report:
-1. Owner re-test (window fix + settings fix + drop zone + drop effects + hover outline + RoL sweep + lighting port).
+1. Owner re-test (this checkpoint: seam, walk pop, team colours, tiles, projectile sprites/trails, errors).
 2. FIX FIRST item 3 (lane stones brightness) re-check against `rolmedia` with the ported lighting, then the
    particle/model polish lists and `docs/ingame-gap-audit.md` top-down.
 

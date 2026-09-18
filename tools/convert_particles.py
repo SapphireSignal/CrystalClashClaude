@@ -20,6 +20,7 @@ SRC = ROOT / "reference" / "rise-of-legions" / "Graphics" / "Effects" / "Particl
 EFFECT_TEXTURES = ROOT / "reference" / "rise-of-legions" / "Graphics" / "Effects" / "Textures"   # only RangeLine*: names collide with particle textures (Trace.tga)
 OUT = ROOT / "assets" / "effects"
 TEXTURES_OUT = OUT / "textures"
+VERTEX_TEXTURES_OUT = OUT / "vertex_textures"   # Graphics/Effects/Textures (TVertexQuad / TVertexTrace textures), kept apart: names collide
 TEXTURE_CASE: dict[str, str] = {}   # lowercase name -> actual disk name (pfx references vary in case)
 
 
@@ -191,6 +192,12 @@ def main(filters: list[str]) -> int:
                 shutil.copy2(src, dst)
             TEXTURE_CASE[src.name.lower()] = src.name
             textures += 1
+    VERTEX_TEXTURES_OUT.mkdir(parents=True, exist_ok=True)
+    for src in EFFECT_TEXTURES.iterdir():
+        if src.suffix.lower() in (".tga", ".png"):
+            dst = VERTEX_TEXTURES_OUT / src.name
+            if not dst.exists() or dst.stat().st_mtime < src.stat().st_mtime:
+                shutil.copy2(src, dst)
     count = failed = 0
     for src in sorted(SRC.rglob("*.pfx")):
         rel = src.relative_to(SRC)

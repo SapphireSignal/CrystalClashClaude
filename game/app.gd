@@ -24,6 +24,7 @@ var _scenario := "es1v1"        # the Play screen's choice, RGameFoundData.scena
 var _menu_settings: SettingsMenu = null   # diSettings opened from the SystemPanel
 var _exit_dialog: ExitDialog = null       # client.Close -> ExitDialogVisible
 var _system_panel: SystemPanel = null     # kept in front of the shell (its ZOffset 20000)
+var _menu_resize: Callable = Callable()   # MenuLayout re-apply on window resize, disconnected with the menu
 
 
 func _ready() -> void:
@@ -52,6 +53,9 @@ func _process(_delta: float) -> void:
 
 func change_game_state(id: String) -> void:
 	if _state_root != null:   # LeaveState
+		if _menu_resize.is_valid():
+			get_viewport().size_changed.disconnect(_menu_resize)
+			_menu_resize = Callable()
 		if _state == GAMESTATE_LOADGAMESTATE:
 			_first_loading = false
 		if id == GAMESTATE_INGAME:
@@ -82,7 +86,8 @@ func change_game_state(id: String) -> void:
 			_menu_layer = layer
 			# GUI.VirtualSize = 1280x720 for the menu client: the canvas scales with the window (MenuLayout)
 			MenuLayout.apply(layer)
-			get_viewport().size_changed.connect(func(): MenuLayout.apply(layer))
+			_menu_resize = func(): MenuLayout.apply(layer)
+			get_viewport().size_changed.connect(_menu_resize)
 			layer.add_child(MenuBackground.new())   # TGameStateMenu.EnterState (coMenuAnimatedBackground)
 			# MainMenu.dui includes the SystemPanel above everything, so it is there during the loading page too
 			_system_panel = SystemPanel.new()

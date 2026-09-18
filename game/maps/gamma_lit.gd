@@ -9,7 +9,7 @@ const SHADER_PATH := "res://game/maps/gamma_lit.gdshader"
 static var _shaders: Dictionary = {}   # define list -> Shader
 
 
-## options: glow / normal (Texture2D), uv_clamp, alpha_scissor, semi_transparent, cull_disabled, flip_backface,
+## options: glow / normal (Texture2D), uv_clamp (define), alpha_scissor, semi_transparent, cull_disabled, flip_backface,
 ## specular_power, specular_intensity, specular_tint, shading_reduction, glow_gain.
 static func material(albedo: Texture2D, options: Dictionary = {}) -> ShaderMaterial:
 	var defines: Array[String] = []
@@ -19,6 +19,8 @@ static func material(albedo: Texture2D, options: Dictionary = {}) -> ShaderMater
 		defines.append("FLIP_BACKFACE")
 	if options.get("semi_transparent", false):
 		defines.append("SEMI_TRANSPARENT")
+	if options.get("uv_clamp", false):
+		defines.append("UV_CLAMP")
 	var mat := ShaderMaterial.new()
 	mat.shader = _shader(defines)
 	if albedo != null:
@@ -31,7 +33,7 @@ static func material(albedo: Texture2D, options: Dictionary = {}) -> ShaderMater
 	if normal != null:
 		mat.set_shader_parameter("normal_texture", normal)
 		mat.set_shader_parameter("has_normal", true)
-	for key in ["uv_clamp", "alpha_scissor", "specular_power", "specular_intensity", "specular_tint", "shading_reduction", "glow_gain"]:
+	for key in ["alpha_scissor", "specular_power", "specular_intensity", "specular_tint", "shading_reduction", "glow_gain"]:
 		if options.has(key):
 			mat.set_shader_parameter(key, options[key])
 	return mat

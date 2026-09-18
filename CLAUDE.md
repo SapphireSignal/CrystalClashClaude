@@ -126,8 +126,10 @@ Act as two people at once:
   Window: stretch **disabled** (the original draws its HUD in absolute pixels at every resolution, no design-space
   scaling); `Hud._layout` pins the panels to the window edges and switches to the client's `.small` layout below
   1710x816 (`core_game_scaling.scss`: resources/minimap/top bar 80 %, deck slots 66x64, card hint 267 wide). **Sides**: the 2022 scripts' (Blue at -x, Red at +x, `SimMap.side()`); the camera never rotates per team and
-  `GetDisplayedTeam` paints the own team blue whatever its id, so the owner's screenshots (own base top-right, lane
-  leaving bottom-left, own nexus hover-outlined red) are the **Red** player's view: the sandbox human is team 2 (`Main.HUMAN_TEAM`).
+  `GetDisplayedTeam` paints the own team blue whatever its id. **Sandbox human = team 1 (Blue at -x)** since checkpoint 74:
+  the 2022 sandbox game info inserts the team-1 commander at slot 0 (`BaseConflict.Game.Server.pas:379-393`), and the
+  mesh hover outline uses the raw team id (`BORDER_TEAMCOLORS[Owner.TeamID]`, Visuals.pas:3053-3074), so only team 1
+  sees its own units outlined blue. (The earlier team-2 choice came from Crystal Clash screenshots: superseded.)
 - 2026-09-17 **Planned upgrade (owner, after the replica is playable)**: a HUD size slider in the settings menu so the
   HUD can stay the same size at any resolution (the 2022 client has no HUD scale option, only the fixed-pixel
   layouts with the `.small` switch below 1710 px). Default = the original behaviour.
@@ -269,4 +271,8 @@ SpawnShader mesh effects), spawner placement animation, hover outline, Monk anim
 lists what the in-match client still lacks. Checkpoint 72: RoL-only sweep done, every HUD/tile/glow number cites the 2022
 source. Checkpoint 73: lighting is the original's gamma-space formula ported verbatim (`game/maps/gamma_lit.gdshader`
 + `GammaLit` material builder: terrain, vegetation, decorations, unit models incl. glow post gain and the ColorCorrection
-post; map ambient/sun reach it as global shader parameters, no fitted scales remain). See `CONTINUE.md`.
+post; map ambient/sun reach it as global shader parameters, no fitted scales remain). Checkpoint 74 (owner's report):
+terrain chunk seam (hardware clamp), walk-cycle pop (clip cutter sampled the next take's pose), menu resize-callback
+errors after a match, human = team 1, build tiles lit by the shared `gamma_light.gdshaderinc`, TVertexQuad/TVertexTrace
+projectile sprites + trails (`game/effects/vertex_quad.gd` / `vertex_trace.gd`, extractor `quads`/`traces`,
+`assets/effects/vertex_textures`). See `CONTINUE.md`.

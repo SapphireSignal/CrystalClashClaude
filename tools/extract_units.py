@@ -34,6 +34,10 @@ RE_EFFECT = re.compile(
     r"TParticleEffectComponent\.Create(?:Grouped)?\(Entity(?:,\s*\[([^\]]*)\])?,\s*'([^']*)'(?:\s*,\s*((?:[^()]|\([^()]*\))*))?\)(.*?);", re.S
 )
 RE_EFFECT_CALL = re.compile(r"\.([A-Za-z]+)(?:\(([^()]*(?:\([^()]*\)[^()]*)*)\))?")
+RE_VERTEX_QUAD = re.compile(
+    r"TVertexQuadComponent\.Create(?:Grouped)?\(Entity(?:,\s*\[([^\]]*)\])?,\s*'([^']*)'(\s*\+\s*Entity\.SkinFileSuffix\s*\+\s*'([^']*)')?\s*,\s*([0-9.]+)\s*,\s*([0-9.]+)\s*\)(.*?);", re.S
+)
+RE_VERTEX_TRACE = re.compile(r"TVertexTraceComponent\.Create(?:Grouped)?\(Entity(?:,\s*\[([^\]]*)\])?\)(.*?);", re.S)
 RE_UNIT_BAR = re.compile(
     r"TResourceDisplay(IntegerProgressBar|ProgressBar)Component\.Create(?:Grouped)?\(Entity(?:,\s*\[[^\]]*\])?\)(.*?);", re.S
 )
@@ -499,6 +503,89 @@ def _apply_mesh_chain(mesh: dict, chain: str) -> None:
             mesh.setdefault("team_textures", {}).setdefault(args[2].strip(), {})[kind] = args[1].strip().strip("'")
 
 
+def parse_vertex_quads(text: str) -> list:
+    """Client-side TVertexQuadComponent: a textured quad (lens flares, magic shots, decals) of Width x Height
+    world units at the entity (times eiModelSize). Orientation: ScreenSpace = camera billboard, CameraOriented =
+    horizontal axis along the entity's front with the vertical axis facing the camera, else front + up of the
+    bind matrix (TVertexWorldspaceQuad.ComputeAndSave). Texture paths are relative to Graphics/."""
+    quads = []
+    for groups, path, _skin, skin_tail, width, height, chain in RE_VERTEX_QUAD.findall(text):
+        full = (path + "{skin}" + skin_tail) if skin_tail else path   # {skin} = Entity.SkinFileSuffix, like the mesh paths
+        quad = {"texture": full.replace("\\", "/"), "width": float(width), "height": float(height),
+                "groups": [g.strip() for g in groups.split(",") if g.strip()]}
+        for method, raw_args in RE_EFFECT_CALL.findall(chain):
+            if method == "ScreenSpace":
+                quad["screen_space"] = True
+            elif method == "CameraOriented":
+                quad["camera_oriented"] = True
+            elif method == "Additive":
+                quad["additive"] = True
+            elif method == "Color" and raw_args and raw_args.strip().startswith("$"):
+                quad["color"] = int(raw_args.strip().lstrip("$"), 16)
+            elif method == "IsDecal":
+                quad["decal"] = True
+            elif method == "SetUnitPlaceholder":
+                quad["unit_placeholder"] = True
+        quads.append(quad)
+    return quads
+
+
+def _texture_expression(expr: str, text: str) -> str:
+    """A Graphics/-relative path from a script expression: quoted parts joined, PATH_GRAPHICS_EFFECTS_TEXTURES
+    expanded, Entity.SkinFileSuffix -> {skin}, a script variable resolved from its last `name := '...'`
+    assignment (the else branch of a skin switch = the default skin)."""
+    out = ""
+    for part in [p.strip() for p in expr.strip().split("+")]:
+        if part.startswith("'"):
+            out += part.strip("'")
+        elif part == "PATH_GRAPHICS_EFFECTS_TEXTURES":
+            out += "Effects/Textures/"
+        elif part == "Entity.SkinFileSuffix":
+            out += "{skin}"
+        elif re.fullmatch(r"[A-Za-z_]\w*", part):
+            found = re.findall(r"(?<![A-Za-z0-9_])" + re.escape(part) + r"\s*:=\s*'([^']*)'", text)
+            if found:
+                out += found[-1]
+    return out.replace("\\", "/")
+
+
+def parse_vertex_traces(text: str) -> list:
+    """Client-side TVertexTraceComponent: a ribbon following the entity (projectile trails, beams). Values
+    are the TVertexTrace fields; activation defaults to create unless ActivateOnFire is set."""
+    traces = []
+    for groups, chain in RE_VERTEX_TRACE.findall(text):
+        trace = {"groups": [g.strip() for g in groups.split(",") if g.strip()]}
+        for method, raw_args in RE_EFFECT_CALL.findall(chain):
+            arg = raw_args.strip() if raw_args else ""
+            if method == "Texture" and arg:
+                trace["texture"] = _texture_expression(arg, text)
+            elif method == "Color" and arg.startswith("$"):
+                trace["color"] = int(arg.lstrip("$"), 16)
+            elif method in ("Width", "SamplingDistance", "FadeLength", "MaxLength", "TexturePerDistance", "FadeWidening", "RollUpSpeed") and arg:
+                key = {"Width": "width", "SamplingDistance": "sampling_distance", "FadeLength": "fade_length", "MaxLength": "max_length",
+                       "TexturePerDistance": "texture_per_distance", "FadeWidening": "fade_widening", "RollUpSpeed": "roll_up_speed"}[method]
+                try:
+                    trace[key] = float(eval(arg, {"__builtins__": {}}, {}))   # noqa: S307 - literal arithmetic
+                except Exception:  # noqa: BLE001
+                    pass
+            elif method == "Additive":
+                trace["additive"] = True
+            elif method == "ActivateOnFire":
+                trace["activate"] = "fire"
+            elif method == "ActivateOnPreFire":
+                trace["activate"] = "prefire"
+            elif method == "DeactivateOnMoveTo":
+                trace["deactivate_on_move"] = True
+            elif method == "DeactivateAfterTime" and arg:
+                trace["deactivate_after"] = float(arg)
+            elif method == "LocalSpace":
+                trace["local_space"] = True
+            elif method == "VisibleWithResource" and arg:
+                trace["visible_with_resource"] = arg
+        traces.append(trace)
+    return traces
+
+
 def parse_effects(text: str) -> list:
     """Client-side TParticleEffectComponent chains: effect path (%d = displayed team), size normalisation,
     wela groups and the activation / placement options (docs/particles.md)."""
@@ -635,6 +722,15 @@ def parse_script(path: Path) -> dict:
             data["effects"] = json.loads(json.dumps(parent["effects"]))
         if parent.get("visuals"):
             data["visuals"] = json.loads(json.dumps(parent["visuals"]))
+        for k in ("quads", "traces"):
+            if parent.get(k):
+                data[k] = json.loads(json.dumps(parent[k]))
+    quads = parse_vertex_quads(text)
+    if quads:
+        data["quads"] = list(data.get("quads", [])) + quads
+    traces = parse_vertex_traces(text)
+    if traces:
+        data["traces"] = list(data.get("traces", [])) + traces
     bars = parse_unit_bars(text)
     if bars:
         data["unit_bars"] = bars

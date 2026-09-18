@@ -135,14 +135,45 @@ static func _cut_animations(player: AnimationPlayer, ranges: Dictionary) -> void
 			var nt := clip.add_track(take.track_get_type(t))
 			clip.track_set_path(nt, take.track_get_path(t))
 			clip.track_set_interpolation_type(nt, take.track_get_interpolation_type(t))
-			# keys inside the range, plus the neighbours just outside clamped onto the edges (same time = replace)
+			# keys inside the range; the exact poses at both edges are sampled from the take so the loop closes on
+			# the range's own last frame (clamping the neighbour key outside the range onto the edge replaced the
+			# last walk pose with the next take's first pose: a visible pop every walk cycle)
+			var has_start := false
+			var has_end := false
 			for k in take.track_get_key_count(t):
 				var time := take.track_get_key_time(t, k)
-				if time < start - frame or time > end + frame:
+				if time < start - 0.0001 or time > end + 0.0001:
 					continue
-				clip.track_insert_key(nt, clampf(time - start, 0.0, clip.length), take.track_get_key_value(t, k))
+				var local := clampf(time - start, 0.0, clip.length)
+				has_start = has_start or local < 0.0001
+				has_end = has_end or local > clip.length - 0.0001
+				clip.track_insert_key(nt, local, take.track_get_key_value(t, k))
+			if not has_start:
+				var v = _sample_track(take, t, start)
+				if v != null:
+					clip.track_insert_key(nt, 0.0, v)
+			if not has_end and clip.length > frame * 0.5:
+				var v = _sample_track(take, t, end)
+				if v != null:
+					clip.track_insert_key(nt, clip.length, v)
 		library.add_animation(name, clip)
 	player.add_animation_library("unit", library)
+
+
+## The take's interpolated value at `time` for the track types the models use (null for others).
+static func _sample_track(take: Animation, t: int, time: float) -> Variant:
+	match take.track_get_type(t):
+		Animation.TYPE_POSITION_3D:
+			return take.position_track_interpolate(t, time)
+		Animation.TYPE_ROTATION_3D:
+			return take.rotation_track_interpolate(t, time)
+		Animation.TYPE_SCALE_3D:
+			return take.scale_track_interpolate(t, time)
+		Animation.TYPE_BLEND_SHAPE:
+			return take.blend_shape_track_interpolate(t, time)
+		Animation.TYPE_VALUE:
+			return take.value_track_interpolate(t, time)
+	return null
 
 
 ## A node following the bone bound to a zone (BindZoneToBone + BoneOffset), null when unknown. Used to attach

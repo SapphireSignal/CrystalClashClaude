@@ -2,9 +2,13 @@
 // toward cyan while the field is in the wave rotation, plus the engine's HSV ColorAdjustment (Standardshader.fx
 // COLORADJUSTMENT: hue offset wraps, saturation/value offsets clamp, AbsoluteHSV replaces a channel) used by
 // ShowOccupation (green free / red occupied) and ShowInvalid (red) while a card is armed.
+// Lit with the original's gamma-space formula (gamma_light.gdshaderinc), like the terrain around the tiles.
 shader_type spatial;
+render_mode ambient_light_disabled, specular_disabled, depth_draw_opaque;
 
-uniform sampler2D albedo_tex : source_color, filter_linear_mipmap;
+#include "res://game/maps/gamma_light.gdshaderinc"
+
+uniform sampler2D albedo_tex : filter_linear_mipmap;   // raw texels = gamma-space colour
 uniform float overshoot = 0.0;                 // go_overshoot (GLOW_COLOR_INTENSITY x glow, the no-Glow-post branch)
 uniform vec3 glow_color = vec3(0.0, 1.0, 1.0); // go_color $00FFFF
 uniform vec3 hsv_offset = vec3(0.0);
@@ -38,7 +42,10 @@ vec3 adjust(vec3 rgb) {
 
 void fragment() {
 	// GlowOvershoot runs before the colour adjustment (#inherited after it): the tint recolours the glow too
-	ALBEDO = adjust(mix(texture(albedo_tex, UV).rgb, glow_color, overshoot));
+	v_albedo = adjust(mix(texture(albedo_tex, UV).rgb, glow_color, overshoot));
+	v_glow = vec3(0.0);
+	ALBEDO = vec3(1.0);
 	ROUGHNESS = 1.0;
+	METALLIC = 0.0;
 	SPECULAR = 0.0;
 }
