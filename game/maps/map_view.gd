@@ -105,6 +105,10 @@ func _add_lights(lights: Dictionary) -> void:
 		node.light_energy = float(c[3]) * SUN_SCALE
 		node.shadow_enabled = true
 		node.shadow_blur = 1.5   # SHADOW_SAMPLING_RANGE 1: a small PCF blur
+		# One orthogonal cascade like the original's single shadow map: the default PSSM4 shows its split
+		# boundaries as straight brightness seams across the map at RTS camera distances.
+		node.directional_shadow_mode = DirectionalLight3D.SHADOW_ORTHOGONAL
+		node.directional_shadow_max_distance = 220.0   # covers the visible lane at max zoom
 		node.top_level = true   # placed in global space: the map lives under the Z-mirrored World node (main.gd)
 		add_child(node)
 		var dir_global := Vector3(dir.x, dir.y, -dir.z)

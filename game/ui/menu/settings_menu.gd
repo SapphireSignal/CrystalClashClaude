@@ -228,6 +228,7 @@ func _ready() -> void:
 	_build_buttons()
 	get_viewport().size_changed.connect(_layout)
 	_layout()
+	set_category(category)   # only the open category's page is visible
 	refresh()
 
 

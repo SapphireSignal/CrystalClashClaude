@@ -457,6 +457,8 @@ def parse_visuals(text: str) -> dict:
         for g in groups.split(","):
             if g.strip():
                 sizes[g.strip()] = float(value)
+    for value in re.findall(r"Eventbus\.Write\(eiModelSize,\s*\[([0-9.]+)\]\)", text):   # ungrouped (ArcherBaseProjectile)
+        sizes["*"] = float(value)
     if sizes:
         visuals["model_sizes"] = sizes
     return visuals
@@ -485,6 +487,8 @@ def _apply_mesh_chain(mesh: dict, chain: str) -> None:
             mesh["has_attack_loop"] = True
         elif method == "IgnoreModelSize":
             mesh["ignore_model_size"] = True
+        elif method == "ApplyAutoSizeNormalization":   # FinalSize = eiModelSize / (bbox XZ half extents max * 2)
+            mesh["auto_size"] = True
         elif method == "BindTextureToTeam" and len(args) >= 3:   # (mtDiffuse | mtGlow, file, team id)
             kind = args[0].strip().lower().replace("mt", "", 1)
             mesh.setdefault("team_textures", {}).setdefault(args[2].strip(), {})[kind] = args[1].strip().strip("'")

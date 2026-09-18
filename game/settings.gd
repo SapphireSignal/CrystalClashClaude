@@ -218,14 +218,10 @@ static func _apply_game_window() -> void:
 	if DisplayServer.window_get_mode(window) == DisplayServer.WINDOW_MODE_MINIMIZED:
 		return
 	if display_mode() == DisplayMode.BORDERLESS_FULLSCREEN_WINDOW:
-		# dmBorderlessFullscreenWindow is exactly that: `BorderStyle := bsNone` plus `SetBounds(TargetMonitor...)`,
-		# a borderless window over the whole monitor (its full bounds, taskbar included) - never a fullscreen mode
-		# switch, so alt-tab and a second monitor keep working.
-		var monitor := DisplayServer.window_get_current_screen(window)
-		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED, window)
-		DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_BORDERLESS, true, window)
-		DisplayServer.window_set_position(DisplayServer.screen_get_position(monitor), window)
-		DisplayServer.window_set_size(DisplayServer.screen_get_size(monitor), window)
+		# dmBorderlessFullscreenWindow: a borderless window over the monitor's full bounds, never an exclusive
+		# mode switch. Godot's WINDOW_MODE_FULLSCREEN is exactly that (and unlike a hand-made borderless cover,
+		# Windows does not promote it to exclusive fullscreen, so leaving it for the menu window works).
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN, window)
 		return
 	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED, window)
 	DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_BORDERLESS, false, window)
@@ -246,9 +242,13 @@ static func _apply_menu_window() -> void:
 	var screen := DisplayServer.screen_get_usable_rect(DisplayServer.window_get_current_screen(window))
 	var wanted := menu_window_size(screen.size)
 	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED, window)
-	DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_BORDERLESS, true, window)   # GameWindow.BorderStyle := bsNone
+	# A borderless window covering the whole monitor counts as fullscreen to Windows and ignores resizes:
+	# drop the border flag, shrink and move first, then go borderless again (GameWindow.BorderStyle := bsNone).
+	DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_BORDERLESS, false, window)
 	DisplayServer.window_set_size(wanted, window)
 	DisplayServer.window_set_position(screen.position + (screen.size - wanted) / 2, window)
+	DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_BORDERLESS, true, window)
+	DisplayServer.window_set_size(wanted, window)   # the flag change can re-apply the frame size
 
 
 ## SetClientWindow's size arithmetic. `ScaledWindowSize` is the screen fitted to the canvas' 16:9, so the window

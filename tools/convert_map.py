@@ -129,6 +129,14 @@ def write_terrain_glb(name: str, heights: np.ndarray, scale: list[float], positi
             pos3 = np.stack([px, ys[gx, gz], pz], axis=-1).reshape(-1, 3).astype(np.float32)
             nrm = normals[gx, gz].reshape(-1, 3).astype(np.float32)
             u, v = np.meshgrid(np.arange(chunk + 1) / chunk, np.arange(chunk + 1) / chunk, indexing="ij")
+            # sample texel centers (D3D convention): the outermost texels sit ON the chunk border, so adjacent
+            # chunks share their edge colour and no filtered seam line appears between them
+            diffuse = MAPS / name / f"{name}{chunk_id}Diffuse.png"
+            if diffuse.exists():
+                with Image.open(diffuse) as img:
+                    tw, th = img.size
+                u = (0.5 + u * (tw - 1)) / tw
+                v = (0.5 + v * (th - 1)) / th
             uv = np.stack([u, v], axis=-1).reshape(-1, 2).astype(np.float32)
             n = chunk + 1
             i = np.arange(chunk)[:, None] * n + np.arange(chunk)[None, :]

@@ -43,7 +43,7 @@ static func create(unit_id: String, displayed_team: int = 1) -> UnitModel:
 	var model := UnitModel.new()
 	var sizes: Dictionary = visuals.get("model_sizes", {})   # eiModelSize per wela group
 	for mesh in visuals["meshes"]:
-		var model_size := 1.0
+		var model_size: float = sizes.get("*", 1.0)   # ungrouped Eventbus.Write(eiModelSize) (projectiles)
 		if not mesh.get("ignore_model_size", false):
 			for g in mesh.get("groups", []):
 				if sizes.has(str(g)):
@@ -94,8 +94,19 @@ static func _build_mesh(mesh: Dictionary, model_size: float, displayed_team: int
 	for mi in node.find_children("*", "MeshInstance3D", true, false):
 		for i in mi.mesh.get_surface_count():
 			mi.set_surface_override_material(i, material)
-	# original scale: raw units x SIZE_FACTOR_3DSMAX (legacy) or x 1, times eiModelSize
+	# original scale: raw units x SIZE_FACTOR_3DSMAX (legacy) or x 1, times eiModelSize;
+	# ApplyAutoSizeNormalization instead fits the mesh's larger XZ extent to eiModelSize world units
 	var s := (SIZE_FACTOR_3DSMAX if mesh.get("legacy_size_factor", false) else 1.0) * model_size
+	if mesh.get("auto_size", false):
+		var aabb := AABB()
+		var first := true
+		for mi in node.find_children("*", "MeshInstance3D", true, false):
+			var box: AABB = mi.transform * mi.get_aabb()
+			aabb = box if first else aabb.merge(box)
+			first = false
+		var extent := maxf(aabb.size.x, aabb.size.z)
+		if extent > 0.0001:
+			s = model_size / extent
 	node.scale = Vector3(s, s, s)
 	if mesh.has("model_offset"):
 		var o: Array = mesh["model_offset"]

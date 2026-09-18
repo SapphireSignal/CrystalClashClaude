@@ -231,6 +231,26 @@ Done this checkpoint:
 - `tools/screenshot.gd`: default window = primary monitor size (owner's screen), `size=WxH` for reference shots;
   `arm=N`; `play=N` falls back to nexus +-8; `main._play` returns the PlayResult.
 
+**Checkpoint 69 (owner's second round):**
+- **"Black line across the lane" root-caused for real**: it was the DirectionalLight PSSM cascade split
+  boundary (a straight brightness seam crossing terrain AND units). `map_view.gd` uses SHADOW_ORTHOGONAL
+  with max distance 220 (single cascade like the original's one shadow map). The capture-ring arc remains
+  (faithful). Terrain textures also clamp + sample texel centers now (both were harmless-but-wrong).
+- **Giant arrows fixed**: `ApplyAutoSizeNormalization` + ungrouped `Eventbus.Write(eiModelSize)` are now
+  extracted (`auto_size`, `model_sizes["*"]`); `UnitModel` fits such meshes to eiModelSize world units
+  (ArcherBaseProjectile: arrow = 1.2 units).
+- **End-of-match fullscreen lobby fixed**: a hand-made borderless window covering the monitor gets promoted
+  to exclusive fullscreen by Windows (mode reads 4, resizes ignored). `_apply_game_window` now uses Godot's
+  WINDOW_MODE_FULLSCREEN (= borderless fullscreen window); leaving to the 1280x720 menu window works.
+  Probably also fixes PrtSc.
+- **Settings dialog overlap fixed**: all category pages started visible (`set_category` was only called on
+  clicks); `_ready` now calls it. The SystemPanel path showed every page stacked.
+- **`tools/playtest.gd`**: autopilot playtest (plays affordable cards at sensible targets, camera follows the
+  front line, screenshots every N s + first projectile/death/spell, summary line). THE standard test now:
+  `godot --path <proj> -s tools/playtest.gd --log-file <proj>/.tmp/godot.log -- 150 shot=25`.
+- **Probe hygiene**: parse-check scratch scripts headlessly before opening a window
+  (`.tmp/parse_check.gd -- res://path.gd`); the owner sees every red block on their screen.
+
 Still open from the owner's report (next, in order):
 1. **Buff/modifier visuals**: extractor must record `{$IFDEF CLIENT}` TParticleEffectComponent chains in
    `Scripts/Modifiers/*.dws` + `Links/*.dws` (currently dropped, so ShieldsUp/Frenzy/etc. show nothing);
