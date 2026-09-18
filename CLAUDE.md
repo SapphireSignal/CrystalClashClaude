@@ -254,4 +254,10 @@ layout, snapshot/Save/Cancel/Revert, graphics quality presets) + `game/ui/menu/s
 Gameplay/Sound/Graphics tabs) + `ingame_menu.gd` (HUD/Menu.dui via Escape / minimap button; Surrender ends the match).
 The HUD reads hotkey badges, health bar mode and the technical panel from it. The SystemPanel (minimize/settings/
 close) and the ExitDialog are in, the menu runs on its 1280x720 canvas and the window changes with the client state.
-See `CONTINUE.md`.
+Owner playtests drive the current work (checkpoints 67-70): card arming with ghost preview + Spelltarget
+reticle, render interpolation (smooth 31 Hz sim), shield-ready gate, buff/modifier client effects
+(modifiers.json `effects`, `main._sync_buff_effects`), particle player fixes (Hermite tangents, no parent
+scale, StickToEmitter, texture case), auto-size projectile meshes (eiModelSize), shadow = one orthogonal
+cascade (PSSM splits drew a fake "seam" line), window modes (game = WINDOW_MODE_FULLSCREEN, menu = borderless
+1280x720; hand-made borderless covers get promoted to exclusive fullscreen and ignore resizes), settings
+dialog page visibility. `tools/playtest.gd` = autopilot playtest (the standard test). See `CONTINUE.md`.

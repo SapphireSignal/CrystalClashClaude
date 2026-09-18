@@ -259,9 +259,15 @@ effects to the bind zone while the buff lasts (Shieldblock ring via ShieldsUp ve
 block event from the sim) and buffs on non-UnitModel views.
 
 Still open from the owner's report (next, in order):
-1. **Drop/spawn animation**: the original shows a light pillar + effect when units drop (owner's reference
-   screenshot 4). Find the effect (drop scripts' UnitTemplate create chain or `FromHeaven`-style pfx) and play
-   it on squad spawn.
+1. **Drop/spawn animation** (lead found, build next): dropped/produced units get
+   `TWarheadApplyScriptComponent(... 'Modifiers\Drop.dws').ApplyToProducedUnits()` plus
+   `Modifiers\SummoningSickness.dws` (1000 ms) from the card templates (`BuildingCardTemplate.dws:43-52`,
+   and the same pattern in the drop card template) + a per-colour drop sound. So the light pillar the owner
+   showed = the client effects of `Modifiers/Drop.dws` (already extracted into modifiers.json `effects` at
+   checkpoint 70!). To build: make the sim apply `Drop`/`SummoningSickness` buffs to drop-spawned squads
+   (ApplyToProducedUnits), then `_sync_buff_effects` shows them automatically. Some units pass
+   `HasOwnSpawnEffect` (their own `*_spawn.pfx` on create: Defender lothar_spawn, PatronSaint, Brratu,
+   Groundbreaker, Sapling...) - check the extractor records those unit-script variants.
 2. **Drop-zone overlay** while a drop/epic card is armed (owner's reference screenshot 3): green valid area /
    red invalid over the walkzone (TZoneRenderer port, or a vertex-coloured grid mesh approximation), plus the
    green tint on the ground reticle, grid occupation tints, entity hover outline, deck-slot armed glow.
