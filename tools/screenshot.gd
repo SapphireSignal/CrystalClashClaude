@@ -1,7 +1,7 @@
 extends SceneTree
 ## Runs game/main.tscn for a while and saves screenshots of the HUD for comparison with
 ## reference/rolmedia/ingame. Usage (windowed, not headless):
-##   godot --path <proj> -s tools/screenshot.gd --log-file <proj>/.tmp/godot.log -- <seconds> [<seconds> ...] [select] [hover=<slot>] [finish] [zoom=nexus|unit|node] [at=node] [screen=X,Y] [size=WxH, default 1920x1080] [play=<slot>] [menu] [settings=<category>]
+##   godot --path <proj> -s tools/screenshot.gd --log-file <proj>/.tmp/godot.log -- <seconds> [<seconds> ...] [select] [hover=<slot>] [finish] [zoom=nexus|unit|node] [at=node|tower] [screen=X,Y] [size=WxH, default 1920x1080] [play=<slot>] [menu] [settings=<category>]
 ## Writes .tmp/shot_<seconds>.png for each requested time; "select" selects a unit (or the blue nexus), "hover=N" shows deck slot N's card hint.
 
 var _targets: Array = []
@@ -85,6 +85,10 @@ func _process(delta: float) -> bool:
 					target = units[0]
 			_main._zoom = 2.6   # close-up for detail checks only: the game itself never zooms
 			_main._place_camera(target.position)
+		if _at == "tower":   # at=tower: the human team's first lanetower
+			var towers: Array = _main.sim.alive_entities(-1).filter(func(e): return e.unit_id.begins_with("Units/Neutral/Lanetower") and e.team == _main.HUMAN_TEAM)
+			if not towers.is_empty():
+				_main._place_camera(towers[0].position)
 		if _at == "node":
 			var nodes: Array = _main.sim.alive_entities(-1).filter(func(e): return e.is_lane_node())
 			if not nodes.is_empty():

@@ -31,6 +31,9 @@ func _ready() -> void:
 	mouse_filter = MOUSE_FILTER_IGNORE
 
 
+var position_of: Callable   # (id, entity) -> the interpolated view position (Main.view_position), else the sim position
+
+
 func setup(sim: Simulation, own_team: int, camera: Camera3D) -> void:
 	_sim = sim
 	_own_team = own_team
@@ -70,7 +73,8 @@ func _draw() -> void:
 		if bars.is_empty():
 			continue
 		var top := BUILDING_TOP if e.is_building() else UNIT_TOP
-		var world := Vector3(e.position.x, top + 1.0, -e.position.y)   # sim -> global (World is mirrored on Z)
+		var pos: Vector2 = position_of.call(e.id, e) if position_of.is_valid() else e.position   # the displayed position
+		var world := Vector3(pos.x, top + 1.0, -pos.y)   # sim -> global (World is mirrored on Z)
 		if _camera.is_position_behind(world):
 			continue
 		var screen := _camera.unproject_position(world)

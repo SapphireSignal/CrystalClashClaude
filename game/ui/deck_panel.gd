@@ -38,6 +38,7 @@ class SlotView:
 	var cooldown_text: Label
 	var charge_text: Label
 	var hotkey: Array = []      # [background, label] of the hotkey badge
+	var hover: TextureRect      # .hover overlay (CardIcon_*_Hover.png), visible while the mouse is over the card
 
 
 class Group:
@@ -185,6 +186,11 @@ func _build_plate_top(count: int) -> Control:
 	return top
 
 
+func _pop(control: Control, target: float, seconds: float) -> void:
+	var tween := control.create_tween()
+	tween.tween_property(control, "scale", Vector2.ONE * target, seconds)
+
+
 func _build_slot(commander: Commander, index: int) -> SlotView:
 	var v := SlotView.new()
 	v.index = index
@@ -198,6 +204,11 @@ func _build_slot(commander: Commander, index: int) -> SlotView:
 	v.root.pressed.connect(func(): slot_clicked.emit(index))
 	v.root.mouse_entered.connect(func(): slot_hovered.emit(index))
 	v.root.mouse_exited.connect(func(): slot_unhovered.emit(index))
+	# _common.scss .pop-out: Transform scale(0.95) while pressed (25 ms), back over 50 ms, anchored at the centre
+	v.root.pivot_offset = v.root.size / 2.0
+	v.root.button_down.connect(func(): _pop(v.root, 0.95, 0.025))
+	v.root.button_up.connect(func(): _pop(v.root, 1.0, 0.05))
+	v.root.mouse_exited.connect(func(): _pop(v.root, 1.0, 0.05))
 	# ready glow behind the icon
 	var glow_name := "highlight_spawner" if card.is_spawner() else "highlight_drop"
 	var glow_tex := HudStyle.tex("HUD/DeckPanel/%s.png" % glow_name)
@@ -249,6 +260,18 @@ func _build_slot(commander: Commander, index: int) -> SlotView:
 	v.root.add_child(hot_bg)
 	v.root.add_child(hot)
 	v.hotkey = [hot_bg, hot]
+	# shared_card.scss .card-icon .hover: 126 % wide at -1.8 % / -16 %, top-anchored, CardIcon_[Spawner_|Legendary_]Hover.png,
+	# visible while hovered (not on disabled slots), pulsing with $glow
+	var hover_name := "CardIcon_Spawner_Hover" if card.is_spawner() else ("CardIcon_Legendary_Hover" if (card.legendary or card.epic) else "CardIcon_Hover")
+	var hover_tex := HudStyle.tex("MainMenu/Shared/Card/%s.png" % hover_name)
+	var hover_w := SLOT_W * 1.26
+	var hover_h := hover_w * hover_tex.get_height() / hover_tex.get_width()
+	v.hover = HudStyle.picture(hover_tex, Rect2((SLOT_W - hover_w) / 2.0 - SLOT_W * 0.018, -SLOT_H * 0.16, hover_w, hover_h))
+	v.hover.pivot_offset = v.hover.size / 2.0
+	v.hover.visible = false
+	v.root.add_child(v.hover)
+	v.root.mouse_entered.connect(func(): v.hover.visible = true)
+	v.root.mouse_exited.connect(func(): v.hover.visible = false)
 	return v
 
 
@@ -290,6 +313,10 @@ func refresh(sim: Simulation, commander: Commander) -> void:
 		v.glow.visible = ready
 		v.glow.modulate.a = lerpf(1.0, 0.6, pulse)
 		v.glow.scale = Vector2.ONE * lerpf(1.02, 1.0, pulse)
+		if locked_views.has(v):
+			v.hover.visible = false
+		v.hover.modulate.a = lerpf(1.0, 0.6, pulse)
+		v.hover.scale = Vector2.ONE * lerpf(1.02, 1.0, pulse)
 		v.darken.set_shader_parameter("override_color", Color(0, 0, 0, 0) if ready else HudStyle.DARKEN_SOFT)
 		v.charge_text.text = str(s.charges)
 		var charging := s.recharge_at >= 0 and s.charges < s.charge_cap and not s.card.epic

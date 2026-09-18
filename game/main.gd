@@ -30,6 +30,7 @@ var _settings: SettingsMenu = null    # diSettings
 var _exit_dialog: ExitDialog = null   # ExitDialog.dui
 var _selection_decal: MeshInstance3D
 var _armed_slot: int = -1      # armed card (TClientInputComponent.FPreparedSpell): key/click arms, ground click plays
+var _prev_front := {}                   # entity id -> front before the last sim step (turn interpolation)
 var _preview_root: Node3D = null       # ghost unit models while a card is armed (TProductionPreviewComponent)
 var _reticle: MeshInstance3D = null    # ground target decal (TSpelltargetVisualizerShowTextureComponent)
 var _armed_cell: Variant = null        # [zone_id, Vector2i] under the cursor while a spawner card is armed
@@ -96,6 +97,8 @@ func _ready() -> void:
 	_hud.setup(sim, HUMAN_TEAM, _camera)
 	_hud.slot_clicked.connect(_on_slot_clicked)
 	_hud.spawner_jump.connect(_spawner_jump)
+	_hud.minimap.move_to.connect(func(world: Vector2): _place_camera(world))   # eiMiniMapMoveToEvent -> CameraMoveTo(pos, 0)
+	_hud.unit_bars.position_of = view_position
 	_hud.match_left.connect(_on_match_left)
 	_hud.minimap.menu_pressed.connect(_toggle_menu)
 	_selection_decal = _make_decal()
@@ -170,6 +173,8 @@ func _unhandled_input(event: InputEvent) -> void:
 				_confirm_armed()
 			else:
 				_hud.select(_unit_at(_mouse_world_2d(), true))
+		elif event.pressed and event.button_index == MOUSE_BUTTON_MIDDLE:
+			_spawner_jump()   # coKeybindingBindingNexusJumpAlt = mbMiddle (Settings.Client.pas:664)
 		elif event.pressed and event.button_index == MOUSE_BUTTON_WHEEL_UP:
 			_zoom = maxf(ZOOM_MIN, _zoom - ZOOM_SPEED)
 			_place_camera(_look_at)
@@ -192,6 +197,9 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _unhandled_key_input(event: InputEvent) -> void:
 	if not event.is_pressed() or event.is_echo():
+		return
+	if event.keycode == KEY_SPACE and _menu == null or (event.keycode == KEY_SPACE and not _menu.visible):
+		_spawner_jump()   # kbNexusJump: Space (Settings.Client.pas:663) -> HUD.SpawnerJump
 		return
 	if event.keycode == KEY_ESCAPE:
 		if _exit_dialog != null:
@@ -835,6 +843,7 @@ func _set_outline(id: int, on: bool) -> void:
 ## (player-invisible engineering; the original client also rendered decoupled from the game tick).
 func _capture_prev() -> void:
 	_prev_pos.clear()
+	_prev_front.clear()
 	for id in _views:
 		var p: Projectile = sim.projectiles.get(id)
 		if p != null:
@@ -843,6 +852,12 @@ func _capture_prev() -> void:
 		var e: SimEntity = sim.entities.get(id)
 		if e != null:
 			_prev_pos[id] = e.position
+			_prev_front[id] = e.front
+
+
+## The interpolated (displayed) position of an entity this frame, for the HUD bars projected over the units.
+func view_position(id: int, e) -> Vector2:
+	return _lerp_pos(id, e.position, clampf(_accumulator_ms / SimConstants.TICK_MS, 0.0, 1.0))
 
 
 func _lerp_pos(id: int, current: Vector2, alpha: float) -> Vector2:
@@ -893,7 +908,9 @@ func _sync_views() -> void:
 			var ep2 := _lerp_pos(id, e.position, alpha)
 			view.position = Vector3(ep2.x, y, ep2.y)
 		if e.front.length_squared() > 0.0:
-			if view is UnitModel:   # the models face their local +Z
-				view.rotation.y = lerp_angle(view.rotation.y, atan2(e.front.x, e.front.y), alpha)
+			if view is UnitModel:   # the models face their local +Z; the turn interpolates like the position
+				var target := atan2(e.front.x, e.front.y)
+				var pf: Variant = _prev_front.get(id)
+				view.rotation.y = lerp_angle(atan2(pf.x, pf.y), target, alpha) if pf != null and (pf as Vector2).length_squared() > 0.0 else target
 			else:
 				view.rotation.y = atan2(-e.front.y, e.front.x) + PI / 2

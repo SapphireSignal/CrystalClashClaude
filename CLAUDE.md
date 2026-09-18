@@ -275,4 +275,7 @@ post; map ambient/sun reach it as global shader parameters, no fitted scales rem
 terrain chunk seam (hardware clamp), walk-cycle pop (clip cutter sampled the next take's pose), menu resize-callback
 errors after a match, human = team 1, build tiles lit by the shared `gamma_light.gdshaderinc`, TVertexQuad/TVertexTrace
 projectile sprites + trails (`game/effects/vertex_quad.gd` / `vertex_trace.gd`, extractor `quads`/`traces`,
-`assets/effects/vertex_textures`). See `CONTINUE.md`.
+`assets/effects/vertex_textures`). Checkpoint 75: the lane "line" was the flat Bridge quads' shadow acne on the
+coplanar terrain (flat decorations no longer cast), HUD bars and unit turning use the interpolated view state,
+minimap click/drag moves the camera (MiniMapToWorld port), Space / middle mouse = nexus jump, deck cards press
+(`.pop-out` scale 0.95) and show the `.hover` overlay. See `CONTINUE.md`.

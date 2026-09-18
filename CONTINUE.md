@@ -357,8 +357,36 @@ uniform at its default (never wrap it in `float()`/`bool()` blindly).
   `_sync_buff_effects` polling, the CPU particle player, `find_children` in the hover outline) and the drop-zone
   SubViewport. Next: profile with `--debug` / `Performance` monitors and cut the per-frame work.
 
+**Checkpoint 75 (owner's report on 74, 2026-09-17):**
+- **The line through the towers, for real this time**: not the terrain (the chunk textures have no dark border,
+  the clamp fix was right but irrelevant). Isolated by experiments (`ROL_*` env toggles, since removed): no shadows /
+  no normal map / flat terrain colour kept the line; it moved when the Bridge quads were raised and vanished when
+  decorations stopped casting shadows. Bridge1-3 (`Environment/Bridge*.ets`) are flat 32x29 quads at y = 0 lying on
+  the terrain; x = +-48.05 is exactly the lanetower position, and a coplanar caster produces shadow acne along its
+  edge. `MapView._add_decoration`: decorations flatter than 0.1 units no longer cast shadows. A faint tone step
+  between the bridge texture and the terrain beside it remains (the reference shows none): check the terrain
+  normal map / the two diffuse textures next. `tools/screenshot.gd` gained `at=tower`; frame one shot earlier
+  than the capture (`-- 13 14 at=tower`), the capture shows the previous frame.
+- **Health bars flicker while walking**: they were projected from the sim position (31 Hz steps) while the model
+  moved on the interpolated position. `UnitBars.position_of` (= `Main.view_position`) projects the displayed position.
+- **"Monk looks low-fps while walking"**: probes show nothing wrong with the Monk clip (40 keys, LINEAR, rate 1.43).
+  The remaining stepping was the *turn*: `_sync_views` lerped the view rotation toward the target with alpha, which
+  restarts every tick; the front is now captured like the position (`_prev_front`) and the yaw interpolates between
+  the two sim states. If the owner still sees it, next suspect is the walk clip length vs speed (Visuals.pas:3343).
+- **Minimap click / drag** (`TMiniMapComponent.OnKeybindingEvent` / `OnMouseMoveEvent`): `Minimap._gui_input` emits
+  `move_to(world)` from the `MiniMapToWorld` port (Classes.MiniMap.pas:455-485) on left press and while dragging;
+  `Main` places the camera there (`CameraMoveTo(pos, 0)` = instant).
+- **Space = nexus jump**: `coKeybindingBindingNexusJump` default `TasteLeerTaste` (Settings.Client.pas:663), alt =
+  middle mouse (:664) -> `HUD.SpawnerJump` (the existing `_spawner_jump`, which also toggles back).
+- **Card click feedback**: `_common.scss .pop-out` (`&:enabled:down` Transform scale(0.95), 25 ms in / 50 ms out,
+  centre anchor) on the deck slot button, plus the `.hover` overlay of `DeckCard.dui` (`shared_card.scss
+  .card-icon .hover`: CardIcon_[Spawner_|Legendary_]Hover.png, 126 % wide at -1.8 % / -16 %, `$glow` pulse, hidden
+  on disabled slots). The in-game deck has no `.selected` state (only the deck builder's cards do).
+- Open from the reference shot `press_lane_tower_card_hint`: unit shadows there are long and fall to the lower
+  left; ours are short. Check the map light direction handedness (`_add_lights` mirrors z) against it.
+
 Still open from the owner's earlier report:
-1. Owner re-test (this checkpoint: seam, walk pop, team colours, tiles, projectile sprites/trails, errors).
+1. Owner re-test (this checkpoint: line, bars, turning, minimap click, Space, card press/hover).
 2. FIX FIRST item 3 (lane stones brightness) re-check against `rolmedia` with the ported lighting, then the
    particle/model polish lists and `docs/ingame-gap-audit.md` top-down.
 

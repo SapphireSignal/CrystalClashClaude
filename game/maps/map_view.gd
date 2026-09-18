@@ -188,6 +188,10 @@ func _add_decoration(deco: Dictionary) -> void:
 		instance.mesh = mesh
 		instance.material_override = _environment_material(str(m.get("diffuse", "")), false)
 		instance.scale = Vector3.ONE * float(m["scale"])
+		if mesh.get_aabb().size.y < 0.1:
+			# flat ground quads (the lane Bridge1-3): a shadow cast onto the plane they lie on is pure acne, a dark
+			# line along their edges (the original's shadow bias hides it)
+			instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		root.add_child(instance)
 
 

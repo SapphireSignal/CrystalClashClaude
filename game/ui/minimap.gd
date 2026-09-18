@@ -4,6 +4,9 @@ extends Control
 ## tinted with the displayed team colour, the camera's ground quad and the menu button.
 
 signal menu_pressed
+signal move_to(world: Vector2)   # eiMiniMapMoveToEvent: a left click or drag inside the map
+
+var _mouse_down := false
 
 const SIZE := 302.0
 const CONTENT := 281.0
@@ -67,6 +70,33 @@ func setup(sim: Simulation, own_team: int, camera: Camera3D) -> void:
 
 func refresh() -> void:
 	_overlay.queue_redraw()
+
+
+## TMiniMapComponent: kbMainAction down inside the map bounds moves the camera there, and keeps following the
+## mouse while it stays down (OnMouseMoveEvent); the release is swallowed so the world gets no click.
+func _gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		if event.pressed and _in_bounds(event.position):
+			_mouse_down = true
+			move_to.emit(minimap_to_world(event.position))
+			accept_event()
+		elif not event.pressed:
+			_mouse_down = false
+	elif event is InputEventMouseMotion and _mouse_down and _in_bounds(event.position):
+		move_to.emit(minimap_to_world(event.position))
+		accept_event()
+
+
+func _in_bounds(panel_pos: Vector2) -> bool:
+	return Rect2(SIZE - CONTENT, SIZE - CONTENT, CONTENT, CONTENT).has_point(panel_pos)
+
+
+## TMiniMap.MiniMapToWorld (Classes.MiniMap.pas:455-485): the inverse of world_to_minimap.
+func minimap_to_world(panel_pos: Vector2) -> Vector2:
+	var p := panel_pos - Vector2(SIZE - CONTENT, SIZE - CONTENT)
+	var rel := (p - _gui_rect.get_center()) / _gui_rect.size / 1.8
+	rel = Vector2(rel.y, rel.x).rotated(-_angle)
+	return _world_rect.get_center() + rel * _world_rect.size
 
 
 ## TMiniMap.WorldToMiniMap: centre, rotate, mirror along x = y, scale 1.8, back to the centre, clamp.
