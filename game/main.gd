@@ -785,11 +785,10 @@ func _set_outline(id: int, on: bool) -> void:
 		if not on:
 			mi.material_overlay = null
 			continue
-		var base := mi.get_surface_override_material(0) as StandardMaterial3D
 		var m := ShaderMaterial.new()
 		m.shader = OUTLINE_SHADER
 		m.set_shader_parameter("outline_color", BORDER_TEAM_COLORS[clampi(e.team if e != null else 0, 0, 2)])
-		m.set_shader_parameter("albedo_tex", base.albedo_texture if base != null else null)
+		m.set_shader_parameter("albedo_tex", GammaLit.albedo_of(mi.get_surface_override_material(0)))
 		mi.material_overlay = m
 
 

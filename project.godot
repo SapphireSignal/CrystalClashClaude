@@ -21,3 +21,14 @@ window/stretch/aspect="expand"
 
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
+
+[shader_globals]
+
+rol_ambient={
+"type": "vec3",
+"value": Vector3(0.772, 0.772, 0.772)
+}
+rol_sun={
+"type": "vec3",
+"value": Vector3(0.52, 0.52, 0.52)
+}

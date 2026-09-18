@@ -267,4 +267,6 @@ dialog page visibility. `tools/playtest.gd` = autopilot playtest (the standard t
 port with stencil passes + PostprocessZone post), build-grid occupation tints, drop visuals (drop pfx + the five
 SpawnShader mesh effects), spawner placement animation, hover outline, Monk animations. `docs/ingame-gap-audit.md`
 lists what the in-match client still lacks. Checkpoint 72: RoL-only sweep done, every HUD/tile/glow number cites the 2022
-source (only `MapView` AMBIENT/SUN scales remain fitted; gamma-space lighting port is next). See `CONTINUE.md`.
+source. Checkpoint 73: lighting is the original's gamma-space formula ported verbatim (`game/maps/gamma_lit.gdshader`
++ `GammaLit` material builder: terrain, vegetation, decorations, unit models incl. glow post gain and the ColorCorrection
+post; map ambient/sun reach it as global shader parameters, no fitted scales remain). See `CONTINUE.md`.

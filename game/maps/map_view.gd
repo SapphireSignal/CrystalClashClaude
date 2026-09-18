@@ -5,12 +5,9 @@ extends Node3D
 
 const MAPS_DIR := "res://assets/maps/"
 const ENV_DIR := "res://assets/environment/"
-## The original lit in gamma space (Standardshader.fx:515 colour * (NdotL * light + ambient)): with ambient 0.772
-## and sun 0.52 a shadowed patch shows 63 % of the lit brightness on screen. Godot lights in linear space, so
-## the same numbers would show ~80 % (flat look). Ambient x0.35 and sun x1.06 give the 63 % display ratio with
-## the lit sand / platform at the reference's brightness (patch medians, docs/reference-material.md).
-const AMBIENT_SCALE := 0.35
-const SUN_SCALE := 1.06
+## Lighting is the original's gamma-space formula, ported verbatim in game/maps/gamma_lit.gdshader (terrain,
+## vegetation, decorations and unit models); the map's ambient / sun values reach it as the global shader
+## parameters rol_ambient / rol_sun. The Godot light node only supplies direction and shadow.
 ## The engine's Glow post-effect (PostEffects.fxs:22-33: Kernelsize 3, AdditiveBlur, Intensity 0.44, one iteration)
 ## blurs the rsGlow buffer with the un-normalised GAUSS_3_ADDITIVE kernel (Shaderglobals.fx:24, taps sum 4.94164)
 ## once per axis, each pass scaled by the intensity, and adds the result to the scene (Engine.Core.pas:1835-1890):
@@ -46,6 +43,13 @@ func _add_terrain(path: String) -> void:
 		return
 	var terrain: Node3D = (load(path) as PackedScene).instantiate()
 	terrain.name = "Terrain"
+	# the glb's PBR materials carry the chunk textures; relight them with the original's formula
+	for mi: MeshInstance3D in terrain.find_children("*", "MeshInstance3D", true, false):
+		for i in mi.mesh.get_surface_count():
+			var base := mi.mesh.surface_get_material(i) as BaseMaterial3D
+			if base == null:
+				continue
+			mi.set_surface_override_material(i, GammaLit.material(base.albedo_texture, {"normal": base.normal_texture, "uv_clamp": true}))
 	add_child(terrain)
 
 
@@ -99,7 +103,9 @@ func _add_water(water: Dictionary, dir: String, lights: Dictionary, terrain: Dic
 func _add_lights(lights: Dictionary) -> void:
 	var ambient: Array = lights.get("ambient", [1, 1, 1, 1])
 	ambient_color = Color(ambient[0], ambient[1], ambient[2])
-	ambient_energy = float(ambient[3]) * AMBIENT_SCALE
+	ambient_energy = float(ambient[3])
+	# Ambient = rgb premultiplied by the intensity (Engine.Core.pas:1009)
+	RenderingServer.global_shader_parameter_set("rol_ambient", Vector3(ambient[0], ambient[1], ambient[2]) * float(ambient[3]))
 	for light in lights.get("directional", []):
 		if not light.get("enabled", false):
 			continue
@@ -108,7 +114,9 @@ func _add_lights(lights: Dictionary) -> void:
 		var dir := Vector3(d[0], d[1], d[2]).normalized()
 		var c: Array = light["color"]
 		node.light_color = Color(c[0], c[1], c[2])
-		node.light_energy = float(c[3]) * SUN_SCALE
+		node.light_energy = float(c[3])
+		# DirectionalLightColor.rgb * .a (Standardshader.fx:486); the shadow comes from the light node
+		RenderingServer.global_shader_parameter_set("rol_sun", Vector3(c[0], c[1], c[2]) * float(c[3]))
 		node.shadow_enabled = true
 		node.shadow_blur = 1.5   # SHADOW_SAMPLING_RANGE 1: a small PCF blur
 		# One orthogonal cascade like the original's single shadow map: the default PSSM4 shows its split
@@ -204,17 +212,9 @@ static func _environment_material(diffuse: String, foliage: bool) -> Material:
 		return _material_cache[key]
 	var path := ENV_DIR + diffuse
 	var texture: Texture2D = load(path) if diffuse != "" and ResourceLoader.exists(path) else null
-	if foliage:   # leaves: cut-out alpha, both sides lit (game/maps/foliage.gdshader)
-		var leaf := ShaderMaterial.new()
-		leaf.shader = preload("res://game/maps/foliage.gdshader")
-		if texture != null:
-			leaf.set_shader_parameter("albedo_texture", texture)
-		_material_cache[key] = leaf
-		return leaf
-	var mat := StandardMaterial3D.new()
-	if texture != null:
-		mat.albedo_texture = texture
-	mat.roughness = 1.0
-	mat.metallic_specular = 0.2
+	# leaves / grass: cut-out alpha, both sides lit (the back face uses the flipped normal: the world node is
+	# mirrored (main.gd), so a plain double-sided material showed the back faces with normals pointing away)
+	var options := {"cull_disabled": true, "flip_backface": true, "alpha_scissor": 0.5} if foliage else {}
+	var mat := GammaLit.material(texture, options)
 	_material_cache[key] = mat
 	return mat

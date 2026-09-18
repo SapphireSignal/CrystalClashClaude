@@ -37,7 +37,7 @@ static func apply(model: Node3D, color: String) -> void:
 			var original: Material = mi.get_surface_override_material(i)
 			if original == null:
 				original = mi.mesh.surface_get_material(i)
-			var mat := _spawn_material(original as StandardMaterial3D, mode, fading, height, model.global_position)
+			var mat := _spawn_material(original, mode, fading, height, model.global_position)
 			if mat == null:
 				continue
 			fx._restore.append([mi, i, mi.get_surface_override_material(i)])
@@ -49,13 +49,14 @@ static func apply(model: Node3D, color: String) -> void:
 	model.add_child(fx)
 
 
-static func _spawn_material(base: StandardMaterial3D, mode: int, fading: Color, height: float, origin: Vector3) -> ShaderMaterial:
+static func _spawn_material(base: Material, mode: int, fading: Color, height: float, origin: Vector3) -> ShaderMaterial:
 	if base == null:
 		return null
 	var variant := ""
-	if base.transparency == BaseMaterial3D.TRANSPARENCY_ALPHA:
+	var scissor := GammaLit.alpha_scissor_of(base)
+	if GammaLit.is_semi_transparent(base):
 		variant = "TRANSPARENT"
-	elif base.transparency == BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR:
+	elif scissor > 0.0:
 		variant = "SCISSOR"
 	if not _shaders.has(variant):
 		var shader := Shader.new()
@@ -64,13 +65,14 @@ static func _spawn_material(base: StandardMaterial3D, mode: int, fading: Color, 
 		_shaders[variant] = shader
 	var m := ShaderMaterial.new()
 	m.shader = _shaders[variant]
-	m.set_shader_parameter("albedo_tex", base.albedo_texture)
-	m.set_shader_parameter("emission_tex", base.emission_texture if base.emission_enabled else null)
-	m.set_shader_parameter("has_emission", 1.0 if base.emission_enabled and base.emission_texture != null else 0.0)
-	m.set_shader_parameter("emission_gain", base.emission_energy_multiplier)
-	m.set_shader_parameter("roughness", base.roughness)
-	m.set_shader_parameter("specular", base.metallic_specular)
-	m.set_shader_parameter("alpha_scissor", base.alpha_scissor_threshold)
+	var glow := GammaLit.glow_of(base)
+	m.set_shader_parameter("albedo_tex", GammaLit.albedo_of(base))
+	m.set_shader_parameter("emission_tex", glow)
+	m.set_shader_parameter("has_emission", 1.0 if glow != null else 0.0)
+	m.set_shader_parameter("emission_gain", MapView.GLOW_POST_GAIN)
+	m.set_shader_parameter("roughness", 1.0)
+	m.set_shader_parameter("specular", 0.0)
+	m.set_shader_parameter("alpha_scissor", scissor)
 	m.set_shader_parameter("mode", mode)
 	m.set_shader_parameter("model_height", height)
 	m.set_shader_parameter("object_position", origin)

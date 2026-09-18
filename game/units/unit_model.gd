@@ -15,7 +15,7 @@ const UNITS_DIR := "res://assets/units/"
 const GLOW_GAIN := MapView.GLOW_POST_GAIN
 
 static var _scene_cache: Dictionary = {}     # glb path -> PackedScene
-static var _material_cache: Dictionary = {}  # xml path + team -> StandardMaterial3D
+static var _material_cache: Dictionary = {}  # xml path + team -> ShaderMaterial (GammaLit)
 static var _folder_index: Dictionary = {}    # folder -> {lowercase name -> real name}
 
 var _players: Array[AnimationPlayer] = []
@@ -250,36 +250,36 @@ static func _read_descriptor(xml_path: String) -> Dictionary:
 
 ## Standardshader.fx: diffuse albedo; Material.tga argb = (shading reduction, specular intensity, specular
 ## power, specular tint). Godot's spec/roughness approximate the specular term; no shadow reduction.
-static func _material(xml_path: String, descriptor: Dictionary, team_textures: Dictionary = {}) -> StandardMaterial3D:
+static func _material(xml_path: String, descriptor: Dictionary, team_textures: Dictionary = {}) -> ShaderMaterial:
 	var key := xml_path + "|" + str(team_textures)
 	if _material_cache.has(key):
 		return _material_cache[key]
-	var mat := StandardMaterial3D.new()
 	var folder := xml_path.get_base_dir()
+	var options := {}
+	var albedo: Texture2D = null
 	var diffuse := str(team_textures.get("diffuse", descriptor.get("DiffuseTetxure", descriptor.get("DiffuseTexture", ""))))
 	if diffuse != "":
 		var tex_path := _real_path(folder + "/" + diffuse)
 		if ResourceLoader.exists(tex_path):
-			mat.albedo_texture = load(tex_path)
+			albedo = load(tex_path)
 	var glow := str(team_textures.get("glow", descriptor.get("GlowTexture", "")))
 	if glow != "":   # GlowTexture: emissive parts (crystals, runes, eyes), baked rgb * alpha as png by the copy tool
 		var glow_path := _real_path(folder + "/" + glow.get_basename() + ".png")
 		if ResourceLoader.exists(glow_path):
-			mat.emission_enabled = true
-			mat.emission_texture = load(glow_path)
-			mat.emission = Color.BLACK   # emission_operator ADD: colour + texture, so only the texture counts
-			mat.emission_energy_multiplier = GLOW_GAIN
+			options["glow"] = load(glow_path)
+			options["glow_gain"] = GLOW_GAIN
 	if str(descriptor.get("Cullmode", "cmCCW")) == "cmNone":
-		mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+		options["cull_disabled"] = true
 	if str(descriptor.get("TextureSemiTransparency", "False")) == "True":
-		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		options["semi_transparent"] = true
 	elif float(str(descriptor.get("AlphaTestTreshold", "0")).replace(",", ".")) > 0.0:
-		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
-		mat.alpha_scissor_threshold = float(str(descriptor["AlphaTestTreshold"]).replace(",", "."))
-	var spec_power := float(str(descriptor.get("SpecularPower", "128")).replace(",", "."))
-	mat.roughness = clampf(1.0 - spec_power / 256.0, 0.3, 1.0)
-	mat.metallic = 0.0
-	mat.metallic_specular = clampf(float(str(descriptor.get("SpecularIntensity", "1")).replace(",", ".")) * 0.5, 0.0, 1.0)
+		options["alpha_scissor"] = float(str(descriptor["AlphaTestTreshold"]).replace(",", "."))
+	# TMaterial (Engine.Mesh.pas:630-633) values from the mesh xml, used verbatim by the lighting shader
+	options["specular_power"] = float(str(descriptor.get("SpecularPower", "128")).replace(",", "."))
+	options["specular_intensity"] = float(str(descriptor.get("SpecularIntensity", "0")).replace(",", "."))
+	options["specular_tint"] = float(str(descriptor.get("SpecularTint", "1")).replace(",", "."))
+	options["shading_reduction"] = float(str(descriptor.get("ShadingReduction", "0")).replace(",", "."))
+	var mat := GammaLit.material(albedo, options)
 	_material_cache[key] = mat
 	return mat
 

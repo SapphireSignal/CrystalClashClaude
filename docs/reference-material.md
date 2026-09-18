@@ -177,7 +177,9 @@ These are current and take precedence over Codex's older captures. Facts read fr
   saturation (not ported yet: units use Godot's PBR with the scaled lights).
 - Lighting (2026-09-17, game-start shot): patch medians ref vs ours after `MapView` ambient x0.35 / sun x1.06:
   sand SW 157/159, sand W 228/219, shadowed jungle 65/58, platform 174/172. The original's gamma-space
-  `colour * (NdotL * sun + ambient)` makes shadow 63 % of lit on screen; the linear scales reproduce that.
+  `colour * (NdotL * sun + ambient)` makes shadow 63 % of lit on screen; the linear scales reproduced that.
+  Superseded at checkpoint 73: the lighting is now the source formula itself (`game/maps/gamma_lit.gdshader`),
+  no fitted scales.
 - Top bar in the live client: red bar left, blue bar right for both the blue and the red player (own team is
   not on the left). Ours puts blue (own) left: check the original `.dui` before changing.
 - Capture point (lane node): a white disc on the lane with a blue progress ring while a team captures it.

@@ -5,7 +5,7 @@ Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
 **Owner (2026-09-17):** the owner **playtests**: at each
 checkpoint give the run command and a short list of things to check, and fix what they report first.
 
-## State (2026-09-17, checkpoint 66)
+## State (2026-09-17, checkpoint 73; see the checkpoint 73 paragraph below for the latest)
 - Phases 1-3 done, 835 tests pass. Sandbox `game/main.tscn`: blue deck on keys 1-9,0,-,= or by clicking a card
   (drops/spells then need a left click on the ground, spawners go to the next free field); red AI plays Black.
 - **Phase 4 (HUD): step 1 done.** `game/ui/` holds the code-built HUD from `docs/hud.md`: top bar (clock, nexus
@@ -299,16 +299,32 @@ number that had been fitted to Crystal Clash shots is now source-derived (file:l
   (was a fitted 4.0).
 - Camera comment cites Constants.Client.pas:34 / Settings.Client.pas:512,576-577 / EntityComponents.Client.pas:2078.
 - Removed every "live client" / owner-screenshot mention from `game/`; `docs/hud.md` hint delay corrected.
-Still Crystal-Clash-fitted (re-derive from RoL next): `map_view.gd` AMBIENT_SCALE 0.35 / SUN_SCALE 1.06 (the
-source lights in gamma space: `Standardshader.fx:486,515` colour * (NdotL * sun + ambient), then ColorCorrection
-`PostEffects.fxs:56-63` = pow(scene / 0.956, 1.08); the faithful port is a gamma-space lighting shader for terrain /
-units / vegetation, or a re-fit of the two scales against `rolmedia` sand / shadow patch medians). Everything
-else in `game/` now cites the 2022 source or `rolmedia`.
+Everything in `game/` now cites the 2022 source or `rolmedia`.
+
+**Checkpoint 73 (gamma-space lighting port, 2026-09-17):** `MapView.AMBIENT_SCALE` / `SUN_SCALE` (fitted to
+Crystal Clash shots) are gone. `game/maps/gamma_lit.gdshader` is the verbatim port of `Standardshader.fx:486-515`
+(= `DeferredDirectionalAmbientLight.fx`, the default DeferredShading path): `tex * lerp(NdotL * (1 - shadow) * sun +
+ambient, 1, shading_reduction) + specular * light` in gamma space (textures sampled raw, no `source_color`), then
+the Glow post (additive, gain `GLOW_POST_GAIN`, render order 2) and ColorCorrection (`PosteffectColorCorrection.fx`,
+PostEffects.fxs: shadows 0 / lights 0.956 / midtones **1.008**, order 10; the old note said 1.08), converted once
+to linear for Godot's sRGB output. `game/maps/gamma_lit.gd` (`GammaLit.material(albedo, options)`) builds the
+variants (`CULL_DISABLED`, `FLIP_BACKFACE`, `SEMI_TRANSPARENT` as prepended #defines) and serves the material
+queries the spawn mesh effect / hover outline need. Used by: terrain chunks (glb materials replaced, normal map +
+UV clamp), vegetation + grass (replaces `foliage.gdshader`), decorations, unit models (`UnitModel._material` now
+returns a ShaderMaterial with the xml's SpecularPower/Intensity/Tint/ShadingReduction; engine defaults
+`Engine.Mesh.pas:630-633`, specular intensity 0). Ambient (`rgb * intensity`, `Engine.Core.pas:1009`) and sun
+(`rgb * a`) are the global shader parameters `rol_ambient` / `rol_sun` (project.godot `[shader_globals]`, set by
+`MapView._add_lights`); the DirectionalLight3D only supplies direction + shadow (`ATTENUATION`). Verified: before/
+after shots nearly identical to the fitted look (slightly more contrast in the jungle), shadows/glow/ghost preview/
+playtest fine, 835 tests. Not ported: the spawn mesh effect shader (`spawn_mesh.gdshader`) still lights PBR during
+its 2 s; particles/water untouched (their own shaders). Rules learned: Godot multiplies `DIFFUSE_LIGHT` by `ALBEDO`
+after `light()` (pass the texel through a varying, set ALBEDO white); `get_shader_parameter` returns null for a
+uniform at its default (never wrap it in `float()`/`bool()` blindly).
 
 Still open from the owner's earlier report:
-1. Owner re-test (window fix + settings fix + drop zone + drop effects + hover outline + this sweep).
-2. Lighting: the gamma-space port above (also FIX FIRST item 3, lane stones brightness), then the particle/model
-   polish lists and `docs/ingame-gap-audit.md` top-down.
+1. Owner re-test (window fix + settings fix + drop zone + drop effects + hover outline + RoL sweep + lighting port).
+2. FIX FIRST item 3 (lane stones brightness) re-check against `rolmedia` with the ported lighting, then the
+   particle/model polish lists and `docs/ingame-gap-audit.md` top-down.
 
 ## Done from `reference/rolmedia/` (2026-09-17)
 - Hotkey badges hidden by default (`coGameplayShowDeckHotkeys` = false; `DeckPanel.show_hotkeys` for the settings menu).
