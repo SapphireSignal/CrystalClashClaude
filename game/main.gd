@@ -23,6 +23,7 @@ var _views: Dictionary = {}   # entity id -> Node3D (UnitModel or placeholder me
 var _prev_pos: Dictionary = {}   # entity id -> Vector2 position before the last sim step (render interpolation)
 var _last_fire: Dictionary = {}   # entity id -> fire_at last seen (attack animation trigger)
 var _ready_effects: Dictionary = {}   # entity id -> [[ParticleEffect, wela group]] shown while that wela is ready
+var _buff_fx: Dictionary = {}         # entity id -> {Buff: [ParticleEffect]} attached while the buff lasts
 var _hud: Hud
 var _menu: IngameMenu = null          # hud.IsMenuOpen
 var _settings: SettingsMenu = null    # diSettings
@@ -559,6 +560,41 @@ func _on_projectile_spawned(p: Projectile) -> void:
 	_views[p.id] = mesh
 
 
+## A buff's client effects (modifiers.json `effects`) follow the unit while the buff is active: attach the
+## "now"/"create"-activated ones when the buff appears, free them when it is gone (Shieldblock ring, Frenzy...).
+func _sync_buff_effects(e: SimEntity, view: UnitModel) -> void:
+	var cur: Dictionary = _buff_fx.get_or_add(e.id, {})
+	for b in cur.keys():
+		if not e.buffs.has(b):
+			for fx in cur[b]:
+				if is_instance_valid(fx):
+					fx.queue_free()
+			cur.erase(b)
+	for b in e.buffs:
+		if cur.has(b):
+			continue
+		var list := []
+		for effect in Buff.effects(b.name):
+			var activate: Array = effect.get("activate", [])
+			if not (activate.has("now") or activate.has("create")):
+				continue   # "fire" effects (shield_block_trigger) need a block trigger; not wired yet
+			var scale := 1.0
+			if str(effect.get("scale_with", "")) == "eiCollisionRadius":
+				scale = e.collision_radius
+			var size := scale / float(effect.get("size_normalization", 1.0))
+			var fx := ParticleEffect.create(effect["path"], size)
+			if fx == null:
+				continue
+			var anchor: Node3D = view
+			if effect.has("bind_zone"):
+				var attachment := view.bone_attachment(str(effect["bind_zone"]))
+				if attachment != null:
+					anchor = attachment
+			anchor.add_child(fx)
+			list.append(fx)
+		cur[b] = list
+
+
 func _on_died(e) -> void:
 	var view: Node3D = _views.get(e.id)
 	if view:
@@ -569,6 +605,7 @@ func _on_died(e) -> void:
 		_views.erase(e.id)
 		_last_fire.erase(e.id)
 		_ready_effects.erase(e.id)
+		_buff_fx.erase(e.id)
 
 
 func _on_projectile_removed(p: Projectile, _hit: bool) -> void:
@@ -677,6 +714,7 @@ func _sync_views() -> void:
 			var ep := _lerp_pos(id, e.position, alpha)
 			view.position = Vector3(ep.x, 0.0, ep.y)
 			view.set_moving(e.moving, e.speed())
+			_sync_buff_effects(e, view)
 			for pair in _ready_effects.get(id, []):   # VisibleWithWelaReady (eiIsReady includes the cooldown)
 				var w := e.wela(pair[1])
 				pair[0].visible = w != null and sim.time_ms >= w.cooldown_ready_at and sim._wela_ready(e, w)

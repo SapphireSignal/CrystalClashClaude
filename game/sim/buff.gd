@@ -139,6 +139,12 @@ static func exists(script_name: String) -> bool:
 	return _db.has(script_name)
 
 
+## The modifier's client-side particle effects ({$IFDEF CLIENT} TParticleEffectComponent chains).
+static func effects(script_name: String) -> Array:
+	load_db()
+	return _db.get(script_name, {}).get("effects", [])
+
+
 ## Build a buff from a modifier script. `params` maps script parameters (e.g. "Duration") to values.
 static func create(script_name: String, now: int, params: Dictionary = {}) -> Buff:
 	load_db()

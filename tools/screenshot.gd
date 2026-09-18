@@ -14,7 +14,7 @@ var _zoom := ""
 var _at := ""
 var _screen := Vector2(-1, -1)   # screen=X,Y: put the at= target on this pixel (matches a reference shot's framing)
 var size := ""   # default: the primary monitor's size (fits the owner's screen); size=1920x1080 for reference comparisons      # at=node: look at the first lane node at the default zoom
-var _play := -1
+var _plays: Array = []
 var _arm := -1
 var _menu := false        # menu: open the game menu (Escape) at the first shot
 var _settings := ""       # settings=<gameplay|sound|graphics|keybinding>: open the settings dialog on that category
@@ -32,8 +32,9 @@ func _initialize() -> void:
 			_finish = true
 		elif arg.begins_with("zoom="):
 			_zoom = arg.trim_prefix("zoom=")
-		elif arg.begins_with("play="):
-			_play = int(arg.trim_prefix("play="))
+		elif arg.begins_with("play="):   # play=2 or play=2,7: those deck slots, in order
+			for p in arg.trim_prefix("play=").split(","):
+				_plays.append(int(p))
 		elif arg.begins_with("arm="):
 			_arm = int(arg.trim_prefix("arm="))
 		elif arg == "menu":
@@ -91,13 +92,13 @@ func _process(delta: float) -> bool:
 				if _screen.x >= 0:   # shift the look-at so the node projects onto the requested pixel
 					var centre := Vector2(root.get_viewport().size) / 2.0
 					_main._place_camera(nodes[0].position + (_main._ground_at(centre) - _main._ground_at(_screen)))
-		if _play >= 0:   # play=N: the blue deck slot N at the camera's look-at point (free cards not needed: 300 gold)
+		for slot in _plays:   # play=N,...: the blue deck slots at the camera's look-at point (or near the nexus)
 			_main.sim.commanders[_main.HUMAN_TEAM].free_cards = true
 			var nexus: Vector2 = _main.sim.entities[_main.sim.nexus_ids[_main.HUMAN_TEAM]].position
 			for at in [_main._look_at + Vector2(6, 0), _main._look_at - Vector2(6, 0), nexus + Vector2(8, 0), nexus - Vector2(8, 0)]:
-				if _main._play(_main.HUMAN_TEAM, _play, at) == Simulation.PlayResult.OK:
+				if _main._play(_main.HUMAN_TEAM, slot, at) == Simulation.PlayResult.OK:
 					break
-			_play = -1
+		_plays = []
 		if _arm >= 0:   # arm=N: arm the blue deck slot N (ghost preview at the mouse position)
 			_main.sim.commanders[_main.HUMAN_TEAM].free_cards = true
 			_main._arm(_arm)

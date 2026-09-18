@@ -345,6 +345,7 @@ def parse_modifier(path: Path) -> dict:
     if raw:  # some scripts split the server part into ApplyRaw/ApplyEffect (Invincibility, BlessingGrievousWounds)
         body = raw.group(1) + "\n" + body
     body = strip_comments(body)
+    effects = parse_effects(body)   # {$IFDEF CLIENT} TParticleEffectComponent chains: the buff's visuals
     body = re.sub(r"\{\$IFDEF CLIENT\}.*?\{\$ENDIF\}", "", body, flags=re.S)
     consts = {k: float(v) if "." in v else int(v) for k, v in RE_CONST.findall(body)}
     for k, v in re.findall(r"^#define\s+(\w+)\s+([0-9.]+)", text, re.M):
@@ -370,7 +371,10 @@ def parse_modifier(path: Path) -> dict:
         entry = values.setdefault(key, {})
         for g in [x.strip() for x in groups.split(",") if x.strip()]:
             entry[g] = value
-    return {"params": params, "defaults": defaults, "consts": consts, "values": values, "components": parse_components(body)}
+    result = {"params": params, "defaults": defaults, "consts": consts, "values": values, "components": parse_components(body)}
+    if effects:
+        result["effects"] = effects
+    return result
 
 
 def extract_modifiers() -> dict:

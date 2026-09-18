@@ -251,18 +251,23 @@ Done this checkpoint:
 - **Probe hygiene**: parse-check scratch scripts headlessly before opening a window
   (`.tmp/parse_check.gd -- res://path.gd`); the owner sees every red block on their screen.
 
+**Checkpoint 70:** buff/modifier visuals done (first slice): the extractor records `{$IFDEF CLIENT}`
+TParticleEffectComponent chains in Modifiers/Links (`modifiers.json` `effects`, 43 scripts), `Buff.effects()`
+serves them, `main.gd _sync_buff_effects` polls each unit's buffs per frame and attaches the "now"/"create"
+effects to the bind zone while the buff lasts (Shieldblock ring via ShieldsUp verified). `tools/screenshot.gd`
+`play=` takes a comma list. Not built: "fire"-activated buff effects (shield_block_trigger on a block needs a
+block event from the sim) and buffs on non-UnitModel views.
+
 Still open from the owner's report (next, in order):
-1. **Buff/modifier visuals**: extractor must record `{$IFDEF CLIENT}` TParticleEffectComponent chains in
-   `Scripts/Modifiers/*.dws` + `Links/*.dws` (currently dropped, so ShieldsUp/Frenzy/etc. show nothing);
-   sim needs buff_applied/buff_removed signals; main.gd attaches the effects to the unit view while the buff
-   lasts (ActivateNow/OnCreate) and on fire (shield_block_trigger on block).
-2. **Window state bug**: after leaving a match the main menu came back fullscreen-sized with the bottom cut off
-   (owner screenshot); also PrtSc reportedly stopped working while in the borderless fullscreen game window.
-   Reproduce via `.tmp/exit_flow.gd`-style probe; check `ClientSettings.menu_window_size` on re-enter.
-3. Anchor warnings ("non-equal opposite anchors") from menu `_layout` functions: use `set_deferred` or set
-   size before anchors; purely cosmetic but the owner sees yellow spam.
-4. Deck-slot armed glow + drop-zone overlay + grid occupation tints + entity hover outline (arming polish).
-5. Owner re-test, then the remaining FIX FIRST item 3 (lane stones brightness) and the particle/model polish lists.
+1. **Drop/spawn animation**: the original shows a light pillar + effect when units drop (owner's reference
+   screenshot 4). Find the effect (drop scripts' UnitTemplate create chain or `FromHeaven`-style pfx) and play
+   it on squad spawn.
+2. **Drop-zone overlay** while a drop/epic card is armed (owner's reference screenshot 3): green valid area /
+   red invalid over the walkzone (TZoneRenderer port, or a vertex-coloured grid mesh approximation), plus the
+   green tint on the ground reticle, grid occupation tints, entity hover outline, deck-slot armed glow.
+3. Anchor warnings ("non-equal opposite anchors") from menu `_layout` functions: yellow spam the owner sees.
+4. Owner re-test (window fix + settings fix need their confirmation; PrtSc likely fixed by WINDOW_MODE_FULLSCREEN).
+5. Then FIX FIRST item 3 (lane stones brightness) and the particle/model polish lists.
 
 ## Done from `reference/rolmedia/` (2026-09-17)
 - Hotkey badges hidden by default (`coGameplayShowDeckHotkeys` = false; `DeckPanel.show_hotkeys` for the settings menu).
