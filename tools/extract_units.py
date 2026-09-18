@@ -453,7 +453,8 @@ def parse_visuals(text: str) -> dict:
         return {}
     # animations declared on the MeshComponent variable inside skin branches: take the default (last else) branch
     branch = text[default_branch_start:]
-    for m in re.finditer(r"MeshComponent\s*((?:\s*\.[A-Za-z]+(?:\([^()]*(?:\([^()]*\)[^()]*)*\))?)+);", branch):
+    # (a chain inside a begin/end block ends with `end;` - Monk)
+    for m in re.finditer(r"MeshComponent\s*((?:\s*\.[A-Za-z]+(?:\([^()]*(?:\([^()]*\)[^()]*)*\))?)+)\s*(?:end\s*)?;", branch):
         _apply_mesh_chain(meshes[0], m.group(1))
     visuals = {"meshes": meshes}
     sizes = {}

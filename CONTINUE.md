@@ -2,8 +2,7 @@
 
 Paste into a new chat: **"Read CLAUDE.md and CONTINUE.md, then continue."**
 
-**Model routing (owner, 2026-09-17):** obsolete — the owner runs everything on **Fable 5** now. Ignore any
-leftover `[Opus]`/`[Fable]` tags below; never stop over the model. The owner also **playtests**: at each
+**Owner (2026-09-17):** the owner **playtests**: at each
 checkpoint give the run command and a short list of things to check, and fix what they report first.
 
 ## State (2026-09-17, checkpoint 66)
@@ -258,22 +257,35 @@ effects to the bind zone while the buff lasts (Shieldblock ring via ShieldsUp ve
 `play=` takes a comma list. Not built: "fire"-activated buff effects (shield_block_trigger on a block needs a
 block event from the sim) and buffs on non-UnitModel views.
 
-Still open from the owner's report (next, in order):
-1. **Drop/spawn animation** (lead found, build next): dropped/produced units get
-   `TWarheadApplyScriptComponent(... 'Modifiers\Drop.dws').ApplyToProducedUnits()` plus
-   `Modifiers\SummoningSickness.dws` (1000 ms) from the card templates (`BuildingCardTemplate.dws:43-52`,
-   and the same pattern in the drop card template) + a per-colour drop sound. So the light pillar the owner
-   showed = the client effects of `Modifiers/Drop.dws` (already extracted into modifiers.json `effects` at
-   checkpoint 70!). To build: make the sim apply `Drop`/`SummoningSickness` buffs to drop-spawned squads
-   (ApplyToProducedUnits), then `_sync_buff_effects` shows them automatically. Some units pass
-   `HasOwnSpawnEffect` (their own `*_spawn.pfx` on create: Defender lothar_spawn, PatronSaint, Brratu,
-   Groundbreaker, Sapling...) - check the extractor records those unit-script variants.
-2. **Drop-zone overlay** while a drop/epic card is armed (owner's reference screenshot 3): green valid area /
-   red invalid over the walkzone (TZoneRenderer port, or a vertex-coloured grid mesh approximation), plus the
-   green tint on the ground reticle, grid occupation tints, entity hover outline, deck-slot armed glow.
-3. Anchor warnings ("non-equal opposite anchors") from menu `_layout` functions: yellow spam the owner sees.
-4. Owner re-test (window fix + settings fix need their confirmation; PrtSc likely fixed by WINDOW_MODE_FULLSCREEN).
-5. Then FIX FIRST item 3 (lane stones brightness) and the particle/model polish lists.
+**Checkpoint 71 (owner's "finish everything in-game" round, 2026-09-17):**
+- **Drop-zone overlay** = TZoneRenderer port: `game/effects/drop_zone_overlay.gd` (SubViewport with its own mirrored
+  world + camera copy, the Drop_<Map> / _Invalid / _Cutout / _Dynamic meshes from `assets/gameplay/Zone` drawn with
+  stencil passes in `zone_mesh.gdshader`, composited by `zone_post.gdshader` = PostprocessZone.fx: 0.7 alpha, 7x7
+  border, world-space yellow noise, cursor fade dzAll). Shown while a drop/building card or an epic spell is armed;
+  dynamic circles = own nexus (+ lanetowers unless epic) eiWelaRange[3]. Valid colour $FF00FF00 / invalid $FFFF0000.
+- **Build grid tints**: `build_tile.gdshader` (HSV ColorAdjustment port) + `BuildGrid.show_occupation / show_invalid /
+  reset_colors`; `buildgrid_activate.pfx` plays on each wave spawn.
+- **Drop visuals**: `SimEntity.card_drop` (set before the spawn signal via `spawn(..., card_drop)`) -> `main._play_drop`
+  plays the faction's drop_<color>.pfx from modifiers.json `Drop` and `SpawnMeshEffect` (`spawn_mesh.gdshader` = the
+  five SpawnShader_<Color>.fx, EFFECT_TIMES, GLOW_COLOR_MAP; Blue's 20 ghost passes reduced to one). Spawner placement:
+  `spawner_placed` -> Spawner.dws animation (scale Y 3->0.3->1, drop 3->0 over 160/300 ms, SpawnerImpact after 160 ms,
+  permanent +0.2 offset via `_view_y`). Mesh glow flash (TMeshEffectGlow 350 ms) not built.
+- **Hover outline**: `outline.gdshader` as material_overlay on the unit under the cursor, BORDER_TEAMCOLORS by real
+  team id (entity spells: only while targetable). Approximation of the rsOutline post (normal-extruded shell).
+- **Extractor**: mesh chains ending in `end;` inside skin branches (Monk had no animations). Verify after any
+  extractor change: `python -c` count units with empty `animations` (now: ShieldDrone, FrostgoyleFountain,
+  MonumentOfLight = genuinely static).
+- **App**: the loading screen stays 3 frames over the starting match (no grey clear-colour flash).
+- `tools/screenshot.gd` names fractional shot times `shot_14_4.png`.
+- Top bar orientation confirmed from the source (left = team 1's nexus, coloured by displayed team): correct.
+- `docs/ingame-gap-audit.md` (subagent) = the full checklist of in-match client features still missing; work it
+  top-down by visibility next, one item per step, screenshot-verified.
+
+Still open from the owner's earlier report:
+1. Anchor warnings ("non-equal opposite anchors") from menu `_layout` functions (not in the match log; check the
+   app flow).
+2. Owner re-test (window fix + settings fix + drop zone + drop effects + hover outline).
+3. Then FIX FIRST item 3 (lane stones brightness) and the particle/model polish lists.
 
 ## Done from `reference/rolmedia/` (2026-09-17)
 - Hotkey badges hidden by default (`coGameplayShowDeckHotkeys` = false; `DeckPanel.show_hotkeys` for the settings menu).
@@ -382,21 +394,21 @@ Still open from the owner's report (next, in order):
    constants were screenshot measurements taken at 1600 wide and never divided by that shot's 1.25 scale.
    Open: no English Play/queue reference at a known scale exists in `reference/rolmedia/lobby`, so the sub-navbar
    font is stylesheet-derived, not screenshot-verified (the Shop shot uses the *secondary* sub-navbar).
-   Next: **[Opus]** (9) the Keybindings tab (`KeybindingSettings.dui` + `KeybindingDialog.dui`, EnumKeybinding from
+   Next: (9) the Keybindings tab (`KeybindingSettings.dui` + `KeybindingDialog.dui`, EnumKeybinding from
    `Constants.Client.pas:63` and the KeybindingManager defaults), then the remaining polish lists below.
    Earlier notes: SystemPanel (MainMenu/SystemPanel: minimise / options / close top-right) so the settings open from the
    menu with `in_game = false` (Menu categories enabled, MenuSettings.dui/MenuSoundSettings.dui content), or the
    Keybindings tab. Then the remaining polish lists below.
-1. **[Opus]** Particles polish; **[Fable]** for (e) the rotation sign convention if an effect looks mirrored: (a) `AtFireTarget` / `ClonesToTarget` effects; (c) light particles as
+1. Particles polish; for (e) the rotation sign convention if an effect looks mirrored: (a) `AtFireTarget` / `ClonesToTarget` effects; (c) light particles as
    OmniLight3D (100 emitters), `ptTrace` ribbons, nested `ptEffect`; (d) deactivation (`DeactivateOn*`,
    `stop_on_free`) and interval emitters that should stop when the wela ends; (e) the rotation sign convention
    (`Basis.from_euler(-rot)`) is a guess: compare an effect with a mean rotation against the original if one
    looks mirrored; (f) the light_pulse_cast flash appears off-centre in the debug view: check emitter FPosition.
-2. **[Fable]** Map polish (lighting/material comparisons kept disagreeing before): (b) shadows look weak: check the DirectionalLight shadow settings and
+2. Map polish (lighting/material comparisons kept disagreeing before): (b) shadows look weak: check the DirectionalLight shadow settings and
    the original's shadow strength; (c) terrain `Material.png` (specular) later; (d) verify the Delphi `Random`
    replica against the original (palm variants/rotations) if a screenshot shows a mismatch; (e) grass wind
    animation (`Custom` vertex data = time offset) as a shader.
-2. **[Opus]** Models polish; **[Fable]** for (d) the zero-scale import errors if a model looks wrong (glow textures done: `copy_unit_assets.py` bakes `*Glow*` maps as premultiplied png used as
+2. Models polish; for (d) the zero-scale import errors if a model looks wrong (glow textures done: `copy_unit_assets.py` bakes `*Glow*` maps as premultiplied png used as
    emission with `emission = BLACK` + ADD): (a) done (checkpoint 59): walk clip length per `Visuals.pas:3343-3361`
    incl. the IgnoreScalingForAnimations variant, SpeedFactor as a length multiplier, random 0-70 % walk offset; (b) glow textures (`GlowTexture`, team glow) as emission; (c) `Effects/Meshes` spell props and
    the Environment/Gameplay `.msh` (13 + 2) once the map needs them; (d) the 18 "Basis must be normalized" import

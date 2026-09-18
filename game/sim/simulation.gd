@@ -58,8 +58,11 @@ func spawn_bases() -> void:
 		spawn("Units/Neutral/LaneNode", 0, p)
 
 
-func spawn(unit_id: String, team: int, pos: Vector2, front: Vector2 = Vector2.ZERO, level: int = 0) -> SimEntity:
+## card_drop: the unit comes from a drop / building card (Modifiers/Drop.dws on the client); set before the spawn signal.
+func spawn(unit_id: String, team: int, pos: Vector2, front: Vector2 = Vector2.ZERO, level: int = 0, card_drop: bool = false) -> SimEntity:
 	var e := SimEntity.new()
+	e.card_drop = card_drop
+	e.spawner_placed = _placing_spawner
 	e.id = _next_id
 	_next_id += 1
 	e.team = team
@@ -188,11 +191,11 @@ static func spawning_pattern(pos: Vector2, front: Vector2, is_spawner: bool, ind
 
 ## TWelaEffectFactoryComponent.SpreadSpawns without an area of effect: units spawn in formation and get
 ## Modifiers/SummoningSickness.dws for 1000 ms.
-func spawn_squad(unit_id: String, team: int, pos: Vector2, count: int, is_spawner: bool, level: int = 0) -> Array[SimEntity]:
+func spawn_squad(unit_id: String, team: int, pos: Vector2, count: int, is_spawner: bool, level: int = 0, card_drop: bool = false) -> Array[SimEntity]:
 	var result: Array[SimEntity] = []
 	var front := Vector2(-map.side(team), 0.0)   # towards the enemy
 	for i in count:
-		var e := spawn(unit_id, team, spawning_pattern(pos, front, is_spawner, i, count), front, level)
+		var e := spawn(unit_id, team, spawning_pattern(pos, front, is_spawner, i, count), front, level, card_drop)
 		apply_buff(e, "SummoningSickness", {"Duration": SimConstants.SUMMONING_SICKNESS_MS})
 		result.append(e)
 	return result
@@ -200,7 +203,7 @@ func spawn_squad(unit_id: String, team: int, pos: Vector2, count: int, is_spawne
 
 ## Drop card: squad appears in formation at the drop point.
 func drop_squad(unit_id: String, team: int, pos: Vector2, count: int, level: int = 0) -> Array[SimEntity]:
-	return spawn_squad(unit_id, team, pos, count, false, level)
+	return spawn_squad(unit_id, team, pos, count, false, level, true)
 
 
 # ---------------------------------------------------------------- buffs (modifier scripts)
@@ -440,7 +443,7 @@ func play_card(team: int, slot_index: int, target: Variant) -> PlayResult:
 	slot.times_played += 1   # TWelaEffectIncreaseResourceComponent(reCardTimesPlayed) fires before the factory
 	var level := mini(slot.times_played, int(UnitDb.raw(pattern)["values"].get("eiResourceCap.reLevel", {}).get("*", 0)))
 	if card.is_building():
-		spawn(pattern, team, target, Vector2.ZERO, level)
+		spawn(pattern, team, target, Vector2.ZERO, level, true)
 	else:
 		var count: int = int(unit_data["values"].get("eiWelaCount", {}).get("0", 1))
 		drop_squad(pattern, team, target, count, level)
@@ -645,11 +648,16 @@ func _has_legendary_unit(team: int) -> bool:
 
 
 ## Place a spawner card on a build-grid field. Returns null when the field is not free or not the team's.
+var _placing_spawner := false   # place_spawner sets spawner_placed before the spawn signal
+
+
 func place_spawner(unit_id: String, team: int, zone_id: int, field: Vector2i) -> SimEntity:
 	var zone: BuildZone = build_zones.get(zone_id)
 	if zone == null or zone.team != team or not zone.is_free(field):
 		return null
+	_placing_spawner = true
 	var e := spawn(unit_id, team, zone.center_of_field(field), zone.front)
+	_placing_spawner = false
 	e.build_zone_id = zone_id
 	e.build_field = field
 	zone.occupy(field, e.id)

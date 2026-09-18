@@ -33,6 +33,10 @@ var _armed_slot: int = -1      # armed card (TClientInputComponent.FPreparedSpel
 var _preview_root: Node3D = null       # ghost unit models while a card is armed (TProductionPreviewComponent)
 var _reticle: MeshInstance3D = null    # ground target decal (TSpelltargetVisualizerShowTextureComponent)
 var _armed_cell: Variant = null        # [zone_id, Vector2i] under the cursor while a spawner card is armed
+var _zone_overlay: DropZoneOverlay = null   # TZoneRenderer: drop area while a drop / epic card is armed
+var _grid: BuildGrid = null                 # the spawner tiles (occupation tints while armed)
+var _hovered_id: int = -1                   # unit under the cursor (eiDrawOutline each frame)
+var _view_y: Dictionary = {}                # entity id -> model height offset (TPositionerOffsetComponent)
 var _jump_return: Variant = null   # camera look-at to return to after a spawner jump
 var _red_next_play_at: int = 15000
 var _red_cursor: int = 0
@@ -57,6 +61,9 @@ const ZOOM_MIN := 2.6              # coGameplayCameraMinZoom
 const ZOOM_MAX := 3.8              # coGameplayCameraMaxZoom (the start zoom, TClientCameraComponent.Create)
 const ZOOM_SPEED := 0.2            # ZOOMSPEED per wheel notch
 const CAMERA_FOV := 0.6853981635   # coEngineCameraFoV (vertical, radians)
+const OUTLINE_SHADER: Shader = preload("res://game/effects/outline.gdshader")
+## BORDER_TEAMCOLORS (Visuals.pas:3053): outline by the real team id (NPC grey, team 1 blue, team 2 red).
+const BORDER_TEAM_COLORS := [Color("404040"), Color("0036FF"), Color("FF1818")]
 var _drag_anchor: Variant = null    # ground point under the mouse when the right drag started
 
 
@@ -71,9 +78,12 @@ func _ready() -> void:
 	_map = MapView.new()   # the original map: terrain, water, lights, vegetation, decorations
 	_world.add_child(_map)
 	_map.load_map(sim.map.name)
-	var grid := BuildGrid.new()   # the spawner tiles of both build zones
-	_world.add_child(grid)
-	grid.setup(sim)
+	_grid = BuildGrid.new()   # the spawner tiles of both build zones
+	_world.add_child(_grid)
+	_grid.setup(sim)
+	_zone_overlay = DropZoneOverlay.new()
+	add_child(_zone_overlay)
+	_zone_overlay.setup(sim.map.name, _camera)
 	_environment.environment.ambient_light_color = _map.ambient_color
 	_environment.environment.ambient_light_energy = _map.ambient_energy
 	# Decks go through the Deck rules (validates them) and its slot sort, like the real card bar.
@@ -143,6 +153,8 @@ func _process(delta: float) -> void:
 	_hud.refresh()
 	_sync_selection()
 	_update_preview()
+	_update_zone_display()
+	_update_hover()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -498,9 +510,17 @@ func _on_spawned(e: SimEntity) -> void:
 		return
 	var model := UnitModel.create(e.unit_id, HudStyle.displayed_team(e.team, HUMAN_TEAM))
 	if model != null:
+		if e.is_spawner():
+			_view_y[e.id] = 0.2   # Modifiers/Spawner.dws: TPositionerOffsetComponent.Offset(0, 0.2, 0)
+		model.position = Vector3(e.position.x, _view_y.get(e.id, 0.0), e.position.y)
+		model.rotation.y = atan2(e.front.x, e.front.y)
 		_units_root.add_child(model)
 		_views[e.id] = model
 		_spawn_effects(e, "create", model)
+		if e.card_drop:
+			_play_drop(e, model)
+		if e.spawner_placed:
+			_play_spawner_place(e, model)
 		return
 	if e.is_spell_effect() or not e.is_targetable():   # spell effects, fields: only their particle effects
 		var holder := Node3D.new()
@@ -606,6 +626,9 @@ func _on_died(e) -> void:
 		_last_fire.erase(e.id)
 		_ready_effects.erase(e.id)
 		_buff_fx.erase(e.id)
+		_view_y.erase(e.id)
+		if _hovered_id == e.id:
+			_hovered_id = -1
 
 
 func _on_projectile_removed(p: Projectile, _hit: bool) -> void:
@@ -628,45 +651,148 @@ func _spawn_effects(e, activation: String, parent: Node3D) -> void:
 		var path: String = effect["path"]
 		if path.contains("%d"):
 			path = path % HudStyle.displayed_team(e.team, HUMAN_TEAM)
-		var groups: Array = effect.get("groups", [])
-		var group := int(groups[0]) if not groups.is_empty() else 0
-		var scale := 1.0
-		var gameplay_scale := false   # eiWelaRange/eiWelaAreaOfEffect skip model size (GAMEPLAY_SCALE_EVENTS)
-		match str(effect.get("scale_with", "")):
-			"eiCollisionRadius": scale = e.collision_radius if e is SimEntity else 0.5
-			"eiWelaRange":
-				scale = e.range_of(group) if e is SimEntity else 1.0
-				gameplay_scale = true
-			"eiWelaAreaOfEffect":
-				scale = float(e.bb.get_value("eiWelaAreaOfEffect", group, 1.0)) if e is SimEntity else 1.0
-				gameplay_scale = true
-		var model_size := 1.0
-		var sizes: Dictionary = UnitDb.raw(e.unit_id).get("visuals", {}).get("model_sizes", {})
-		for g in groups:
-			if sizes.has(str(g)):
-				model_size = sizes[str(g)]
-				break
-		var size := scale * (1.0 if gameplay_scale or effect.get("ignore_model_size", false) else model_size) / float(effect.get("size_normalization", 1.0))
-		var fx := ParticleEffect.create(path, size)
-		if fx == null:
-			continue
-		var offset := Vector3.ZERO
-		if effect.has("model_offset"):
-			var o: Array = effect["model_offset"]
-			offset = Vector3(o[0], o[1], o[2]) * model_size
-		if parent != null:
-			var anchor := parent
-			if parent is UnitModel and effect.has("bind_zone"):   # BindToSubPositionGroup: follow the zone's bone
-				var attachment: Node3D = parent.bone_attachment(str(effect["bind_zone"]))
-				if attachment != null:
-					anchor = attachment
-			anchor.add_child(fx)
-			fx.position = offset
-			if effect.get("visible_with_wela_ready", false) and e is SimEntity:
-				_ready_effects.get_or_add(e.id, []).append([fx, group])
+		var fx := _attach_effect(e, effect, path, parent)
+		if fx != null and effect.get("visible_with_wela_ready", false) and e is SimEntity:
+			var groups: Array = effect.get("groups", [])
+			_ready_effects.get_or_add(e.id, []).append([fx, int(groups[0]) if not groups.is_empty() else 0])
+
+
+## TParticleEffectComponent sizing + binding: size = scale source x model size / SizeNormalization (gameplay
+## scale events skip the model size), attached to the bind zone's bone or placed at the entity on the ground.
+func _attach_effect(e, effect: Dictionary, path: String, parent: Node3D) -> ParticleEffect:
+	var groups: Array = effect.get("groups", [])
+	var group := int(groups[0]) if not groups.is_empty() else 0
+	var scale := 1.0
+	var gameplay_scale := false   # eiWelaRange/eiWelaAreaOfEffect skip model size (GAMEPLAY_SCALE_EVENTS)
+	match str(effect.get("scale_with", "")):
+		"eiCollisionRadius": scale = e.collision_radius if e is SimEntity else 0.5
+		"eiWelaRange":
+			scale = e.range_of(group) if e is SimEntity else 1.0
+			gameplay_scale = true
+		"eiWelaAreaOfEffect":
+			scale = float(e.bb.get_value("eiWelaAreaOfEffect", group, 1.0)) if e is SimEntity else 1.0
+			gameplay_scale = true
+	if effect.has("scale_range"):   # .ScaleRange(min, max)
+		scale = clampf(scale, float(effect["scale_range"][0]), float(effect["scale_range"][1]))
+	var model_size := 1.0
+	var sizes: Dictionary = UnitDb.raw(e.unit_id).get("visuals", {}).get("model_sizes", {})
+	for g in groups:
+		if sizes.has(str(g)):
+			model_size = sizes[str(g)]
+			break
+	var size := scale * (1.0 if gameplay_scale or effect.get("ignore_model_size", false) else model_size) / float(effect.get("size_normalization", 1.0))
+	var fx := ParticleEffect.create(path, size)
+	if fx == null:
+		return null
+	var offset := Vector3.ZERO
+	if effect.has("model_offset"):
+		var o: Array = effect["model_offset"]
+		offset = Vector3(o[0], o[1], o[2]) * model_size
+	if parent != null and not effect.get("fixed_height_ground", false):
+		var anchor := parent
+		if parent is UnitModel and effect.has("bind_zone"):   # BindToSubPositionGroup: follow the zone's bone
+			var attachment: Node3D = parent.bone_attachment(str(effect["bind_zone"]))
+			if attachment != null:
+				anchor = attachment
+		anchor.add_child(fx)
+		fx.position = offset
+	else:
+		_units_root.add_child(fx)
+		fx.position = Vector3(e.position.x, 0.0, e.position.y) + offset
+	return fx
+
+
+## Modifiers/Drop.dws (applied to every unit a drop / building card produces): the faction's drop_<color>.pfx
+## plus TMeshEffectSpawn on the model.
+func _play_drop(e: SimEntity, model: UnitModel) -> void:
+	var color := str(e.bb.get_value("eiColorIdentity", 0, "ecWhite"))
+	var folder: String = {"ecGreen": "/Green/", "ecBlack": "/Black/", "ecBlue": "/Blue/", "ecColorless": "/Colorless/"}.get(color, "/White/")
+	for effect in Buff.effects("Drop"):
+		if str(effect["path"]).begins_with(folder):
+			_attach_effect(e, effect, effect["path"], model)
+			break
+	SpawnMeshEffect.apply(model, color)
+
+
+## Modifiers/Spawner.dws (ApplyToSelfAtCreate): the spawner slams in - TAnimatorComponent scales Y 3 -> 0.3 -> 1
+## and drops from 3 to 0 over 0/160/300 ms, SpawnerImpact.pfx (2.4) after 160 ms.
+func _play_spawner_place(e: SimEntity, model: UnitModel) -> void:
+	var base_y: float = _view_y.get(e.id, 0.0)
+	var tween := model.create_tween()
+	tween.set_parallel(true)
+	model.scale.y = 3.0
+	_view_y[e.id] = base_y + 3.0
+	tween.tween_property(model, "scale:y", 0.3, 0.16)
+	tween.tween_method(func(y: float): _view_y[e.id] = base_y + y, 3.0, 0.0, 0.16)
+	tween.chain().tween_property(model, "scale:y", 1.0, 0.14)
+	for effect in Buff.effects("Spawner"):
+		var delay := float(effect.get("delay", 0.0))
+		if delay > 0.0:
+			get_tree().create_timer(delay / 1000.0).timeout.connect(func():
+				if is_instance_valid(model):
+					_attach_effect(e, effect, effect["path"], null))
 		else:
-			_units_root.add_child(fx)
-			fx.position = Vector3(e.position.x, 0.0, e.position.y) + offset
+			_attach_effect(e, effect, effect["path"], null)
+
+
+# ---------------------------------------------------------------- zone display + hover outline (TClientInputComponent.Idle)
+
+## TZoneRenderer visible while a drop card or an epic spell is armed; the build grid tints red then
+## (ShowInvalid), or green/red by occupation while a spawner card is armed (ShowOccupation).
+func _update_zone_display() -> void:
+	var card: Cards.CardDef = sim.commanders[HUMAN_TEAM].slots[_armed_slot].card if _armed_slot >= 0 else null
+	var show_zone := card != null and not card.is_spawner() and (not card.is_spell() or card.epic)
+	_zone_overlay.set_shown(show_zone)
+	if show_zone:
+		_grid.show_invalid()
+		var circles: Array = []   # eiDrawSpawnZone: own nexus (dzDrop + dzNexus) and lanetowers (dzDrop), range group 3
+		for u in sim.alive_entities():
+			if u.team != HUMAN_TEAM:
+				continue
+			if u.has("upNexus") or (u.has("upLanetower") and not card.epic):
+				circles.append([u.position, u.bb.get_float("eiWelaRange", 3, 0.0)])
+		_zone_overlay.set_dynamic_zones(circles)
+		var m := _mouse_world_2d()
+		_zone_overlay.update(Vector3(m.x, 0.0, -m.y))
+	elif card != null and card.is_spawner():
+		_grid.show_occupation(HUMAN_TEAM)
+	else:
+		_grid.reset_colors()
+
+
+## The unit under the cursor gets its team-colour outline every frame (eiDrawOutline); while an entity spell
+## is armed only targetable units highlight.
+func _update_hover() -> void:
+	var unit: SimEntity = null
+	if _menu == null and _settings == null and _exit_dialog == null:
+		unit = _unit_at(_mouse_world_2d(), true)
+		if unit != null and _armed_slot >= 0:
+			var card: Cards.CardDef = sim.commanders[HUMAN_TEAM].slots[_armed_slot].card
+			if not (card.is_spell() and card.target_type == "ctEntity"):
+				unit = null
+	var id := unit.id if unit != null else -1
+	if id == _hovered_id:
+		return
+	_set_outline(_hovered_id, false)
+	_hovered_id = id
+	_set_outline(id, true)
+
+
+func _set_outline(id: int, on: bool) -> void:
+	var view: Node3D = _views.get(id)
+	if view == null or not (view is UnitModel):
+		return
+	var e: SimEntity = sim.entities.get(id)
+	for mi: MeshInstance3D in view.find_children("*", "MeshInstance3D", true, false):
+		if not on:
+			mi.material_overlay = null
+			continue
+		var base := mi.get_surface_override_material(0) as StandardMaterial3D
+		var m := ShaderMaterial.new()
+		m.shader = OUTLINE_SHADER
+		m.set_shader_parameter("outline_color", BORDER_TEAM_COLORS[clampi(e.team if e != null else 0, 0, 2)])
+		m.set_shader_parameter("albedo_tex", base.albedo_texture if base != null else null)
+		mi.material_overlay = m
 
 
 ## The sim ticks at 31 Hz: views interpolate from the pre-step state so movement stays smooth at any frame rate
@@ -712,7 +838,7 @@ func _sync_views() -> void:
 			continue
 		if view is UnitModel:
 			var ep := _lerp_pos(id, e.position, alpha)
-			view.position = Vector3(ep.x, 0.0, ep.y)
+			view.position = Vector3(ep.x, _view_y.get(id, 0.0), ep.y)
 			view.set_moving(e.moving, e.speed())
 			_sync_buff_effects(e, view)
 			for pair in _ready_effects.get(id, []):   # VisibleWithWelaReady (eiIsReady includes the cooldown)

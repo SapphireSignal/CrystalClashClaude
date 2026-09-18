@@ -184,7 +184,7 @@ def main(filters: list[str]) -> int:
         return 1
     TEXTURES_OUT.mkdir(parents=True, exist_ok=True)
     textures = 0
-    for src in list(SRC.rglob("*")) + list(EFFECT_TEXTURES.glob("RangeLine*")):
+    for src in list(SRC.rglob("*")) + list(EFFECT_TEXTURES.glob("RangeLine*")) + list(EFFECT_TEXTURES.glob("SpawnMask.png")):
         if src.suffix.lower() in (".tga", ".png"):
             dst = TEXTURES_OUT / src.name
             if not dst.exists() or dst.stat().st_mtime < src.stat().st_mtime:

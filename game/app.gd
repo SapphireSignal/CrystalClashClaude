@@ -54,7 +54,13 @@ func change_game_state(id: String) -> void:
 	if _state_root != null:   # LeaveState
 		if _state == GAMESTATE_LOADGAMESTATE:
 			_first_loading = false
-		_state_root.queue_free()
+		if id == GAMESTATE_INGAME:
+			# The loading screen stays on top until the match has drawn its first frames (the map's shaders compile
+			# on first use), so no grey clear-colour frames show between the two states.
+			var old_root := _state_root
+			_free_after_frames(old_root, 3)
+		else:
+			_state_root.queue_free()
 		_state_root = null
 		_loading_screen = null
 		_menu_layer = null
@@ -92,6 +98,7 @@ func change_game_state(id: String) -> void:
 			# game data is the local player on their team with the sandbox deck (the AI is not a player)
 			var layer := CanvasLayer.new()
 			_state_root.add_child(layer)
+			layer.layer = 10   # above the match while it starts (see change_game_state)
 			_match_loading = LoadingScreen.new()
 			_match_loading.players = [{
 				"username": MainMenu.PROFILE["name"], "team_id": load("res://game/main.gd").HUMAN_TEAM,
@@ -129,3 +136,10 @@ func _open_exit_dialog() -> void:
 	_exit_dialog.closed.connect(func(): _exit_dialog = null)
 	_menu_layer.add_child(_exit_dialog)
 	_menu_layer.move_child(_exit_dialog, -1)
+
+
+func _free_after_frames(node: Node, frames: int) -> void:
+	for i in frames:
+		await RenderingServer.frame_post_draw
+	if is_instance_valid(node):
+		node.queue_free()

@@ -115,7 +115,7 @@ func _process(delta: float) -> bool:
 		if _finish:   # kill the red nexus at the first shot: later shots show the victory screen
 			_main.sim._kill(_main.sim.entities[_main.sim.nexus_ids[_main.AI_TEAM]])
 			_finish = false
-		var path := "res://.tmp/shot_%d.png" % int(seconds)
+		var path := "res://.tmp/shot_%s.png" % (str(int(seconds)) if seconds == floorf(seconds) else str(seconds).replace(".", "_"))
 		var err := root.get_viewport().get_texture().get_image().save_png(path)
 		print("screenshot %s: %s" % [path, error_string(err)])
 	return _targets.is_empty()

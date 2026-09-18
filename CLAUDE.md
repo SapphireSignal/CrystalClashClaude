@@ -153,6 +153,9 @@ Act as two people at once:
   reference**) and `reference/ccmedia/` (the owner's Crystal Clash screenshots, kept for the later refresh). Both
   filled by the owner only. Never read or
   copy from the owner's personal Pictures / OneDrive folders.
+- 2026-09-17 **Rise of Legions only (owner, repeated)**: until the Crystal Clash files arrive, every check, comparison
+  and decision uses the 2022 repo source and `reference/rolmedia/` exclusively. Do not open `reference/ccmedia/` or
+  reason from the live client for anything, not even as a second opinion; mention Crystal Clash only in the refresh notes.
 
 - 2026-09-17 Owner's main monitor is **1920x1080** now (was 1680x1080); desktop origin (0,0) can be another monitor,
   so windows always open via `screen_get_position(SCREEN_PRIMARY)`, never at (0,0). **Full multi-resolution support
@@ -260,4 +263,7 @@ reticle, render interpolation (smooth 31 Hz sim), shield-ready gate, buff/modifi
 scale, StickToEmitter, texture case), auto-size projectile meshes (eiModelSize), shadow = one orthogonal
 cascade (PSSM splits drew a fake "seam" line), window modes (game = WINDOW_MODE_FULLSCREEN, menu = borderless
 1280x720; hand-made borderless covers get promoted to exclusive fullscreen and ignore resizes), settings
-dialog page visibility. `tools/playtest.gd` = autopilot playtest (the standard test). See `CONTINUE.md`.
+dialog page visibility. `tools/playtest.gd` = autopilot playtest (the standard test). Checkpoint 71: drop-zone overlay (TZoneRenderer
+port with stencil passes + PostprocessZone post), build-grid occupation tints, drop visuals (drop pfx + the five
+SpawnShader mesh effects), spawner placement animation, hover outline, Monk animations. `docs/ingame-gap-audit.md`
+lists what the in-match client still lacks. See `CONTINUE.md`.
