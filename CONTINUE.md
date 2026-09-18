@@ -282,8 +282,11 @@ block event from the sim) and buffs on non-UnitModel views.
   top-down by visibility next, one item per step, screenshot-verified.
 
 Still open from the owner's earlier report:
-1. Anchor warnings ("non-equal opposite anchors") from menu `_layout` functions (not in the match log; check the
-   app flow).
+1. **RoL-only sweep (owner, 2026-09-17: "literally everything RoL")**: a few numbers were tuned against Crystal Clash
+   screenshots before the rule; re-derive each from the 2022 stylesheets/source or `rolmedia` and drop the "live
+   client" wording: `build_grid.gd` `_apply_glow` colour fit, `resource_panel.gd` ROW_TEXT_PAD + roman size,
+   `deck_panel.gd` plate inset (:159) and plate/deco overlap (:123), `card_hint.gd` SKILL_HINT_DELAY_MS + description
+   font, `map_view.gd` LIGHT_SCALE 0.7, `main.gd` camera comment (the constant itself is the source's CAMERAOFFSET).
 2. Owner re-test (window fix + settings fix + drop zone + drop effects + hover outline).
 3. Then FIX FIRST item 3 (lane stones brightness) and the particle/model polish lists.
 

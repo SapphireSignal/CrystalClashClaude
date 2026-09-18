@@ -18,7 +18,7 @@ var _buttons: Array[TextureRect] = []
 
 
 func _ready() -> void:
-	set_anchors_preset(PRESET_FULL_RECT)
+	# no anchors: _layout sizes this control from the menu canvas (anchors + size would warn)
 	mouse_filter = MOUSE_FILTER_IGNORE
 	var entries := [
 		["Minimize", func(): DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_MINIMIZED)],   # client.Minimize

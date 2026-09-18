@@ -63,7 +63,7 @@ func _init(p: Dictionary, p_deck_name: String, p_deck_league: int) -> void:
 
 
 func _ready() -> void:
-	set_anchors_preset(Control.PRESET_FULL_RECT)
+	# no anchors: _layout sizes this control from the menu canvas (anchors + size would warn)
 	mouse_filter = MOUSE_FILTER_IGNORE
 	# .navbar.navbar-sub
 	_sub_background = HudStyle.picture(HudStyle.tex("MainMenu/Navbar/SubNavbarBackground.png"), Rect2())

@@ -95,7 +95,7 @@ func _init(p: Dictionary) -> void:
 
 
 func _ready() -> void:
-	set_anchors_preset(Control.PRESET_TOP_WIDE)
+	# no anchors: _layout sizes this control from the menu canvas (anchors + size would warn)
 	mouse_filter = MOUSE_FILTER_IGNORE   # .navbar-wrapper MouseEvents : mePass
 	_background = HudStyle.picture(HudStyle.tex("MainMenu/Navbar/NavbarBackground.png"), Rect2())
 	add_child(_background)

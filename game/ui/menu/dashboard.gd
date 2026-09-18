@@ -76,7 +76,7 @@ func _init(state: Dictionary) -> void:
 
 
 func _ready() -> void:
-	set_anchors_preset(Control.PRESET_FULL_RECT)
+	# no anchors: _layout sizes this control from the menu canvas (anchors + size would warn)
 	mouse_filter = MOUSE_FILTER_IGNORE
 	_header = HudStyle.picture(HudStyle.tex("MainMenu/Dashboard/Header.png"), Rect2())
 	add_child(_header)
