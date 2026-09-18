@@ -876,7 +876,7 @@ func _sync_views() -> void:
 			var pp := _lerp_pos(id, p.position, alpha)
 			var flight := Vector3(pp.x, 1.2, pp.y) - view.position   # face the flight direction
 			view.position = Vector3(pp.x, 1.2, pp.y)
-			if view is UnitModel and flight.length_squared() > 0.0001:
+			if flight.length_squared() > 0.0001:   # models and sprite/effect holders alike (the bind matrix front)
 				view.rotation.y = atan2(flight.x, flight.z)
 			continue
 		var e: SimEntity = sim.entities.get(id)

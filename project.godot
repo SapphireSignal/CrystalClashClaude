@@ -1,5 +1,10 @@
 ; Engine configuration file.
-; Crystal Clash - Godot 4 port
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
 
 config_version=5
 
@@ -13,8 +18,6 @@ config/features=PackedStringArray("4.7", "GL Compatibility")
 
 window/size/viewport_width=1920
 window/size/viewport_height=1080
-window/size/initial_position_type=1
-window/stretch/mode="disabled"
 window/stretch/aspect="expand"
 
 [rendering]

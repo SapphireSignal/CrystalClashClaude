@@ -385,8 +385,14 @@ uniform at its default (never wrap it in `float()`/`bool()` blindly).
 - Open from the reference shot `press_lane_tower_card_hint`: unit shadows there are long and fall to the lower
   left; ours are short. Check the map light direction handedness (`_add_lights` mirrors z) against it.
 
+**Checkpoint 75b:** projectile holders (sprite / effect-only projectiles: VoidBowman arrows, souls) now turn to the
+flight direction like the models (the bind matrix front), so CameraOriented arrow quads no longer draw sideways.
+Verified the middle lane node has no line in this build (`-- 13 14 at=node`). Open: the souls fly straight; the
+original moves them on a spline (`TPositionerSplineComponent` StartTangent(PI/2, 0, 4) / EndTangent(PI/16, 0, 1) /
+MaxDistanceScaling(15), SoulGatherProjectile.ets) - port the positioner next if the owner still finds them odd.
+
 Still open from the owner's earlier report:
-1. Owner re-test (this checkpoint: line, bars, turning, minimap click, Space, card press/hover).
+1. Owner re-test (this checkpoint: line, bars, turning, minimap click, Space, card press/hover, arrow sprites).
 2. FIX FIRST item 3 (lane stones brightness) re-check against `rolmedia` with the ported lighting, then the
    particle/model polish lists and `docs/ingame-gap-audit.md` top-down.
 
