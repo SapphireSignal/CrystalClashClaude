@@ -9,6 +9,10 @@ const MESHES := "res://assets/gameplay/Buildgrid/"
 const VARIANTS := 4
 const GLOW_TIME_IN := 0.5
 const GLOW_TIME_OUT := 1.0
+## EntityComponents.Client.pas:510-513 / SetUpShader :3052-3063: with the Glow post-effect the tile lerps only 0.032
+## toward cyan and glows through the blurred glow stage; without it the world lerp is GLOW_COLOR_INTENSITY 0.4.
+## We have no Glow post-effect, so the tiles use the 0.4 branch (reference/rolmedia base shots measure (70,188,187)
+## on lit tiles = lerp(lit diffuse, cyan, 0.4)).
 const GLOW_COLOR_INTENSITY := 0.4
 const SINK := 0.04
 
@@ -43,8 +47,7 @@ func _make_tile(zone: BuildZone, coord: Vector2i) -> Dictionary:
 	var mat := ShaderMaterial.new()
 	mat.shader = load("res://game/maps/build_tile.gdshader")
 	mat.set_shader_parameter("albedo_tex", load(MESHES + "Buildgrid%dDiffuse.tga" % variant))
-	# GlowOvershoot.fx: rgb = lerp(diffuse, go_color, go_overshoot); overshoot = GLOW_COLOR_INTENSITY 0.4 without
-	# the post-effect glow (the live screenshots show that strong teal), fading to 0 once the field spawned.
+	# GlowOvershoot.fx: rgb = lerp(diffuse, go_color $00FFFF, go_overshoot), fading to 0 once the field spawned.
 	_apply_glow(mat, 1.0)
 	mesh.material_override = mat
 	mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
@@ -102,10 +105,7 @@ func _process(delta: float) -> void:
 
 
 static func _apply_glow(mat: ShaderMaterial, glow: float) -> void:
-	# Fitted to the live client's tile colour (ref (120,205,204) from diffuse ~(101,114,113)): 0.6 x diffuse +
-	# 0.30 x cyan overshoot + 0.23 x white bloom (the post-effect glow the original adds on top).
 	mat.set_shader_parameter("overshoot", GLOW_COLOR_INTENSITY * glow)
-	mat.set_shader_parameter("bloom", glow)
 
 
 # ---------------------------------------------------------------- TBuildGridVisualizer colour states

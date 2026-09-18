@@ -5,9 +5,8 @@
 shader_type spatial;
 
 uniform sampler2D albedo_tex : source_color, filter_linear_mipmap;
-uniform float overshoot = 0.0;                 // GLOW_COLOR_INTENSITY x glow
-uniform vec3 bloom_color = vec3(0.27, 0.6, 0.6);
-uniform float bloom = 0.0;
+uniform float overshoot = 0.0;                 // go_overshoot (GLOW_COLOR_INTENSITY x glow, the no-Glow-post branch)
+uniform vec3 glow_color = vec3(0.0, 1.0, 1.0); // go_color $00FFFF
 uniform vec3 hsv_offset = vec3(0.0);
 uniform vec3 hsv_absolute = vec3(0.0);
 
@@ -39,8 +38,7 @@ vec3 adjust(vec3 rgb) {
 
 void fragment() {
 	// GlowOvershoot runs before the colour adjustment (#inherited after it): the tint recolours the glow too
-	ALBEDO = adjust(texture(albedo_tex, UV).rgb * (1.0 - overshoot));
+	ALBEDO = adjust(mix(texture(albedo_tex, UV).rgb, glow_color, overshoot));
 	ROUGHNESS = 1.0;
 	SPECULAR = 0.0;
-	EMISSION = adjust(bloom_color) * bloom;
 }

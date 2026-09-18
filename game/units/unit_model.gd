@@ -10,10 +10,9 @@ const SIZE_FACTOR_3DSMAX := 2.0 / 125.0     # Visuals.pas:873, applied by ApplyL
 const FRAME_MS := 1000.0 / 30.0             # Engine.Mesh.pas:2697 (frames -> ms)
 const DEFAULT_SKIN := "_Default"
 const UNITS_DIR := "res://assets/units/"
-## The engine's glow stage writes glow.rgb * glow.a and the glow post-effect blurs and adds it on top of the
-## already lit surface; the baked png alone (alpha ~0.13 on the nexus crystal) is far too weak, this gain
-## brings the nexus crystal towards the reference's white-cyan (docs/reference-material.md).
-const GLOW_GAIN := 4.0
+## The engine's glow stage writes glow.rgb * glow.a (Engine.Mesh.pas:826-835) and the Glow post-effect blurs and
+## adds it with the additive kernel gain (MapView.GLOW_POST_GAIN).
+const GLOW_GAIN := MapView.GLOW_POST_GAIN
 
 static var _scene_cache: Dictionary = {}     # glb path -> PackedScene
 static var _material_cache: Dictionary = {}  # xml path + team -> StandardMaterial3D

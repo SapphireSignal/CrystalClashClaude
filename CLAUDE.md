@@ -266,4 +266,5 @@ cascade (PSSM splits drew a fake "seam" line), window modes (game = WINDOW_MODE_
 dialog page visibility. `tools/playtest.gd` = autopilot playtest (the standard test). Checkpoint 71: drop-zone overlay (TZoneRenderer
 port with stencil passes + PostprocessZone post), build-grid occupation tints, drop visuals (drop pfx + the five
 SpawnShader mesh effects), spawner placement animation, hover outline, Monk animations. `docs/ingame-gap-audit.md`
-lists what the in-match client still lacks. See `CONTINUE.md`.
+lists what the in-match client still lacks. Checkpoint 72: RoL-only sweep done, every HUD/tile/glow number cites the 2022
+source (only `MapView` AMBIENT/SUN scales remain fitted; gamma-space lighting port is next). See `CONTINUE.md`.

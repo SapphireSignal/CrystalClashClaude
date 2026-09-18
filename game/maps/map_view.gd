@@ -11,6 +11,12 @@ const ENV_DIR := "res://assets/environment/"
 ## the lit sand / platform at the reference's brightness (patch medians, docs/reference-material.md).
 const AMBIENT_SCALE := 0.35
 const SUN_SCALE := 1.06
+## The engine's Glow post-effect (PostEffects.fxs:22-33: Kernelsize 3, AdditiveBlur, Intensity 0.44, one iteration)
+## blurs the rsGlow buffer with the un-normalised GAUSS_3_ADDITIVE kernel (Shaderglobals.fx:24, taps sum 4.94164)
+## once per axis, each pass scaled by the intensity, and adds the result to the scene (Engine.Core.pas:1835-1890):
+## a flat glowing area gains (4.94164 * 0.44)^2 of its glow value. Godot has no such pass, so emissive surfaces
+## carry this gain in their emission energy.
+const GLOW_POST_GAIN := pow(4.94164 * 0.44, 2.0)   # 4.73
 
 static var _material_cache: Dictionary = {}
 

@@ -9,7 +9,7 @@ const ROW_X := 49.0
 const ROW_W := 214.0
 const ROW_H := 30.0
 const ROW_Y := [18.0, 63.0, 108.0]   # content coordinates: the art's dark rows sit at panel y 39 / 84 / 129
-const ROW_TEXT_PAD := 36.0           # caption right edge measured in the live client (Padding-Right 120ch; re-measured on the 1679x1079 shots)
+const ROW_TEXT_PAD := 37.0           # Padding-Right 120ch = 1.2 x the row height (core_game.scss:375; ch = own rect height, Engine.GUI.pas:7005)
 const ICON_H := ROW_H * 1.1          # icon "Size auto 110%", centred 10 px inside the row's right end
 const ICON_CX := ROW_X + ROW_W - 16.0   # icon centre 16 px inside the row end (measured: the row shows ~5 px right of the icon)
 const TIER_RECT := Rect2(88, 177, 56, 56)   # tech-wrapper 31.5% 63% of the 281 content
@@ -36,8 +36,8 @@ func _ready() -> void:
 	_gold = _row(content, 0, "HUD/RessourcePanel/mana.png")
 	_wood = _row(content, 1, "HUD/RessourcePanel/essence.png")
 	_income = _row(content, 2, "HUD/RessourcePanel/income_upgrade.png")
-	# Fontsize 60% of 56 in the original; the live client draws the roman 28 px (measured cap height 19.6).
-	_tier = HudStyle.label("I", 28, HudStyle.WHITE, HudStyle.FONT_EXTRABOLD)
+	# .tech-wrapper .caption Fontsize 60 % of the 56 px wrapper (core_game.scss:438-447); Fontsize % = em size in px.
+	_tier = HudStyle.label("I", int(TIER_RECT.size.y * 0.6), HudStyle.WHITE, HudStyle.FONT_EXTRABOLD)
 	HudStyle.place(_tier, TIER_RECT)
 	content.add_child(_tier)
 	# tech-timer: Position 105% 2% from the wrapper centre, anchored left, 18 high, font 100 %.
@@ -49,7 +49,7 @@ func _ready() -> void:
 
 func _row(content: Control, index: int, icon: String) -> Label:
 	var y: float = ROW_Y[index]
-	var l := HudStyle.label("", int(ROW_H * 0.57), HudStyle.WHITE, HudStyle.FONT_SEMIBOLD, HORIZONTAL_ALIGNMENT_RIGHT)   # Fontsize 70 % of the row in the engine's units = cap height 11.4 px in the live shots
+	var l := HudStyle.label("", int(ROW_H * 0.7), HudStyle.WHITE, HudStyle.FONT_SEMIBOLD, HORIZONTAL_ALIGNMENT_RIGHT)   # .caption Fontsize 70 % of the row (core_game.scss:376-382), em size = px (Engine.GfxApi.pas:2186)
 	HudStyle.place(l, Rect2(ROW_X, y, ROW_W - ROW_TEXT_PAD, ROW_H))   # caption left of the icon square
 	content.add_child(l)
 	var icon_rect := Rect2(ICON_CX - ICON_H * 0.5, y + (ROW_H - ICON_H) * 0.5, ICON_H, ICON_H)

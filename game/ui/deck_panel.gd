@@ -120,7 +120,7 @@ func _build_group(commander: Commander, tier: int, indices: Array) -> Group:
 	g.root.add_child(HudStyle.picture(left, Rect2(-lw * 0.3, deco_y, lw, deco_h)))
 	g.root.add_child(HudStyle.picture(mid, Rect2(lw * 0.7, deco_y, g.width - lw * 0.7 - rw * 0.7, deco_h)))
 	g.root.add_child(HudStyle.picture(right, Rect2(g.width - rw * 0.7, deco_y, rw, deco_h)))
-	if tier >= 2:   # the plate covers the deco band's top edge (live client) but stays behind the cards
+	if tier >= 2:   # .tier-timer: full panel height, ZOffset ties the deco and later DOM order wins (core_game_deck.scss:155-163)
 		g.plate = _build_plate(indices.size())
 		g.plate.position = Vector2(0, 0)   # 100 % of the panel height
 		g.root.add_child(g.plate)
@@ -156,9 +156,9 @@ func _build_plate(count: int) -> Control:
 		# .mid spans 100 % of the group; .left / .right hang outside it by their slanted part (Position -70ch,
 		# Anchor caBottomLeft at the parent's bottom-right), slant facing outwards (the art's transparent corner
 		# is top-right, so the left end is the mirrored image).
-		# Measured on the live client: a 3-slot plate is 170 px wide for 198 px of slots, i.e. inset ~21 design
-		# px per side (the plates of adjacent locked groups never touch).
-		var inset := 21.0
+		# core_game_deck.scss:164-183: the ends sit at Position-X 70ch (0.7 x the 75 px height = 52.5 px) from the
+		# group edges, anchored outwards, so the 41 px end image starts 52.5 - 41 = 11.5 px inside the group.
+		var inset := panel_height * 0.7 - 41.0
 		var overhang := 41.0 * 0.3
 		plate.add_child(HudStyle.picture(mid, Rect2(inset + overhang, 0, w - 2.0 * (inset + overhang), panel_height)))
 		var left_end := HudStyle.picture(end, Rect2(inset, 0, 41, panel_height))

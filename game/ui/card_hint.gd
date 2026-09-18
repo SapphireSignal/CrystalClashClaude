@@ -36,7 +36,7 @@ var _keyword_panel: PanelContainer
 var _hover_started_ms: int = -1
 
 const SKILL_HINT_W := 250.0
-const SKILL_HINT_DELAY_MS := 1000    # the live client opens the ability box after a short hover (docs/hud.md)
+const SKILL_HINT_DELAY_MS := 800     # CARD_HINT_DELAY (BaseConflict.Classes.Gamestates.GUI.pas:153)
 const HINT_BG := Color(0x3C / 255.0, 0x57 / 255.0, 0x57 / 255.0, 1.0)         # $background-hint
 const FIELD_BG := Color(0x27 / 255.0, 0x3A / 255.0, 0x3C / 255.0, 1.0)        # $field-background
 const BORDER_CYAN := Color(0x5C / 255.0, 0x89 / 255.0, 0x89 / 255.0, 1.0)     # $border-cyan
@@ -250,7 +250,7 @@ func show_slot(slot: Commander.DeckSlot, commander: Commander, now: int = 0) -> 
 	else:
 		var unit_id := unit_script(card)
 		_description.text = skill_list(unit_id, slot.league)
-		_description.add_theme_font_size_override("font_size", maxi(1, int(_description.size.y * 0.175)))   # live client: same size as spell text
+		_description.add_theme_font_size_override("font_size", maxi(1, int(_description.size.y * 0.65 * 0.26)))   # .skills FontSize 26 % of the content rect left by Padding-Top 30 % / Bottom 5 % (shared_card.scss:315-320)
 		_description.position.y = _stats.position.y + _description.size.y * 0.30   # .skills padding-top
 		var stats := HudStyle.unit_stats(unit_id, slot.league, slot.level)
 		var squad := squad_size(card)

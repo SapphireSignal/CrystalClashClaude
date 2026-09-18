@@ -281,14 +281,34 @@ block event from the sim) and buffs on non-UnitModel views.
 - `docs/ingame-gap-audit.md` (subagent) = the full checklist of in-match client features still missing; work it
   top-down by visibility next, one item per step, screenshot-verified.
 
+**Checkpoint 72 (RoL-only sweep, owner repeated 2026-09-17: "I really want only Rise of Legions for now")**: every
+number that had been fitted to Crystal Clash shots is now source-derived (file:line in the code comments):
+- Resource panel: caption Padding-Right 120ch = 1.2 x row height = 37 px, row font 70 % of the row (21 px em), tier
+  roman 60 % of the 56 px wrapper (33 px) — `core_game.scss:361-447`; engine `ch` = own rect height, Fontsize % =
+  em size in px (`Engine.GUI.pas:7005`, `Engine.GfxApi.pas:2186`).
+- Deck panel locked plate: ends at Position-X 70ch (0.7 x 75 = 52.5 px) anchored outwards -> inset 11.5 px per
+  side (was 21), full panel height, over the deco band, under the cards (`core_game_deck.scss:155-183`).
+- Card hint: CARD_HINT_DELAY 800 ms (`Classes.Gamestates.GUI.pas:153`); unit skill list font = 26 % of the content
+  rect left by Padding-Top 30 % / Bottom 5 % (`shared_card.scss:315-320`).
+- Build grid tiles: `GlowOvershoot.fx` lerp(diffuse, cyan, 0.4) = the source's no-Glow-post branch
+  (`EntityComponents.Client.pas:3052-3063`; we have no Glow post-effect). Measured: rolmedia lit tiles (70,188,187),
+  ours now (71,214,213) (green/blue = the known lighting brightness gap). With a Glow post the source uses 0.032 +
+  the blurred glow stage — that is the path to take once a Godot glow environment is added.
+- `MapView.GLOW_POST_GAIN` = (GAUSS_3_ADDITIVE taps 4.94164 x Intensity 0.44)^2 = 4.73 (PostEffects.fxs:22-33,
+  Shaderglobals.fx:24, Engine.Core.pas:1835-1890): the unit glow-texture emission gain now derives from it
+  (was a fitted 4.0).
+- Camera comment cites Constants.Client.pas:34 / Settings.Client.pas:512,576-577 / EntityComponents.Client.pas:2078.
+- Removed every "live client" / owner-screenshot mention from `game/`; `docs/hud.md` hint delay corrected.
+Still Crystal-Clash-fitted (re-derive from RoL next): `map_view.gd` AMBIENT_SCALE 0.35 / SUN_SCALE 1.06 (the
+source lights in gamma space: `Standardshader.fx:486,515` colour * (NdotL * sun + ambient), then ColorCorrection
+`PostEffects.fxs:56-63` = pow(scene / 0.956, 1.08); the faithful port is a gamma-space lighting shader for terrain /
+units / vegetation, or a re-fit of the two scales against `rolmedia` sand / shadow patch medians). Everything
+else in `game/` now cites the 2022 source or `rolmedia`.
+
 Still open from the owner's earlier report:
-1. **RoL-only sweep (owner, 2026-09-17: "literally everything RoL")**: a few numbers were tuned against Crystal Clash
-   screenshots before the rule; re-derive each from the 2022 stylesheets/source or `rolmedia` and drop the "live
-   client" wording: `build_grid.gd` `_apply_glow` colour fit, `resource_panel.gd` ROW_TEXT_PAD + roman size,
-   `deck_panel.gd` plate inset (:159) and plate/deco overlap (:123), `card_hint.gd` SKILL_HINT_DELAY_MS + description
-   font, `map_view.gd` LIGHT_SCALE 0.7, `main.gd` camera comment (the constant itself is the source's CAMERAOFFSET).
-2. Owner re-test (window fix + settings fix + drop zone + drop effects + hover outline).
-3. Then FIX FIRST item 3 (lane stones brightness) and the particle/model polish lists.
+1. Owner re-test (window fix + settings fix + drop zone + drop effects + hover outline + this sweep).
+2. Lighting: the gamma-space port above (also FIX FIRST item 3, lane stones brightness), then the particle/model
+   polish lists and `docs/ingame-gap-audit.md` top-down.
 
 ## Done from `reference/rolmedia/` (2026-09-17)
 - Hotkey badges hidden by default (`coGameplayShowDeckHotkeys` = false; `DeckPanel.show_hotkeys` for the settings menu).

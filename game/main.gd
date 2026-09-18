@@ -41,14 +41,14 @@ var _jump_return: Variant = null   # camera look-at to return to after a spawner
 var _red_next_play_at: int = 15000
 var _red_cursor: int = 0
 ## The sandbox human is team 2 (Red, +x side): the HUD, textures and effects still paint the own team blue
-## (GetDisplayedTeam maps own -> 1), exactly like the client did in the owner's screenshots (own base top-right,
-## lane leaving bottom-left, hover outline in the real team colour). The AI is team 1 (Blue, -x).
+## (GetDisplayedTeam maps own -> 1) like the original client: own base top-right, lane leaving bottom-left,
+## hover outline in the real team colour. The AI is team 1 (Blue, -x).
 const HUMAN_TEAM := Simulation.TEAM_RED
 const AI_TEAM := Simulation.TEAM_BLUE
 
 ## The original engine is left-handed (DirectX); Godot is right-handed. `World` is scaled -1 on Z so the
 ## sim / map coordinates (used verbatim inside it) render as the exact mirror Godot would otherwise show,
-## i.e. exactly like the original client (shadow sides, texture details, docs/reference-material.md).
+## i.e. exactly like the original client (shadow sides, texture details match reference/rolmedia).
 ## Everything in global space (camera, mouse rays, HUD projections) converts with z_global = -z_sim.
 @onready var _world: Node3D = $World
 @onready var _units_root: Node3D = $World/Units
@@ -485,10 +485,8 @@ func _place_camera(look_at_2d: Vector2) -> void:
 	# Original camera offset direction (Constants.Client.pas:34), scaled to see the lane.
 	_look_at = look_at_2d
 	_camera.fov = rad_to_deg(CAMERA_FOV)
-	# CAMERAOFFSET (Constants.Client.pas:34, z sign flipped for Godot) = the live client's camera: rendered sweeps
-	# at the reference window size scored by per-block alignment with the game-start screenshot put this vector
-	# (pitch 54.3, yaw 47.4, distance 38 at zoom 3.8, original FOV) at ~6 px mean block error, better than any
-	# flatter / closer / narrower variant (docs/reference-material.md). Blue sits at +x (SimMap).
+	# CAMERAOFFSET (BaseConflict.Constants.Client.pas:34), CameraDirection = zoom * CAMERAOFFSET.Normalize * 10
+	# (EntityComponents.Client.pas:2078), zoom 2.6..3.8 (Settings.Client.pas:576-577), FoV 0.6854 rad (:512).
 	# In global (mirrored) space the original CAMERAOFFSET (-0.3947, 0.8121, -0.4297) becomes +z.
 	var offset := Vector3(-0.394721269607544, 0.812130928039551, 0.429695725440979) * _zoom * 10.0
 	var target := Vector3(look_at_2d.x, 0, -look_at_2d.y)   # sim -> global

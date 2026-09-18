@@ -75,7 +75,6 @@ func clamp_to_zone(zone_name: String, p: Vector2) -> Vector2:
 
 ## Base layout per team: {"nexus": Vector2, "lanetowers": [Vector2], "lane_nodes": [Vector2]}.
 ## Sides as in the 2022 scripts (PvPRed.dws / PvPBlue.dws / PvPBase.dws): Blue (team 1) at -x, Red (team 2) at +x.
-## (The live Crystal Clash client mirrors this; it will come with its own files, docs/reference-material.md.)
 func side(team: int) -> float:
 	return -1.0 if team == 1 else 1.0
 

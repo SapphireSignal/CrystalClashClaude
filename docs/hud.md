@@ -128,7 +128,8 @@ keyword descriptions (`effect_<keyword>_description`).
 - Card hint ability box (`.skill-hint`, `shared_card.scss`): 250 wide, `$frame` (2 px `$FF5c8989` border, bg
   `$FF3C5757`), each skill = uppercase name on `$FF273A3C` + hint (15 px, `$FFA9DCE7`), then the keyword
   descriptions (`effect_<keyword>_description`) in a lighter box. The 2022 source shows it on hovering the
-  description; the live client opens it while hovering the deck slot, so we open it after 1 s of hover.
+  description; `hud.CardHintTextVisible` turns true after `CARD_HINT_DELAY` = 800 ms of hover
+  (BaseConflict.Classes.Gamestates.GUI.pas:153).
   Tooltip variables (`%(key)`) come from `units.json` `ability_details` (`PassInteger` etc., per-league arrays).
 - Chat button "Activate Chat (Enter)" left edge, scoreboard (hold key), menu, final screen (`Victory.png` /
   `Defeat.png` on `banner.png`) come with multiplayer / polish.
